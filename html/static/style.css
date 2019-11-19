@@ -1,0 +1,26 @@
+body {
+  font-size: 0.88em;
+}
+
+td, th {
+  padding: 6px;
+  border: 1px #aaa solid;
+}
+
+table {
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 40px;
+}
+
+h1, h2, h3, h4, h5 {
+  text-align: center;
+}
+
+ul {
+  margin-bottom: 0px;
+}
+
+button {
+  border: none;
+}
