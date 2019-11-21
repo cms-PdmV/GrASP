@@ -2,6 +2,7 @@
 <html>
   <head>
     <base href="/samples/">
+    <meta name=viewport content="width=device-width,initial-scale=1">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" integrity="sha384-PsH8R72JQ3SOdhVi3uxftmaW6Vc51MKb0q5P2rRUpPvrszuE4W1povHYgTpBfshb" crossorigin="anonymous">
     <link rel="stylesheet" href="static/style.css">
     <link rel="shortcut icon" type="image/x-icon" href="static/favicon.png">
@@ -15,14 +16,13 @@
   <body>
     <div >
       <div style="text-align: right; margin: 10px;">Logged in as {{ fullname }}</div>
-      <h5>PdmV Samples - {{ campaign }}</h5>
+      <h5>PdmV Samples - {{ campaign }}{% if pwg %} where {{pwg}} is interested{% endif %}</h5>
       <table>
         <tr>
           <th>Short name</th>
-          <th>Dataset</th>
+          <th>Dataset name</th>
           <th>Root request</th>
-          <th>Priority</th>
-          <th>MiniAOD</th>
+          <th>MiniAOD request</th>
           <th>Chained request</th>
           <th>Interested PWGs</th>
         </tr>
@@ -40,28 +40,38 @@
             {% endif %}
             <!-- Root request name -->
             {% if row[2][1] > 0 %}
-            <td rowspan={{row[2][1]}}><a target="_blank" href="https://cms-pdmv.cern.ch/mcm/requests?prepid={{row[2][0]}}" title="Open {{row[2][0]}} in McM">{{row[2][0]}}</a></td>
-            <td rowspan={{row[2][1]}} style="text-align: right" title="Priority of {{row[2][0]}} is {{row[8]}}">{{row[8]}}</td>
+            <td rowspan={{row[2][1]}}>
+              <a target="_blank" href="https://cms-pdmv.cern.ch/mcm/requests?prepid={{row[2][0]}}" title="Open {{row[2][0]}} in McM">{{row[2][0]}}</a><br>
+              <small>Status: {{row[6][0]}}</small><br>
+              <small>Priority: {{row[5][0]}}</small>
+            </td>
             {% endif %}
             <!-- Mini AOD -->
             {% if row[3][1] > 0 %}
-            <td rowspan={{row[3][1]}}><a target="_blank" href="https://cms-pdmv.cern.ch/mcm/requests?prepid={{row[3][0]}}" title="Open {{row[3][0]}} in McM">{{row[3][0]}}</a></td>
+            <td rowspan={{row[3][1]}}>
+              {% if row[3][0] %}
+                <a target="_blank" href="https://cms-pdmv.cern.ch/mcm/requests?prepid={{row[3][0]}}" title="Open {{row[3][0]}} in McM">{{row[3][0]}}</a><br>
+                <small>Status: {{row[8][0]}}</small><br>
+                <small>Priority: {{row[7][0]}}</small><br>
+                <small>Events: {{row[10][0]}}/{{row[9][0]}}</small>
+              {% endif %}
+            </td>
             {% endif %}
             <!-- Chained request -->
             {% if row[4][1] > 0 %}
-            <td rowspan={{row[4][1]}}><a target="_blank" href="https://cms-pdmv.cern.ch/mcm/chained_requests?prepid={{row[4][0]}}" title="Open {{row[4][0]}} in McM">{{row[5]}}</a></td>
+            <td rowspan={{row[4][1]}}><a target="_blank" href="https://cms-pdmv.cern.ch/mcm/chained_requests?prepid={{row[4][0]}}" title="Open {{row[4][0]}} in McM">{{row[11][0]}}</a></td>
             {% endif %}
             <!-- Interested pwgs -->
             <td>
               <ul>
-                {% for pwg in row[6] %}
+                {% for pwg in row[12][0] %}
                   <li>
                     <span title="{{pwg}} is interested in this sample">{{pwg}}</span>
-                    <button type="button" class="badge badge-pill badge-danger" title="Remove {{pwg}} from interested PWGs" onclick="checkboxChange(this, '{{row[7]}}', '{{pwg}}', false)">X</button>
+                    <button type="button" class="badge badge-pill badge-danger" title="Remove {{pwg}} from interested PWGs" onclick="checkboxChange(this, '{{row[13][0]}}', '{{pwg}}', false)">X</button>
                   </li>
                 {% endfor %}
                 <li style="margin-top: 4px" title="Add an interested PWG to this sample">
-                  <select onChange="checkboxChange(this, '{{row[7]}}', this.value, true)">
+                  <select onChange="checkboxChange(this, '{{row[13][0]}}', this.value, true)">
                     <option disabled selected value=''>Add</option>
                     {% for new_pwg in pwgs %}
                       <option value="{{new_pwg}}">{{new_pwg}}</option>

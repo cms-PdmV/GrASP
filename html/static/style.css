@@ -1,5 +1,6 @@
 body {
   font-size: 0.88em;
+  background: #fafafa;
 }
 
 td, th {
@@ -7,13 +8,21 @@ td, th {
   border: 1px #aaa solid;
 }
 
+th {
+  text-align: center;
+}
+
 table {
   margin-left: auto;
   margin-right: auto;
   margin-bottom: 40px;
+  background: white;
+  webkit-box-shadow: 0 3px 3px -2px rgba(0,0,0,.2),0 3px 4px 0 rgba(0,0,0,.14),0 1px 8px 0 rgba(0,0,0,.12)!important;
+  box-shadow: 0 3px 3px -2px rgba(0,0,0,.2),0 3px 4px 0 rgba(0,0,0,.14),0 1px 8px 0 rgba(0,0,0,.12)!important;
 }
 
 h1, h2, h3, h4, h5 {
+  width: 100%;
   text-align: center;
 }
 

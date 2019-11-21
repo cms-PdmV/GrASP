@@ -2,6 +2,7 @@
 <html>
   <head>
     <base href="/samples/">
+    <meta name=viewport content="width=device-width,initial-scale=1">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" integrity="sha384-PsH8R72JQ3SOdhVi3uxftmaW6Vc51MKb0q5P2rRUpPvrszuE4W1povHYgTpBfshb" crossorigin="anonymous">
     <link rel="stylesheet" href="static/style.css">
     <link rel="shortcut icon" type="image/x-icon" href="static/favicon.png">
@@ -18,20 +19,45 @@
       <h3>PdmV Samples</h3>
       <table>
         <tr>
+          <th>Campaign group</th>
           <th>Campaign</th>
           <th>Size</th>
         </tr>
-        {% for campaign in campaigns %}
+        {% for row in campaigns %}
           <tr>
-            <td>
-              <a href="{{campaign}}" title="Show samples for {{campaign}}">{{campaign}}</a>
+            <!-- Campaign group -->
+            {% if row[0][1] > 0 %}
+            <td rowspan={{row[0][1]}}>
+              <a href="campaign_group/{{row[0][0]}}">{{row[0][0]}}</a>
             </td>
-            <td style="text-align: right;" title="{{campaigns[campaign]}} samples in {{campaign}}">
-              {{campaigns[campaign]}}
+            {% endif %}
+            <!-- Campaign -->
+            {% if row[1][1] > 0 %}
+            <td rowspan={{row[1][1]}}>
+              <a href="campaign/{{row[1][0]}}">{{row[1][0]}}</a>
             </td>
+            {% endif %}
+            <td>{{row[2][0]}}</td>
           </tr>
         {% endfor %}
       </table>
+      <table>
+        <tr>
+          <th>Campaign group</th>
+          <th colspan={{pwgs | length}}>PWGs</th>
+        </tr>
+        {% for campaign_group in campaign_groups %}
+        <tr>
+          <td>
+            {{campaign_group}}
+          </td>
+          {% for pwg in pwgs %}
+          <td>
+            <a href="campaign_group/{{campaign_group}}/{{pwg}}">{{pwg}}</a>
+          </td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
     </div>
   </body>
 </html>
