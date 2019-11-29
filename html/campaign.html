@@ -16,7 +16,7 @@
   <body>
     <div >
       <div style="text-align: right; margin: 10px;">Logged in as {{ fullname }}</div>
-      <h5>PdmV Samples - {{ campaign }}{% if pwg %} where {{pwg}} is interested{% endif %}</h5>
+      <h5>PdmV Samples - {% if endpoint != 'default' %}<b>missing</b> samples for {% endif %}{{ campaign }}{% if pwg %} where {{pwg}} is interested {% endif %}</h5>
       <table>
         <tr>
           <th>Short name</th>
@@ -24,7 +24,7 @@
           <th>Root request</th>
           <th>MiniAOD request</th>
           <th>Chained request</th>
-          <th>Interested PWGs</th>
+          {% if endpoint == 'default' %}<th>Interested PWGs</th>{% endif %}
         </tr>
         {% for row in table_rows %}
           <tr>
@@ -62,24 +62,26 @@
             <td rowspan={{row[4][1]}}><a target="_blank" href="https://cms-pdmv.cern.ch/mcm/chained_requests?prepid={{row[4][0]}}" title="Open {{row[4][0]}} in McM">{{row[11][0]}}</a></td>
             {% endif %}
             <!-- Interested pwgs -->
-            <td>
-              <ul>
-                {% for pwg in row[12][0] %}
-                  <li>
-                    <span title="{{pwg}} is interested in this sample">{{pwg}}</span>
-                    <button type="button" class="badge badge-pill badge-danger" title="Remove {{pwg}} from interested PWGs" onclick="checkboxChange(this, '{{row[13][0]}}', '{{pwg}}', false)">X</button>
+            {% if endpoint == 'default' %}
+              <td>
+                <ul>
+                  {% for pwg in row[12][0] %}
+                    <li>
+                      <span title="{{pwg}} is interested in this sample">{{pwg}}</span>
+                      <button type="button" class="badge badge-pill badge-danger" title="Remove {{pwg}} from interested PWGs" onclick="checkboxChange(this, '{{row[13][0]}}', '{{pwg}}', false)">X</button>
+                    </li>
+                  {% endfor %}
+                  <li style="margin-top: 4px" title="Add an interested PWG to this sample">
+                    <select onChange="checkboxChange(this, '{{row[13][0]}}', this.value, true)">
+                      <option disabled selected value=''>Add</option>
+                      {% for new_pwg in pwgs %}
+                        <option value="{{new_pwg}}">{{new_pwg}}</option>
+                      {% endfor %}
+                    </select>
                   </li>
-                {% endfor %}
-                <li style="margin-top: 4px" title="Add an interested PWG to this sample">
-                  <select onChange="checkboxChange(this, '{{row[13][0]}}', this.value, true)">
-                    <option disabled selected value=''>Add</option>
-                    {% for new_pwg in pwgs %}
-                      <option value="{{new_pwg}}">{{new_pwg}}</option>
-                    {% endfor %}
-                  </select>
-                </li>
-              </ul>
-            </td>
+                </ul>
+              </td>
+            {% endif %}
           </tr>
         {% endfor %}
       </table>

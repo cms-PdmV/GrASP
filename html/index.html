@@ -17,6 +17,7 @@
     <div>
       <div style="text-align: right; margin: 10px;">Logged in as {{ fullname }}</div>
       <h3>PdmV Samples</h3>
+      <h5>Existing samples</h5>
       <table>
         <tr>
           <th>Campaign group</th>
@@ -41,6 +42,7 @@
           </tr>
         {% endfor %}
       </table>
+      <h5>Existing samples per PWG</h5>
       <table>
         <tr>
           <th>Campaign group</th>
@@ -58,6 +60,30 @@
           {% endfor %}
         </tr>
         {% endfor %}
+      </table>
+      <h5>Missing samples according to <a target="_blank" href="https://twiki.cern.ch/twiki/bin/viewauth/CMS/MainSamplesFall18">TWiki</a></h5>
+      <table>
+        <tr>
+          <th>Campaign group</th>
+          <th>Campaign</th>
+        </tr>
+        {% for row in campaigns %}
+          <tr>
+            <!-- Campaign group -->
+            {% if row[0][1] > 0 %}
+            <td rowspan={{row[0][1]}}>
+              <a href="missing_group/{{row[0][0]}}">{{row[0][0]}}</a>
+            </td>
+            {% endif %}
+            <!-- Campaign -->
+            {% if row[1][1] > 0 %}
+            <td rowspan={{row[1][1]}}>
+              <a href="missing/{{row[1][0]}}">{{row[1][0]}}</a>
+            </td>
+            {% endif %}
+          </tr>
+        {% endfor %}
+      </table>
     </div>
   </body>
 </html>
