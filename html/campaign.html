@@ -17,6 +17,18 @@
     <div >
       <div style="text-align: right; margin: 10px;">Logged in as {{ fullname }}</div>
       <h5>PdmV Samples - {% if endpoint != 'default' %}<b>missing</b> samples for {% endif %}{{ campaign }}{% if pwg %} where {{pwg}} is interested {% endif %}</h5>
+      {% if endpoint == 'default' %}
+        <div style="text-align: center; margin: 20px;">
+          <b>I am going to tag samples for</b>
+          <select onChange="selectPWG(this, this.value)">
+            <option disabled selected value=''></option>
+            {% for pwg in pwgs %}
+              <option value="{{pwg}}">{{pwg}}</option>
+            {% endfor %}
+          </select>
+          <b>physics working group</b>
+        </div>
+      {% endif %}
       <table>
         <tr>
           <th>Short name</th>
@@ -64,22 +76,25 @@
             <!-- Interested pwgs -->
             {% if endpoint == 'default' %}
               <td>
-                <ul>
+                <ul class="interested-list">
                   {% for pwg in row[12][0] %}
                     <li>
-                      <span title="{{pwg}} is interested in this sample">{{pwg}}</span>
-                      <button type="button" class="badge badge-pill badge-danger" title="Remove {{pwg}} from interested PWGs" onclick="checkboxChange(this, '{{row[13][0]}}', '{{pwg}}', false)">X</button>
+                      <span title="{{pwg}} is interested in this sample">{{pwg}}</span>&nbsp;<!--
+                   --><a class="group group-remove group-remove-{{pwg}}"
+                         style="display: none"
+                         title="Remove {{pwg}} from interested PWGs"
+                         onclick="changeInterestedPWG(this, '{{row[13][0]}}', '{{pwg}}', false)">Remove</a>
                     </li>
                   {% endfor %}
-                  <li style="margin-top: 4px" title="Add an interested PWG to this sample">
-                    <select onChange="checkboxChange(this, '{{row[13][0]}}', this.value, true)">
-                      <option disabled selected value=''>Add</option>
-                      {% for new_pwg in pwgs %}
-                        <option value="{{new_pwg}}">{{new_pwg}}</option>
-                      {% endfor %}
-                    </select>
-                  </li>
                 </ul>
+                <ul>
+                  {% for pwg in pwgs %}
+                    <li style="display: none" class="group group-add group-add-{{pwg}}">
+                      <a title="Add {{pwg}} to interested PWGs"
+                         onclick="changeInterestedPWG(this, '{{row[13][0]}}', '{{pwg}}', true)">Add {{pwg}}</a>
+                      </li>
+                  {% endfor %}
+                </a>
               </td>
             {% endif %}
           </tr>

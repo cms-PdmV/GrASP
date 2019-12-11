@@ -33,3 +33,36 @@ ul {
 button {
   border: none;
 }
+
+body:after {
+    content: "work in progress";
+    position: fixed;
+    width: 400px;
+    height: 50px;
+    background: red;
+    top: 85px;
+    left: -85px;
+    text-align: center;
+    font-size: 28px;
+    font-family: sans-serif;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: #fff;
+    line-height: 50px;
+    opacity: .8;
+    -ms-transform: rotate(-45deg);
+    -webkit-transform: rotate(-45deg);
+    transform: rotate(-45deg)
+}
+
+.group-remove {
+  text-decoration: underline !important;
+  color: red !important;
+  cursor: pointer;
+}
+
+.group-add {
+  text-decoration: underline !important;
+  color: green !important;
+  cursor: pointer;
+}

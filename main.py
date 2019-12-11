@@ -78,10 +78,10 @@ def split_chained_request_name(name):
     try:
         new_name = None
         if 'DR' in name:
-            new_name = name.split('DR')[1].split('_')[0]
+            new_name = name.split('-')[1].split('DR')[1].split('_')[0]
 
         if 'DIGI' in name:
-            new_name = name.split('DIGI')[1].split('_')[0]
+            new_name = name.split('-')[1].split('DIGI')[1].split('_')[0]
 
         if new_name:
             return new_name

@@ -5,7 +5,45 @@ from rest import McM
 
 
 # McM instance
-mcm = McM(dev=False, debug=False)
+mcm = McM(dev=False, debug=False, cookie='cookie.txt')
+
+
+def pick_chained_requests(chained_requests):
+    tree = {}
+    selected_chained_requests = []
+    for chained_request in chained_requests:
+        steps = chained_request_to_steps(chained_request)
+        mini_step = steps.get('miniaod')
+        nano_step = steps.get('nanoaod')
+        if mini_step is None or nano_step is None:
+            selected_chained_requests.append(chained_request)
+            continue
+
+        mini_step = mini_step.split('-')[1]
+        nano_step = nano_step.split('-')[1]
+        if mini_step not in tree:
+            tree[mini_step] = {}
+
+        if nano_step not in tree[mini_step]:
+            tree[mini_step][nano_step] = []
+
+        tree[mini_step][nano_step].append(chained_request)
+
+    for mini_campaign in tree:
+        print('  %s' % (mini_campaign))
+        nano_campaigns = sorted(tree[mini_campaign].keys())
+        for n in nano_campaigns:
+            print('    %s' % (n))
+
+        selected_chained_requests.extend(tree[mini_campaign][nano_campaigns[-1]])
+
+    if len(chained_requests) > 1:
+        prepids = [x['prepid'] for x in chained_requests]
+        selected_prepids = [x['prepid'] for x in selected_chained_requests]
+        for p in prepids:
+            print('%s %s' % ('*' if p in selected_prepids else ' ', p))
+
+    return selected_chained_requests
 
 
 def chained_request_to_steps(chained_request):
@@ -124,53 +162,62 @@ def process_request(request, campaign, cursor, table):
                     interested_pwgs]
         insert_or_update(sql_args, cursor, table)
     else:
+        chained_requests = []
         for chained_request_prepid in request['member_of_chain']:
             chained_request = mcm.get('chained_requests', chained_request_prepid)
             if chained_request:
-                steps = chained_request_to_steps(chained_request)
-                root_request_prepid = chained_request['chain'][0]
-                root_request = mcm.get('requests', root_request_prepid)
-                dataset_name = root_request['dataset_name']
-                root_request_priority = root_request['priority']
-                root_request_total_events = root_request['total_events']
-                root_request_status = root_request['status']
-                miniaod_prepid = steps.get('miniaod')
-                if miniaod_prepid:
-                    # print(miniaod_prepid)
-                    miniaod_request = mcm.get('requests', miniaod_prepid)
-                else:
-                    miniaod_request = {}
+                chained_requests.append(chained_request)
+            else:
+                print('No %s?' % (chained_request_prepid))
 
-                miniaod_priority = miniaod_request.get('priority')
-                miniaod_total_events = miniaod_request.get('total_events')
-                miniaod_done_events = miniaod_request.get('completed_events')
-                miniaod_status = miniaod_request.get('status')
-                if miniaod_request:
-                    interested_pwgs = ','.join(miniaod_request.get('interested_pwg', []))
-                else:
-                    interested_pwgs = ','.join(root_request.get('interested_pwg', []))
+        for chained_request in pick_chained_requests(chained_requests):
+            steps = chained_request_to_steps(chained_request)
+            chained_request_prepid = chained_request['prepid']
+            root_request_prepid = chained_request['chain'][0]
+            root_request = mcm.get('requests', root_request_prepid)
+            dataset_name = root_request['dataset_name']
+            root_request_priority = root_request['priority']
+            root_request_total_events = root_request['total_events']
+            root_request_status = root_request['status']
+            miniaod_prepid = steps.get('miniaod')
+            if miniaod_prepid:
+                # print(miniaod_prepid)
+                miniaod_request = mcm.get('requests', miniaod_prepid)
+            else:
+                miniaod_request = {}
 
-                sql_args = [campaign,
-                            campaign_group,
-                            chained_request_prepid,
-                            dataset_name,
-                            root_request_prepid,
-                            root_request_priority,
-                            root_request_total_events,
-                            root_request_status,
-                            miniaod_prepid,
-                            miniaod_priority,
-                            miniaod_total_events,
-                            miniaod_done_events,
-                            miniaod_status,
-                            interested_pwgs]
+            miniaod_priority = miniaod_request.get('priority')
+            miniaod_total_events = miniaod_request.get('total_events')
+            miniaod_done_events = miniaod_request.get('completed_events')
+            miniaod_status = miniaod_request.get('status')
+            if miniaod_request:
+                interested_pwgs = ','.join(miniaod_request.get('interested_pwg', []))
+            else:
+                interested_pwgs = ','.join(root_request.get('interested_pwg', []))
 
-                insert_or_update(sql_args, cursor, table)
+            sql_args = [campaign,
+                        campaign_group,
+                        chained_request_prepid,
+                        dataset_name,
+                        root_request_prepid,
+                        root_request_priority,
+                        root_request_total_events,
+                        root_request_status,
+                        miniaod_prepid,
+                        miniaod_priority,
+                        miniaod_total_events,
+                        miniaod_done_events,
+                        miniaod_status,
+                        interested_pwgs]
+
+            insert_or_update(sql_args, cursor, table)
 
 
 campaigns = ['RunIISummer19UL16GEN', 'RunIISummer19UL16wmLHEGEN', 'RunIISummer19UL16pLHE',
              'RunIISummer19UL17GEN', 'RunIISummer19UL17wmLHEGEN', 'RunIISummer19UL17pLHE',
              'RunIISummer19UL18GEN', 'RunIISummer19UL18wmLHEGEN', 'RunIISummer19UL18pLHE']
+
+# campaigns = ['RunIISummer19UL17GEN']
 
 conn = sqlite3.connect('data.db')
 c = conn.cursor()
