@@ -76,11 +76,15 @@ def split_chained_request_name(name):
         return ''
 
     try:
+        new_name = None
         if 'DR' in name:
-            return name.split('DR')[1].split('_')[1].replace('flow', '')
+            new_name = name.split('DR')[1].split('_')[0]
 
         if 'DIGI' in name:
-            return name.split('DIGI')[1].split('_')[1].replace('flow', '')
+            new_name = name.split('DIGI')[1].split('_')[0]
+
+        if new_name:
+            return new_name
     except IndexError:
         pass
 
@@ -183,8 +187,8 @@ def campaign_page(campaign_name=None, campaign_group=None, pwg=None):
             sql_args.append(campaign_group)
             campaign_name = campaign_group + '*'
 
-    print(sql_query)
-    print(sql_args)
+    logging.info(sql_query)
+    logging.info(sql_args)
     rows = c.execute(sql_query, sql_args)
     rows = [(get_short_name(r[0]),  # Short name
              r[0],  # Dataset
@@ -223,6 +227,7 @@ def update():
         header_username = request.headers.get('Adfs-Login', '???')
         user = [r for r in c.execute('SELECT username, role FROM mcm_users WHERE username = ?', [header_username])]
         if len(user) != 1:
+            logging.error('Could not find user %s, not doing anything' % (header_username))
             return ''
 
         username = user[0][0]
@@ -232,9 +237,12 @@ def update():
         pwg = data['pwg'].upper()
         uid = int(data['uid'])
         checked = data['checked']
-        rows = [r for r in c.execute('SELECT chained_request, interested_pwgs FROM samples WHERE uid = ?', [uid])]
-        pwgs = set(x for x in rows[0][1].split(',') if x)
-        chained_request = rows[0][0]
+        rows = [r for r in c.execute('SELECT campaign, dataset, root_request, chained_request, interested_pwgs FROM samples WHERE uid = ?', [uid])]
+        pwgs = set(x for x in rows[0][4].split(',') if x)
+        chained_request = rows[0][3]
+        root_request = rows[0][2]
+        dataset = rows[0][1]
+        campaign = rows[0][0]
         if checked and pwg not in pwgs:
             pwgs.add(pwg)
         elif not checked and pwg in pwgs:
@@ -245,8 +253,11 @@ def update():
         pwgs = ','.join(sorted(pwgs))
         update_time = int(time.time())
         c.execute('UPDATE samples SET interested_pwgs = ?, updated = ? WHERE uid = ?', [pwgs, update_time, uid])
-        c.execute('INSERT INTO action_history VALUES (?, ?, ?, ?, ?, ?)',
-                  [chained_request,
+        c.execute('INSERT INTO action_history VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                  [campaign,
+                   dataset,
+                   root_request,
+                   chained_request,
                    username,
                    role,
                    'add' if checked else 'remove',
@@ -264,7 +275,17 @@ def update():
 def history():
     conn = sqlite3.connect('data.db')
     c = conn.cursor()
-    rows = [r for r in c.execute('SELECT uid, username, role, action, pwg, updated FROM action_history ORDER BY updated')]
+    rows = [r for r in c.execute('''SELECT campaign,
+                                           dataset,
+                                           root_request,
+                                           chained_request,
+                                           username,
+                                           role,
+                                           action,
+                                           pwg,
+                                           updated
+                                    FROM action_history
+                                    ORDER BY updated''')]
     return render_template('history.html',
                            rows=rows)
 
