@@ -342,8 +342,8 @@ with open('MainSamplesFall18.txt') as f:
     twiki_samples_fall_18 = [line.strip().split('\t') for line in f if line.strip()]
 
 # Remove this!
-twiki_samples_fall_18 = twiki_samples_fall_18[:5]
-campaigns = [campaigns[3], campaigns[5]]
+# twiki_samples_fall_18 = twiki_samples_fall_18[:5]
+# campaigns = [campaigns[3], campaigns[5]]
 # Remove this!
 
 twiki_added_requests = set()
