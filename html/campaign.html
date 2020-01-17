@@ -55,7 +55,8 @@
             <td rowspan={{row[2][1]}}>
               <a target="_blank" href="https://cms-pdmv.cern.ch/mcm/requests?prepid={{row[2][0]}}" title="Open {{row[2][0]}} in McM">{{row[2][0]}}</a><br>
               <small>Status: {{row[6][0]}}</small><br>
-              <small>Priority: {{row[5][0]}}</small>
+              <small>Priority: {{row[5][0]}}</small><br>
+              <small>Events: {{row[8][0]}}/{{row[7][0]}} ({{(row[8][0] / row[7][0] * 100) | round(1)}}%)</small>
             </td>
             {% endif %}
             <!-- Mini AOD -->
@@ -63,27 +64,27 @@
             <td rowspan={{row[3][1]}}>
               {% if row[3][0] %}
                 <a target="_blank" href="https://cms-pdmv.cern.ch/mcm/requests?prepid={{row[3][0]}}" title="Open {{row[3][0]}} in McM">{{row[3][0]}}</a><br>
-                <small>Status: {{row[8][0]}}</small><br>
-                <small>Priority: {{row[7][0]}}</small><br>
-                <small>Events: {{row[10][0]}}/{{row[9][0]}}</small>
+                <small>Status: {{row[10][0]}}</small><br>
+                <small>Priority: {{row[9][0]}}</small><br>
+                <small>Events: {{row[12][0]}}/{{row[11][0]}} ({{(row[12][0] / row[11][0] * 100) | round(1)}}%)</small>
               {% endif %}
             </td>
             {% endif %}
             <!-- Chained request -->
             {% if row[4][1] > 0 %}
-            <td rowspan={{row[4][1]}}><a target="_blank" href="https://cms-pdmv.cern.ch/mcm/chained_requests?prepid={{row[4][0]}}" title="Open {{row[4][0]}} in McM">{{row[11][0]}}</a></td>
+            <td rowspan={{row[4][1]}}><a target="_blank" href="https://cms-pdmv.cern.ch/mcm/chained_requests?prepid={{row[4][0]}}" title="Open {{row[4][0]}} in McM">{{row[13][0]}}</a></td>
             {% endif %}
             <!-- Interested pwgs -->
             {% if endpoint == 'default' %}
               <td>
                 <ul class="interested-list">
-                  {% for pwg in row[12][0] %}
+                  {% for pwg in row[14][0] %}
                     <li>
                       <span title="{{pwg}} is interested in this sample">{{pwg}}</span>&nbsp;<!--
                    --><a class="group group-remove group-remove-{{pwg}}"
                          style="display: none"
                          title="Remove {{pwg}} from interested PWGs"
-                         onclick="changeInterestedPWG(this, '{{row[13][0]}}', '{{pwg}}', false)">Remove</a>
+                         onclick="changeInterestedPWG(this, '{{row[15][0]}}', '{{pwg}}', false)">Remove</a>
                     </li>
                   {% endfor %}
                 </ul>
@@ -91,7 +92,7 @@
                   {% for pwg in pwgs %}
                     <li style="display: none" class="group group-add group-add-{{pwg}}">
                       <a title="Add {{pwg}} to interested PWGs"
-                         onclick="changeInterestedPWG(this, '{{row[13][0]}}', '{{pwg}}', true)">Add {{pwg}}</a>
+                         onclick="changeInterestedPWG(this, '{{row[15][0]}}', '{{pwg}}', true)">Add {{pwg}}</a>
                       </li>
                   {% endfor %}
                 </a>

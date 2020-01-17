@@ -99,13 +99,22 @@ def get_short_name(name):
     return renames.get(spl[0], spl[0])
 
 
+def get_user_role(username, cursor):
+    roles = cursor.execute('SELECT role FROM mcm_users WHERE username = ?', [username])
+    roles = [r[0] for r in roles]
+    if roles:
+        return roles[0]
+    else:
+        return 'not a user'
+
+
 @app.route('/')
 def index():
     conn = sqlite3.connect('data.db')
     c = conn.cursor()
     fullname = '%s (%s - %s)' % (request.headers.get('Adfs-Fullname', '???'),
                                  request.headers.get('Adfs-Login', '???'),
-                                 request.headers.get('Adfs-Email', '???'))
+                                 get_user_role(request.headers.get('Adfs-Login', '???'), c))
 
     campaigns = c.execute('SELECT campaign_group, campaign, COUNT(1) FROM samples GROUP BY campaign')
     campaigns = add_counters(campaigns)
@@ -135,13 +144,14 @@ def campaign_page(campaign_name=None, campaign_group=None, pwg=None):
     c = conn.cursor()
     fullname = '%s (%s - %s)' % (request.headers.get('Adfs-Fullname', '???'),
                                  request.headers.get('Adfs-Login', '???'),
-                                 request.headers.get('Adfs-Email', '???'))
+                                 get_user_role(request.headers.get('Adfs-Login', '???'), c))
     sql_args = []
     if request.endpoint == 'default':
         sql_query = '''SELECT dataset,
                               root_request,
                               root_request_priority,
                               root_request_total_events,
+                              root_request_done_events,
                               root_request_status,
                               ifnull(miniaod, ""),
                               ifnull(miniaod_priority, ""),
@@ -168,6 +178,7 @@ def campaign_page(campaign_name=None, campaign_group=None, pwg=None):
                               root_request,
                               root_request_priority,
                               root_request_total_events,
+                              root_request_done_events,
                               root_request_status,
                               ifnull(miniaod, ""),
                               ifnull(miniaod_priority, ""),
@@ -193,17 +204,19 @@ def campaign_page(campaign_name=None, campaign_group=None, pwg=None):
     rows = [(get_short_name(r[0]),  # Short name
              r[0],  # Dataset
              r[1],  # Root request
-             r[5],  # MiniAOD request
-             r[10],  # Chained request
+             r[6],  # MiniAOD request
+             r[11],  # Chained request
              r[2],  # Root request priority
-             r[4],  # Root request status
-             r[6],  # MiniAOD priority
-             r[9],  # MiniAOD status
-             r[7] if r[7] > 0 else r[3],  # Total events
-             r[8] if r[8] > 0 else 0,  # Done events
-             split_chained_request_name(r[10]),  # Short chained request
-             [x for x in r[11].split(',') if x],  # Interested pwgs
-             r[12],  # uid
+             r[5],  # Root request status
+             r[3],  # Root request total events
+             r[4],  # Root request done events
+             r[7],  # MiniAOD priority
+             r[10],  # MiniAOD status
+             r[8],  # MiniAOD total events
+             r[9],  # MiniAOD done events
+             split_chained_request_name(r[11]),  # Short chained request
+             [x for x in r[12].split(',') if x],  # Interested pwgs
+             r[13],  # uid
              ) for r in rows]
 
     rows = add_counters(rows)
@@ -228,7 +241,7 @@ def update():
         user = [r for r in c.execute('SELECT username, role FROM mcm_users WHERE username = ?', [header_username])]
         if len(user) != 1:
             logging.error('Could not find user %s, not doing anything' % (header_username))
-            return ''
+            return 'You are not a user of McM', 403
 
         username = user[0][0]
         role = user[0][1]
@@ -267,6 +280,7 @@ def update():
         conn.close()
     except Exception as ex:
         logging.error(ex)
+        return str(ex), 500
 
     return ''
 

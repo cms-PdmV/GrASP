@@ -20,7 +20,7 @@ function changeInterestedPWG(element, uid, pwg, add) {
       $(element).parent().hide();
     }
   }).fail(function(data) {
-    alert('Error');
+    alert('Error: ' + data.responseText);
   })
 }
 
