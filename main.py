@@ -153,11 +153,13 @@ def campaign_page(campaign_name=None, campaign_group=None, pwg=None):
                               root_request_total_events,
                               root_request_done_events,
                               root_request_status,
+                              ifnull(root_request_output, ""),
                               ifnull(miniaod, ""),
                               ifnull(miniaod_priority, ""),
                               ifnull(miniaod_total_events, 0),
                               ifnull(miniaod_done_events, 0),
                               ifnull(miniaod_status, ""),
+                              ifnull(miniaod_output, ""),
                               ifnull(chained_request, ""),
                               interested_pwgs,
                               uid FROM samples'''
@@ -180,11 +182,13 @@ def campaign_page(campaign_name=None, campaign_group=None, pwg=None):
                               root_request_total_events,
                               root_request_done_events,
                               root_request_status,
+                              ifnull(root_request_output, ""),
                               ifnull(miniaod, ""),
                               ifnull(miniaod_priority, ""),
                               ifnull(miniaod_total_events, 0),
                               ifnull(miniaod_done_events, 0),
                               ifnull(miniaod_status, ""),
+                              ifnull(miniaod_output, ""),
                               ifnull(chained_request, ""),
                               interested_pwgs,
                               uid FROM twiki_samples'''
@@ -204,19 +208,21 @@ def campaign_page(campaign_name=None, campaign_group=None, pwg=None):
     rows = [(get_short_name(r[0]),  # Short name
              r[0],  # Dataset
              r[1],  # Root request
-             r[6],  # MiniAOD request
-             r[11],  # Chained request
+             r[7],  # MiniAOD request
+             r[13],  # Chained request
              r[2],  # Root request priority
              r[5],  # Root request status
              r[3],  # Root request total events
              r[4],  # Root request done events
-             r[7],  # MiniAOD priority
-             r[10],  # MiniAOD status
-             r[8],  # MiniAOD total events
-             r[9],  # MiniAOD done events
-             split_chained_request_name(r[11]),  # Short chained request
-             [x for x in r[12].split(',') if x],  # Interested pwgs
-             r[13],  # uid
+             r[6],  # Root request output
+             r[8],  # MiniAOD priority
+             r[11],  # MiniAOD status
+             r[9],  # MiniAOD total events
+             r[10],  # MiniAOD done events
+             r[12],  # MiniAOD output
+             split_chained_request_name(r[13]),  # Short chained request
+             [x for x in r[14].split(',') if x],  # Interested pwgs
+             r[15],  # uid
              ) for r in rows]
 
     rows = add_counters(rows)

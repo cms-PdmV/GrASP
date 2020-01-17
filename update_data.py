@@ -106,13 +106,15 @@ def insert_or_update(sql_args, cursor, table):
     6. root_request_total_events
     7. root_request_done_events
     8. root_request_status
-    9. miniaod_prepid
-    10. miniaod_priority
-    11. miniaod_total_events
-    12. miniaod_done_events
-    13. miniaod_status
-    14. interested_pwgs
-    15. original_interested_pwgs
+    9. root_request_output
+    10. miniaod_prepid
+    11. miniaod_priority
+    12. miniaod_total_events
+    13. miniaod_done_events
+    14. miniaod_status
+    15. miniaod_output
+    16. interested_pwgs
+    17. original_interested_pwgs
     """
     existing_sample = get_sample_if_exists(sql_args, cursor, table)
     nice_description = '%s %s %s %s' % (sql_args[0], sql_args[2], sql_args[3], sql_args[4])
@@ -152,9 +154,9 @@ def insert_or_update(sql_args, cursor, table):
                 print('%s must be updated in McM. Set interested PWGs to %s' % (mcm_request['prepid'], new_interested_pwgs_string))
                 mcm_request['interested_pwg'] = list(new_pwgs)
                 print(mcm.update('requests', mcm_request))
-                new_request = sql_args[9] if sql_args[9] else sql_args[4]
+                new_request = sql_args[10] if sql_args[10] else sql_args[4]
                 if new_request == mcm_request['prepid']:
-                    sql_args[14] = sql_args[15] = new_interested_pwgs_string
+                    sql_args[16] = sql_args[17] = new_interested_pwgs_string
 
         # interested_pwgs = ','.join(sorted(x.strip().upper() for x in sql_args[14].split(',') if x.strip()))
         # if table == 'samples' and samples_interested_pwgs != interested_pwgs:
@@ -181,17 +183,19 @@ def insert_or_update(sql_args, cursor, table):
                               root_request_total_events = ?,
                               root_request_done_events = ?,
                               root_request_status = ?,
+                              root_request_output = ?,
                               miniaod = ?,
                               miniaod_priority = ?,
                               miniaod_total_events = ?,
                               miniaod_done_events = ?,
                               miniaod_status = ?,
+                              miniaod_output = ?,
                               interested_pwgs = ?,
                               original_interested_pwgs = ? WHERE uid = ?''' % (table), sql_args)
     else:
         print('Inserting %s' % (nice_description))
         cursor.execute('''INSERT INTO %s
-                          VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)''' % (table), sql_args)
+                          VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)''' % (table), sql_args)
 
 
 def process_request(request, campaign, cursor, table):
@@ -221,6 +225,10 @@ def process_request(request, campaign, cursor, table):
         root_request_total_events = root_request['total_events']
         root_request_done_events = root_request['completed_events']
         root_request_status = root_request['status']
+        root_request_output = None
+        if root_request['output_dataset']:
+            root_request_output = root_request['output_dataset'][-1]
+
         miniaod_prepid = steps.get('miniaod')
         if miniaod_prepid:
             miniaod_request = mcm.get('requests', miniaod_prepid)
@@ -231,9 +239,12 @@ def process_request(request, campaign, cursor, table):
         miniaod_total_events = miniaod_request.get('total_events')
         miniaod_done_events = miniaod_request.get('completed_events')
         miniaod_status = miniaod_request.get('status')
+        miniaod_output = None
         if miniaod_request:
             # If MiniAOD exists, use MiniAOD interested PWGs
             interested_pwgs = ','.join(miniaod_request.get('interested_pwg', []))
+            if miniaod_request['output_dataset']:
+                miniaod_output = miniaod_request['output_dataset'][-1]
         else:
             # If MiniAOD does not exist, use root request PWGs
             interested_pwgs = ','.join(root_request.get('interested_pwg', []))
@@ -247,11 +258,13 @@ def process_request(request, campaign, cursor, table):
                     root_request_total_events,
                     root_request_done_events,
                     root_request_status,
+                    root_request_output,
                     miniaod_prepid,
                     miniaod_priority,
                     miniaod_total_events,
                     miniaod_done_events,
                     miniaod_status,
+                    miniaod_output,
                     interested_pwgs,
                     interested_pwgs]
 
@@ -276,11 +289,13 @@ c.execute('''CREATE TABLE IF NOT EXISTS samples
               root_request_total_events integer,
               root_request_done_events integer,
               root_request_status text,
+              root_request_output text,
               miniaod text,
               miniaod_priority integer,
               miniaod_total_events integer,
               miniaod_done_events integer,
               miniaod_status text,
+              miniaod_output text,
               interested_pwgs text,
               original_interested_pwgs text,
               updated integer)''')
@@ -296,11 +311,13 @@ c.execute('''CREATE TABLE IF NOT EXISTS twiki_samples
               root_request_total_events integer,
               root_request_done_events integer,
               root_request_status text,
+              root_request_output text,
               miniaod text,
               miniaod_priority integer,
               miniaod_total_events integer,
               miniaod_done_events integer,
               miniaod_status text,
+              miniaod_output text,
               interested_pwgs text,
               original_interested_pwgs text,
               updated integer)''')
@@ -325,8 +342,8 @@ with open('MainSamplesFall18.txt') as f:
     twiki_samples_fall_18 = [line.strip().split('\t') for line in f if line.strip()]
 
 # Remove this!
-# twiki_samples_fall_18 = twiki_samples_fall_18[:5]
-# campaigns = [campaigns[5]]
+twiki_samples_fall_18 = twiki_samples_fall_18[:5]
+campaigns = [campaigns[3], campaigns[5]]
 # Remove this!
 
 twiki_added_requests = set()
