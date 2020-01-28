@@ -42,45 +42,57 @@
           <tr>
             <!-- Short name -->
             {% if row[0][1] > 0 %}
-            <td rowspan={{row[0][1]}} title="All samples with {{row[0][0]}}_* datasets">{{row[0][0]}}</td>
+            <td rowspan={{row[0][1]}} title="All samples with {{row[0][0]}}_* datasets">
+                {{row[0][0]}}
+            </td>
             {% endif %}
             <!-- Dataset name -->
             {% if row[1][1] > 0 %}
             <td rowspan={{row[1][1]}}>
-              <a target="_blank" href="https://cms-pdmv.cern.ch/mcm/requests?member_of_campaign={{campaign}}&dataset_name={{row[1][0]}}{% if pwg %}&pwg={{pwg}}{% endif %}" title="Requests in McM with dataset name {{row[1][0]}} in campaign {{campaign}}">{{row[1][0]}}</a>
+                <a target="_blank" href="https://cms-pdmv.cern.ch/mcm/requests?member_of_campaign={{campaign}}&dataset_name={{row[1][0]}}{% if pwg %}&pwg={{pwg}}{% endif %}" title="Requests in McM with dataset name {{row[1][0]}} in campaign {{campaign}}">{{row[1][0]}}</a>
             </td>
             {% endif %}
             <!-- Root request name -->
             {% if row[2][1] > 0 %}
             <td rowspan={{row[2][1]}}>
-              <a target="_blank" href="https://cms-pdmv.cern.ch/mcm/requests?prepid={{row[2][0]}}" title="Open {{row[2][0]}} in McM">{{row[2][0]}}</a><br>
-              <small>Status: {{row[6][0]}}</small><br>
-              <small>Priority: {{row[5][0]}}</small>
-              {% if row[9][0] %}
-                <br>
-                <small>Events: {{row[8][0]}}/{{row[7][0]}} ({{(row[8][0] / row[7][0] * 100) | round(1)}}%)</small><br>
-                <small><a target="_blank" href="https://cmsweb.cern.ch/das/request?input={{row[9][0]}}">Output in DAS</a></small>
-              {% endif %}
+              <div>
+                <a target="_blank" href="https://cms-pdmv.cern.ch/mcm/requests?prepid={{row[2][0]}}" title="Open {{row[2][0]}} in McM">{{row[2][0]}}</a><br>
+                <small>Status: {{row[6][0]}}</small><br>
+                <small>Priority: {{row[5][0]}}</small>
+                {% if row[9][0] %}
+                  <br>
+                  <small>Events: {{row[8][0]}}/{{row[7][0]}} ({{(row[8][0] / row[7][0] * 100) | round(1)}}%)</small><br>
+                  <small><a target="_blank" href="https://cmsweb.cern.ch/das/request?input={{row[9][0]}}">Output in DAS</a></small>
+                {% endif %}
+              </div>
+              <div class="progress-background {{row[6][0]}}-background" style="width: {{row[8][0] / row[7][0] * 100}}%;">
+              </div>
             </td>
             {% endif %}
             <!-- Mini AOD -->
             {% if row[3][1] > 0 %}
             <td rowspan={{row[3][1]}}>
               {% if row[3][0] %}
-                <a target="_blank" href="https://cms-pdmv.cern.ch/mcm/requests?prepid={{row[3][0]}}" title="Open {{row[3][0]}} in McM">{{row[3][0]}}</a><br>
-                <small>Status: {{row[11][0]}}</small><br>
-                <small>Priority: {{row[10][0]}}</small>
-                {% if row[14][0] %}
-                  <br>
-                  <small>Events: {{row[13][0]}}/{{row[12][0]}} ({{(row[13][0] / row[12][0] * 100) | round(1)}}%)</small><br>
-                  <small><a target="_blank" href="https://cmsweb.cern.ch/das/request?input={{row[14][0]}}">Output in DAS</a></small>
-                {% endif %}
+                <div>
+                  <a target="_blank" href="https://cms-pdmv.cern.ch/mcm/requests?prepid={{row[3][0]}}" title="Open {{row[3][0]}} in McM">{{row[3][0]}}</a><br>
+                  <small>Status: {{row[11][0]}}</small><br>
+                  <small>Priority: {{row[10][0]}}</small>
+                  {% if row[14][0] %}
+                    <br>
+                    <small>Events: {{row[13][0]}}/{{row[12][0]}} ({{(row[13][0] / row[12][0] * 100) | round(1)}}%)</small><br>
+                    <small><a target="_blank" href="https://cmsweb.cern.ch/das/request?input={{row[14][0]}}">Output in DAS</a></small>
+                  {% endif %}
+                </div>
+                <div class="progress-background {{row[11][0]}}-background" style="width: {{row[13][0] / row[12][0] * 100}}%;">
+                </div>
               {% endif %}
             </td>
             {% endif %}
             <!-- Chained request -->
             {% if row[4][1] > 0 %}
-            <td rowspan={{row[4][1]}}><a target="_blank" href="https://cms-pdmv.cern.ch/mcm/chained_requests?prepid={{row[4][0]}}" title="Open {{row[4][0]}} in McM">{{row[15][0]}}</a></td>
+            <td rowspan={{row[4][1]}}>
+                <a target="_blank" href="https://cms-pdmv.cern.ch/mcm/chained_requests?prepid={{row[4][0]}}" title="Open {{row[4][0]}} in McM">{{row[15][0]}}</a>
+            </td>
             {% endif %}
             <!-- Interested pwgs -->
             {% if endpoint == 'default' %}
