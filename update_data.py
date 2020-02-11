@@ -7,7 +7,6 @@ from rest import McM
 # McM instance
 mcm = McM(dev=False, debug=False, cookie='cookie.txt')
 
-
 def pick_chained_requests(chained_requests):
     """
     Select chained requests with newest NanoAOD version
@@ -273,7 +272,10 @@ def process_request(request, campaign, cursor, table):
 
 campaigns = ['RunIISummer19UL16GEN', 'RunIISummer19UL16wmLHEGEN', 'RunIISummer19UL16pLHE',
              'RunIISummer19UL17GEN', 'RunIISummer19UL17wmLHEGEN', 'RunIISummer19UL17pLHE',
-             'RunIISummer19UL18GEN', 'RunIISummer19UL18wmLHEGEN', 'RunIISummer19UL18pLHE']
+             'RunIISummer19UL18GEN', 'RunIISummer19UL18wmLHEGEN', 'RunIISummer19UL18pLHE',
+             #adding more campaigns is probably needed
+             'RunIIFall18GS', 'RunIIFall18wmLHEGS', 'RunIIFall18pLHE'
+         ]
 
 conn = sqlite3.connect('data.db')
 c = conn.cursor()

@@ -37,6 +37,7 @@
           <th>MiniAOD request</th>
           <th>Chained request</th>
           {% if endpoint == 'default' %}<th>Interested PWGs</th>{% endif %}
+	  <th>Notes and comments from groups </th>
         </tr>
         {% for row in table_rows %}
           <tr>
@@ -117,7 +118,11 @@
                   {% endfor %}
                 </a>
               </td>
-            {% endif %}
+           {% endif %}
+           <!-- Notes and comments from various groups -->
+           <td>
+	     <input type="text" title="Add whatever is relevant for the interested PWGs about the sample" value="">
+           </td>
           </tr>
         {% endfor %}
       </table>
