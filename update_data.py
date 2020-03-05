@@ -114,6 +114,8 @@ def insert_or_update(sql_args, cursor, table):
     15. miniaod_output
     16. interested_pwgs
     17. original_interested_pwgs
+    18. notes
+    19. original_notes
     """
     existing_sample = get_sample_if_exists(sql_args, cursor, table)
     nice_description = '%s %s %s %s' % (sql_args[0], sql_args[2], sql_args[3], sql_args[4])
@@ -131,6 +133,7 @@ def insert_or_update(sql_args, cursor, table):
             mcm_request = mcm.get('requests', existing_sample[4] if existing_sample[4] else existing_sample[3])
             print('Will check %s' % (mcm_request['prepid']))
             mcm_interested_pwgs = set([x.strip().upper() for x in mcm_request.get('interested_pwg', [])])
+            notes = mcm_request.get('notes') #notes are simply overwritten
             samples_added = current_interested_pwgs - original_interested_pwgs
             samples_removed = original_interested_pwgs - current_interested_pwgs
             mcm_added = mcm_interested_pwgs - original_interested_pwgs
@@ -152,10 +155,18 @@ def insert_or_update(sql_args, cursor, table):
                 print('  New PWGs: %s' % (','.join(new_pwgs)))
                 print('%s must be updated in McM. Set interested PWGs to %s' % (mcm_request['prepid'], new_interested_pwgs_string))
                 mcm_request['interested_pwg'] = list(new_pwgs)
+                mcm_request['notes'] = notes
                 print(mcm.update('requests', mcm_request))
                 new_request = sql_args[10] if sql_args[10] else sql_args[4]
                 if new_request == mcm_request['prepid']:
                     sql_args[16] = sql_args[17] = new_interested_pwgs_string
+
+                    #FIX HERE: you need also old_notes
+            mcm_request['notes'] = notes
+            print(mcm.update('requests', mcm_request))
+            if new_request == mcm_request['prepid']:
+                sql_args[18] = sql_args[19] = notes
+                    
 
         # interested_pwgs = ','.join(sorted(x.strip().upper() for x in sql_args[14].split(',') if x.strip()))
         # if table == 'samples' and samples_interested_pwgs != interested_pwgs:
@@ -190,11 +201,13 @@ def insert_or_update(sql_args, cursor, table):
                               miniaod_status = ?,
                               miniaod_output = ?,
                               interested_pwgs = ?,
-                              original_interested_pwgs = ? WHERE uid = ?''' % (table), sql_args)
+                              original_interested_pwgs = ?,
+                              notes = ? 
+                              original_notes = ?  WHERE uid = ?''' % (table), sql_args)
     else:
         print('Inserting %s' % (nice_description))
         cursor.execute('''INSERT INTO %s
-                          VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)''' % (table), sql_args)
+                          VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)''' % (table), sql_args)
 
 
 def process_request(request, campaign, cursor, table):
@@ -242,12 +255,15 @@ def process_request(request, campaign, cursor, table):
         if miniaod_request:
             # If MiniAOD exists, use MiniAOD interested PWGs
             interested_pwgs = ','.join(miniaod_request.get('interested_pwg', []))
+            notes = miniaod_request.get('notes')
+        
             if miniaod_request['output_dataset']:
                 miniaod_output = miniaod_request['output_dataset'][-1]
         else:
             # If MiniAOD does not exist, use root request PWGs
             interested_pwgs = ','.join(root_request.get('interested_pwg', []))
-
+            notes = root_request.get('notes')
+        
         sql_args = [campaign,
                     campaign_group,
                     chained_request_prepid,
@@ -265,16 +281,20 @@ def process_request(request, campaign, cursor, table):
                     miniaod_status,
                     miniaod_output,
                     interested_pwgs,
-                    interested_pwgs]
+                    interested_pwgs,
+                    notes,
+                    original_notes]
 
         insert_or_update(sql_args, cursor, table)
 
 
-campaigns = ['RunIISummer19UL16GEN', 'RunIISummer19UL16wmLHEGEN', 'RunIISummer19UL16pLHE',
-             'RunIISummer19UL17GEN', 'RunIISummer19UL17wmLHEGEN', 'RunIISummer19UL17pLHE',
-             'RunIISummer19UL18GEN', 'RunIISummer19UL18wmLHEGEN', 'RunIISummer19UL18pLHE',
-             #adding more campaigns is probably needed
-             'RunIIFall18GS', 'RunIIFall18wmLHEGS', 'RunIIFall18pLHE'
+campaigns = [#'RunIISummer19UL16GEN', 'RunIISummer19UL16wmLHEGEN', 'RunIISummer19UL16pLHEGEN',
+             'RunIISummer19UL17GEN', 'RunIISummer19UL17wmLHEGEN', 'RunIISummer19UL17pLHEGEN',
+             #'RunIISummer19UL18GEN', 'RunIISummer19UL18wmLHEGEN', 'RunIISummer19UL18pLHEGEN',
+             ##adding more campaigns is probably needed
+             #'RunIIFall18GS', 'RunIIFall18wmLHEGS', 'RunIIFall18pLHE'
+             #'RunIIFall17GS', 'RunIIFall17wmLHEGS', 'RunIIFall17pLHE'
+             #'RunIISummer15GS', 'RunIISummer15wmLHEGS', 'RunIIWinter15pLHE'
          ]
 
 conn = sqlite3.connect('data.db')
@@ -300,7 +320,9 @@ c.execute('''CREATE TABLE IF NOT EXISTS samples
               miniaod_output text,
               interested_pwgs text,
               original_interested_pwgs text,
-              updated integer)''')
+              updated integer,
+              notes text,
+              original_notes text)''')
 
 c.execute('''CREATE TABLE IF NOT EXISTS twiki_samples
              (uid integer PRIMARY KEY AUTOINCREMENT,
@@ -322,7 +344,9 @@ c.execute('''CREATE TABLE IF NOT EXISTS twiki_samples
               miniaod_output text,
               interested_pwgs text,
               original_interested_pwgs text,
-              updated integer)''')
+              updated integer,
+              notes text
+              original_notes text)''')
 
 c.execute('''CREATE TABLE IF NOT EXISTS action_history
              (campaign text NOT NULL,
@@ -338,10 +362,19 @@ c.execute('''CREATE TABLE IF NOT EXISTS action_history
 
 conn.commit()
 
+# TWiki samples - old mode
+#with open('MainSamplesFall18.txt') as f:
+#    twiki_samples_fall_18 = [line.strip().split('\t') for line in f if line.strip()]
 
-# TWiki samples
-with open('MainSamplesFall18.txt') as f:
-    twiki_samples_fall_18 = [line.strip().split('\t') for line in f if line.strip()]
+twiki_samples_fall_18 = []
+
+twiki_samples_fall_18_candidate = mcm.get('requests', query='member_of_campaign=RunIIFall18*')
+total_events_threshold = 20000000
+
+for req in twiki_samples_fall_18_candidate:
+
+    if(req['total_events']>total_events_threshold):
+        twiki_samples_fall_18.append(req['dataset_name'])
 
 # Remove this!
 # twiki_samples_fall_18 = twiki_samples_fall_18[:5]
