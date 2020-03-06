@@ -128,7 +128,7 @@ def insert_or_update(sql_args, cursor, table):
         if table == 'samples':
             current_interested_pwgs = set([x.strip().upper() for x in existing_sample[1].split(',') if x.strip()])
             original_interested_pwgs = set([x.strip().upper() for x in existing_sample[2].split(',') if x.strip()])
-            original_notes = existing_sample[5]
+            current_notes = existing_sample[5]
             # Get root request or MiniAOD request from McM that was used before
             mcm_request = mcm.get('requests', existing_sample[4] if existing_sample[4] else existing_sample[3])
             print('Will check %s' % (mcm_request['prepid']))
@@ -143,7 +143,6 @@ def insert_or_update(sql_args, cursor, table):
             new_pwgs = (original_interested_pwgs - all_removed).union(all_added)
             original_interested_pwgs_string = ','.join(sorted(original_interested_pwgs))
             new_interested_pwgs_string = ','.join(sorted(new_pwgs))
-            mcm_request['notes'] = notes
             if original_interested_pwgs_string != new_interested_pwgs_string:
                 print('Interested PWGs:')
                 print('  Reference: %s' % (','.join(original_interested_pwgs)))
@@ -163,13 +162,13 @@ def insert_or_update(sql_args, cursor, table):
                     sql_args[18] = notes
 
                     #FIX HERE: you need also old_notes
-            if notes != original_notes:
+            if notes != current_notes:
                 new_request = sql_args[10] if sql_args[10] else sql_args[4]
+                mcm_request['notes'] = notes
                 print(mcm.update('requests', mcm_request))
                 if new_request == mcm_request['prepid']:
                     sql_args[16] = sql_args[17] = new_interested_pwgs_string
-                    sql_args[18] = notes
-                    
+                    sql_args[18] = notes                    
 
         # interested_pwgs = ','.join(sorted(x.strip().upper() for x in sql_args[14].split(',') if x.strip()))
         # if table == 'samples' and samples_interested_pwgs != interested_pwgs:
@@ -361,18 +360,8 @@ c.execute('''CREATE TABLE IF NOT EXISTS action_history
 conn.commit()
 
 # TWiki samples - old mode
-#with open('MainSamplesFall18.txt') as f:
-#    twiki_samples_fall_18 = [line.strip().split('\t') for line in f if line.strip()]
-
-twiki_samples_fall_18 = []
-
-twiki_samples_fall_18_candidate = mcm.get('requests', query='member_of_campaign=RunIIFall18*')
-total_events_threshold = 20000000
-
-for req in twiki_samples_fall_18_candidate:
-
-    if(req['total_events']>total_events_threshold):
-        twiki_samples_fall_18.append(req['dataset_name'])
+with open('MainSamplesFall18.txt') as f:
+    twiki_samples_fall_18 = [line.strip().split('\t') for line in f if line.strip()]
 
 # Remove this!
 # twiki_samples_fall_18 = twiki_samples_fall_18[:5]
