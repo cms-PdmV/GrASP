@@ -1,7 +1,7 @@
 <!DOCTYPE HTML>
 <html>
   <head>
-    <base href="/samples/">
+    <base href="">
     <meta name=viewport content="width=device-width,initial-scale=1">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" integrity="sha384-PsH8R72JQ3SOdhVi3uxftmaW6Vc51MKb0q5P2rRUpPvrszuE4W1povHYgTpBfshb" crossorigin="anonymous">
     <link rel="stylesheet" href="static/style.css">
@@ -21,21 +21,14 @@
       <table>
         <tr>
           <th>Campaign group</th>
-	</tr>
         {% for row in campaigns %}
             <!-- Campaign group -->
             {% if row[0][1] > 0 %}
-            <td rowspan={{row[0][1]}}>
+            <th rowspan={{row[0][1]}}>
               <a href="campaign_group/{{row[0][0]}}">{{row[0][0]}}</a>
-            </td>	    
+            </th>	    
             {% endif %}
         {% endfor %}
-	<tr>
-	  <!-- Campaign group -->
-	<th> Size</th>
-	{% for row in campaigns %}
-	<td>{{row[2][0]}}</td>
-	{% endfor %}
 	</tr>
       </table>
       <h5>Existing samples per PWG</h5>
