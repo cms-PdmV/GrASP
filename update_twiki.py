@@ -27,7 +27,7 @@ def main():
     conn.commit()
 
     # Get all needed requests
-    twiki_samples_fall_18_candidates = mcm.get('requests', query='member_of_campaign=RunIIFall18pLHE')
+    twiki_samples_fall_18_candidates = mcm.get('requests', query='member_of_campaign=RunIIFall18*')
 
     total_events_threshold = 20000000
 

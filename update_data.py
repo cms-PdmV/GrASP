@@ -288,11 +288,11 @@ def process_request(request, campaign, cursor, table):
         insert_or_update(sql_args, cursor, table)
 
 
-campaigns = ['RunIISummer19UL16GEN', 'RunIISummer19UL16wmLHEGEN', 'RunIISummer19UL16pLHEGEN',
-             'RunIISummer19UL17GEN', 'RunIISummer19UL17wmLHEGEN', 'RunIISummer19UL17pLHEGEN',
-             'RunIISummer19UL18GEN', 'RunIISummer19UL18wmLHEGEN', 'RunIISummer19UL18pLHEGEN',
-             'RunIIFall18GS', 'RunIIFall18wmLHEGS', 'RunIIFall18pLHE'
-             'RunIIFall17GS', 'RunIIFall17wmLHEGS', 'RunIIFall17pLHE'
+campaigns = [#'RunIISummer19UL16GEN', 'RunIISummer19UL16wmLHEGEN', 'RunIISummer19UL16pLHEGEN',
+             #'RunIISummer19UL17GEN', 'RunIISummer19UL17wmLHEGEN', 'RunIISummer19UL17pLHEGEN',
+             #'RunIISummer19UL18GEN', 'RunIISummer19UL18wmLHEGEN', 'RunIISummer19UL18pLHEGEN',
+             #'RunIIFall18GS', 'RunIIFall18wmLHEGS', 'RunIIFall18pLHE'
+             #'RunIIFall17GS', 'RunIIFall17wmLHEGS', 'RunIIFall17pLHE'
              'RunIISummer15GS', 'RunIISummer15wmLHEGS', 'RunIIWinter15pLHE'
          ]
 
