@@ -21,26 +21,15 @@
       <table>
         <tr>
           <th>Campaign group</th>
-          <th>Campaign</th>
-          <th>Size</th>
-        </tr>
         {% for row in campaigns %}
-          <tr>
-            <!-- Campaign group -->
-            {% if row[0][1] > 0 %}
-            <td rowspan={{row[0][1]}}>
-              <a href="campaign_group/{{row[0][0]}}">{{row[0][0]}}</a>
-            </td>
-            {% endif %}
-            <!-- Campaign -->
-            {% if row[1][1] > 0 %}
-            <td rowspan={{row[1][1]}}>
-              <a href="campaign/{{row[1][0]}}">{{row[1][0]}}</a>
-            </td>
-            {% endif %}
-            <td>{{row[2][0]}}</td>
-          </tr>
+          <!-- Campaign group -->
+          {% if row[0][1] > 0 %}
+          <th rowspan={{row[0][1]}}>
+          <a href="campaign_group/{{row[0][0]}}">{{row[0][0]}}</a>
+          </th>	    
+          {% endif %}
         {% endfor %}
+	</tr>
       </table>
       <h5>Existing samples per PWG</h5>
       <table>
@@ -61,11 +50,10 @@
         </tr>
         {% endfor %}
       </table>
-      <h5>Missing samples according to <a target="_blank" href="https://twiki.cern.ch/twiki/bin/viewauth/CMS/MainSamplesFall18">TWiki</a></h5>
+      <h5>Missing high-statistics samples with number of events bigger than 20M </h5> <!-- according to <a target="_blank" href="https://twiki.cern.ch/twiki/bin/viewauth/CMS/MainSamplesFall18">TWiki</a></h5> -->
       <table>
         <tr>
           <th>Campaign group</th>
-          <th>Campaign</th>
         </tr>
         {% for row in campaigns %}
           <tr>
@@ -73,12 +61,6 @@
             {% if row[0][1] > 0 %}
             <td rowspan={{row[0][1]}}>
               <a href="missing_group/{{row[0][0]}}">{{row[0][0]}}</a>
-            </td>
-            {% endif %}
-            <!-- Campaign -->
-            {% if row[1][1] > 0 %}
-            <td rowspan={{row[1][1]}}>
-              <a href="missing/{{row[1][0]}}">{{row[1][0]}}</a>
             </td>
             {% endif %}
           </tr>

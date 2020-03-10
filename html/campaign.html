@@ -37,7 +37,8 @@
           <th>MiniAOD request</th>
           <th>Chained request</th>
           {% if endpoint == 'default' %}<th>Interested PWGs</th>{% endif %}
-        </tr>
+	  <th>Notes and comments from groups </th>
+	</tr>
         {% for row in table_rows %}
           <tr>
             <!-- Short name -->
@@ -117,7 +118,13 @@
                   {% endfor %}
                 </a>
               </td>
-            {% endif %}
+           {% endif %}
+           <!-- Notes and comments from various groups -->
+           <td>
+	     <input type="text" title="Add whatever is relevant for the interested PWGs about the sample" value="" name="notes">
+	     <button title="Freeze notes in text entry (they will be saved in the next cycle)" onclick="SaveNotes()"> Freeze Notes </button>
+	     <button title="Clear notes in text entry" onclick="ClearNotes()"> Clear Notes </button>
+           </td>
           </tr>
         {% endfor %}
       </table>

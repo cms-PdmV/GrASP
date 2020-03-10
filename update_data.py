@@ -5,8 +5,7 @@ from rest import McM
 
 
 # McM instance
-mcm = McM(dev=False, debug=False, cookie='cookie.txt')
-
+mcm = McM(dev=False)
 
 def pick_chained_requests(chained_requests):
     """
@@ -78,7 +77,7 @@ def get_sample_if_exists(sql_args, cursor, table):
     chained_request_equals = '=' if chained_request_prepid is not None else 'IS'
     dataset_equals = '=' if dataset_name is not None else 'IS'
     root_request_equals = '=' if root_request_prepid is not None else 'IS'
-    rows = [r for r in cursor.execute('''SELECT uid, interested_pwgs, original_interested_pwgs, root_request, miniaod
+    rows = [r for r in cursor.execute('''SELECT uid, interested_pwgs, original_interested_pwgs, root_request, miniaod, notes
                                          FROM %s
                                          WHERE campaign %s ? AND
                                                chained_request %s ? AND
@@ -115,6 +114,7 @@ def insert_or_update(sql_args, cursor, table):
     15. miniaod_output
     16. interested_pwgs
     17. original_interested_pwgs
+    18. notes
     """
     existing_sample = get_sample_if_exists(sql_args, cursor, table)
     nice_description = '%s %s %s %s' % (sql_args[0], sql_args[2], sql_args[3], sql_args[4])
@@ -128,10 +128,12 @@ def insert_or_update(sql_args, cursor, table):
         if table == 'samples':
             current_interested_pwgs = set([x.strip().upper() for x in existing_sample[1].split(',') if x.strip()])
             original_interested_pwgs = set([x.strip().upper() for x in existing_sample[2].split(',') if x.strip()])
+            current_notes = existing_sample[5]
             # Get root request or MiniAOD request from McM that was used before
             mcm_request = mcm.get('requests', existing_sample[4] if existing_sample[4] else existing_sample[3])
             print('Will check %s' % (mcm_request['prepid']))
             mcm_interested_pwgs = set([x.strip().upper() for x in mcm_request.get('interested_pwg', [])])
+            notes = mcm_request.get('notes') #notes are simply overwritten
             samples_added = current_interested_pwgs - original_interested_pwgs
             samples_removed = original_interested_pwgs - current_interested_pwgs
             mcm_added = mcm_interested_pwgs - original_interested_pwgs
@@ -157,6 +159,16 @@ def insert_or_update(sql_args, cursor, table):
                 new_request = sql_args[10] if sql_args[10] else sql_args[4]
                 if new_request == mcm_request['prepid']:
                     sql_args[16] = sql_args[17] = new_interested_pwgs_string
+                    sql_args[18] = notes
+
+                    #FIX HERE: you need also old_notes
+            if notes != current_notes:
+                new_request = sql_args[10] if sql_args[10] else sql_args[4]
+                mcm_request['notes'] = notes
+                print(mcm.update('requests', mcm_request))
+                if new_request == mcm_request['prepid']:
+                    sql_args[16] = sql_args[17] = new_interested_pwgs_string
+                    sql_args[18] = notes                    
 
         # interested_pwgs = ','.join(sorted(x.strip().upper() for x in sql_args[14].split(',') if x.strip()))
         # if table == 'samples' and samples_interested_pwgs != interested_pwgs:
@@ -191,11 +203,12 @@ def insert_or_update(sql_args, cursor, table):
                               miniaod_status = ?,
                               miniaod_output = ?,
                               interested_pwgs = ?,
-                              original_interested_pwgs = ? WHERE uid = ?''' % (table), sql_args)
+                              original_interested_pwgs = ?,
+                              notes = ? WHERE uid = ?''' % (table), sql_args)
     else:
         print('Inserting %s' % (nice_description))
         cursor.execute('''INSERT INTO %s
-                          VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)''' % (table), sql_args)
+                          VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)''' % (table), sql_args)
 
 
 def process_request(request, campaign, cursor, table):
@@ -243,12 +256,15 @@ def process_request(request, campaign, cursor, table):
         if miniaod_request:
             # If MiniAOD exists, use MiniAOD interested PWGs
             interested_pwgs = ','.join(miniaod_request.get('interested_pwg', []))
+            notes = miniaod_request.get('notes')
+        
             if miniaod_request['output_dataset']:
                 miniaod_output = miniaod_request['output_dataset'][-1]
         else:
             # If MiniAOD does not exist, use root request PWGs
             interested_pwgs = ','.join(root_request.get('interested_pwg', []))
-
+            notes = root_request.get('notes')
+        
         sql_args = [campaign,
                     campaign_group,
                     chained_request_prepid,
@@ -266,14 +282,19 @@ def process_request(request, campaign, cursor, table):
                     miniaod_status,
                     miniaod_output,
                     interested_pwgs,
-                    interested_pwgs]
+                    interested_pwgs,
+                    notes]
 
         insert_or_update(sql_args, cursor, table)
 
 
-campaigns = ['RunIISummer19UL16GEN', 'RunIISummer19UL16wmLHEGEN', 'RunIISummer19UL16pLHE',
-             'RunIISummer19UL17GEN', 'RunIISummer19UL17wmLHEGEN', 'RunIISummer19UL17pLHE',
-             'RunIISummer19UL18GEN', 'RunIISummer19UL18wmLHEGEN', 'RunIISummer19UL18pLHE']
+campaigns = [#'RunIISummer19UL16GEN', 'RunIISummer19UL16wmLHEGEN', 'RunIISummer19UL16pLHEGEN',
+             #'RunIISummer19UL17GEN', 'RunIISummer19UL17wmLHEGEN', 'RunIISummer19UL17pLHEGEN',
+             #'RunIISummer19UL18GEN', 'RunIISummer19UL18wmLHEGEN', 'RunIISummer19UL18pLHEGEN',
+             #'RunIIFall18GS', 'RunIIFall18wmLHEGS', 'RunIIFall18pLHE'
+             #'RunIIFall17GS', 'RunIIFall17wmLHEGS', 'RunIIFall17pLHE'
+             'RunIISummer15GS', 'RunIISummer15wmLHEGS', 'RunIIWinter15pLHE'
+         ]
 
 conn = sqlite3.connect('data.db')
 c = conn.cursor()
@@ -298,7 +319,8 @@ c.execute('''CREATE TABLE IF NOT EXISTS samples
               miniaod_output text,
               interested_pwgs text,
               original_interested_pwgs text,
-              updated integer)''')
+              updated integer,
+              notes text)''')
 
 c.execute('''CREATE TABLE IF NOT EXISTS twiki_samples
              (uid integer PRIMARY KEY AUTOINCREMENT,
@@ -320,7 +342,8 @@ c.execute('''CREATE TABLE IF NOT EXISTS twiki_samples
               miniaod_output text,
               interested_pwgs text,
               original_interested_pwgs text,
-              updated integer)''')
+              updated integer,
+              notes text)''')
 
 c.execute('''CREATE TABLE IF NOT EXISTS action_history
              (campaign text NOT NULL,
@@ -336,8 +359,7 @@ c.execute('''CREATE TABLE IF NOT EXISTS action_history
 
 conn.commit()
 
-
-# TWiki samples
+# TWiki samples - old mode
 with open('MainSamplesFall18.txt') as f:
     twiki_samples_fall_18 = [line.strip().split('\t') for line in f if line.strip()]
 

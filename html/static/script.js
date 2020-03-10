@@ -33,3 +33,12 @@ function selectPWG(element, pwg) {
     }
   });
 }
+
+function clearNotes() {
+    document.getElementById("notes").reset();
+    document.getElementById("notes").readOnly = false;
+}
+
+function saveNotes() {
+    document.getElementById("notes").readOnly = true;
+}
