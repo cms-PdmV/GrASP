@@ -122,8 +122,8 @@
            <!-- Notes and comments from various groups -->
            <td>
 	     <input type="text" title="Add whatever is relevant for the interested PWGs about the sample" value="" name="notes">
-	     <button title="Freeze notes in text entry (they will be saved in the next cycle)" onclick="SaveNotes(this, '{{row[19][0]}}')"> Freeze Notes </button>
-             <button title="Clear notes in text entry" onclick="ClearNotes(this, '{{row[19][0]}}')"> Clear Notes </button>
+	     <button title="Freeze notes in text entry (they will be saved in the next cycle)" onclick="saveNotes(this, '{{row[19][0]}}')"> Freeze Notes </button>
+             <button title="Clear notes in text entry" onclick="clearNotes(this, '{{row[19][0]}}')"> Clear Notes </button>
 	   </td>
           </tr>
         {% endfor %}
