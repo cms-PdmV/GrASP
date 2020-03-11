@@ -34,11 +34,37 @@ function selectPWG(element, pwg) {
   });
 }
 
-function clearNotes() {
+function clearNotes(element, uid) {
     document.getElementById("notes").reset();
     document.getElementById("notes").readOnly = false;
+    
+    let data = {"uid": uid, "notes": ''};
+    $.ajax({
+	type: "POST",
+	contentType: "application/json",
+	url: "update",
+	data: JSON.stringify(data),
+    }).done(function (data) {
+	alert('Text reset in the database');
+    }).fail(function(data) {
+	alert('Not reset');
+    })
 }
 
-function saveNotes() {
+function saveNotes(element, uid) {
     document.getElementById("notes").readOnly = true;
+    let notes = document.getElementById("notes").value;
+
+    //take the value of the text box 
+    let data = {"uid": uid, "notes": notes};
+    $.ajax({
+        type: "POST",
+        contentType: "application/json",
+        url: "update",
+        data: JSON.stringify(data),
+    }).done(function (data) {
+        alert('Text saved in the database');
+    }).fail(function(data) {
+        alert('Error in saving');
+    })    
 }
