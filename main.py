@@ -214,7 +214,7 @@ def campaign_page(campaign_name=None, campaign_group=None, pwg=None):
              split_chained_request_name(r[13]),  # Short chained request
              [x for x in r[14].split(',') if x],  # Interested pwgs
              r[15],  # uid
-             r[18]   # notes
+             r[19]   # notes
          ) for r in rows]
 
     rows = add_counters(rows)
