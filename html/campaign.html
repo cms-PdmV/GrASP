@@ -84,8 +84,10 @@
                     <small><a target="_blank" href="https://cmsweb.cern.ch/das/request?input={{row[14][0]}}">Output in DAS</a></small>
                   {% endif %}
                 </div>
+                {% if row[12][0] > 0 %}
                 <div class="progress-background {{row[11][0]}}-background" style="width: {{row[13][0] / row[12][0] * 100}}%;">
                 </div>
+                {% endif %}
               {% endif %}
             </td>
             {% endif %}
@@ -114,17 +116,17 @@
                     <li style="display: none" class="group group-add group-add-{{pwg}}">
                       <a title="Add {{pwg}} to interested PWGs"
                          onclick="changeInterestedPWG(this, '{{row[17][0]}}', '{{pwg}}', true)">Add {{pwg}}</a>
-                      </li>
+                    </li>
                   {% endfor %}
                 </a>
               </td>
-           {% endif %}
-           <!-- Notes and comments from various groups -->
-           <td>
-	     <input type="text" title="Add whatever is relevant for the interested PWGs about the sample" value="{{row[18][0]}}" name="notes">
-	     <button title="Freeze notes in text entry (they will be saved in the next cycle)" onclick="saveNotes(this, '{{row[17][0]}}')">Save</button>
-             <button title="Clear notes in text entry" onclick="clearNotes(this, '{{row[17][0]}}')">Clear</button>
-	   </td>
+            {% endif %}
+            <!-- Notes and comments from various groups -->
+            <td>
+              <textarea title="Add whatever is relevant for the interested PWGs about the sample" name="notes">{{row[18][0]}}</textarea>
+	            <button title="Freeze notes in text entry (they will be saved in the next cycle)" onclick="saveNotes(this, '{{row[17][0]}}')">Save</button>
+              <button title="Clear notes in text entry" onclick="clearNotes(this, '{{row[17][0]}}')">Clear</button>
+	          </td>
           </tr>
         {% endfor %}
       </table>

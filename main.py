@@ -153,7 +153,8 @@ def campaign_page(campaign_name=None, campaign_group=None, pwg=None):
                               ifnull(miniaod_output, ""),
                               ifnull(chained_request, ""),
                               interested_pwgs,
-                              uid FROM samples'''
+                              uid,
+                              ifnull(notes, "") FROM samples'''
         if campaign_name:
             sql_query += ' WHERE campaign = ?'
             sql_args.append(campaign_name)
@@ -182,7 +183,8 @@ def campaign_page(campaign_name=None, campaign_group=None, pwg=None):
                               ifnull(miniaod_output, ""),
                               ifnull(chained_request, ""),
                               interested_pwgs,
-                              uid FROM twiki_samples'''
+                              uid,
+                              ifnull(notes, "") FROM twiki_samples'''
 
         sql_query += ' WHERE %s EXISTS (SELECT 1 FROM samples WHERE twiki_samples.dataset = samples.dataset' % ('NOT' if request.endpoint == 'missing' else '')
         if campaign_name:
@@ -196,25 +198,25 @@ def campaign_page(campaign_name=None, campaign_group=None, pwg=None):
     logging.info(sql_query)
     logging.info(sql_args)
     rows = c.execute(sql_query, sql_args)
-    rows = [(get_short_name(r[0]),  # Short name
-             r[0],  # Dataset
-             r[1],  # Root request
-             r[7],  # MiniAOD request
-             r[13],  # Chained request
-             r[2],  # Root request priority
-             r[5],  # Root request status
-             r[3],  # Root request total events
-             r[4],  # Root request done events
-             r[6],  # Root request output
-             r[8],  # MiniAOD priority
-             r[11],  # MiniAOD status
-             r[9],  # MiniAOD total events
-             r[10],  # MiniAOD done events
-             r[12],  # MiniAOD output
-             split_chained_request_name(r[13]),  # Short chained request
-             [x for x in r[14].split(',') if x],  # Interested pwgs
-             r[15],  # uid
-             r[19]   # notes
+    rows = [(get_short_name(r[0]),  # 0 Short name
+             r[0],  # 1 Dataset
+             r[1],  # 2 Root request
+             r[7],  # 3 MiniAOD request
+             r[13],  # 4 Chained request
+             r[2],  # 5 Root request priority
+             r[5],  # 6 Root request status
+             r[3],  # 7 Root request total events
+             r[4],  # 8 Root request done events
+             r[6],  # 9Root request output
+             r[8],  # 10 MiniAOD priority
+             r[11],  # 11 MiniAOD status
+             r[9],  # 12 MiniAOD total events
+             r[10],  # 13 MiniAOD done events
+             r[12],  # 14 MiniAOD output
+             split_chained_request_name(r[13]),  # 15 Short chained request
+             [x for x in r[14].split(',') if x],  # 16 Interested pwgs
+             r[15],  # 17 uid
+             r[16]   # 18 notes
          ) for r in rows]
 
     rows = add_counters(rows)
@@ -245,35 +247,42 @@ def update():
         role = user[0][1]
 
         data = json.loads(request.data)
-        pwg = data['pwg'].upper()
         uid = int(data['uid'])
-        checked = data['checked']
         rows = [r for r in c.execute('SELECT campaign, dataset, root_request, chained_request, interested_pwgs FROM samples WHERE uid = ?', [uid])]
-        pwgs = set(x for x in rows[0][4].split(',') if x)
-        chained_request = rows[0][3]
-        root_request = rows[0][2]
-        dataset = rows[0][1]
-        campaign = rows[0][0]
-        if checked and pwg not in pwgs:
-            pwgs.add(pwg)
-        elif not checked and pwg in pwgs:
-            pwgs.remove(pwg)
+        update_time = int(time.time())
+        if 'pwg' in data:
+            pwg = data['pwg'].upper()
+            checked = data['checked']
+            pwgs = set(x for x in rows[0][4].split(',') if x)
+            chained_request = rows[0][3]
+            root_request = rows[0][2]
+            dataset = rows[0][1]
+            campaign = rows[0][0]
+            if checked and pwg not in pwgs:
+                pwgs.add(pwg)
+            elif not checked and pwg in pwgs:
+                pwgs.remove(pwg)
+            else:
+                return ''
+
+            pwgs = ','.join(sorted(pwgs))
+            c.execute('UPDATE samples SET interested_pwgs = ?, updated = ? WHERE uid = ?', [pwgs, update_time, uid])
+            c.execute('INSERT INTO action_history VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                      [campaign,
+                       dataset,
+                       root_request,
+                       chained_request,
+                       username,
+                       role,
+                       'add' if checked else 'remove',
+                       pwg,
+                       update_time])
+        elif 'notes' in data:
+            notes = data['notes'].strip()
+            c.execute('UPDATE samples SET notes = ?, updated = ? WHERE uid = ?', [notes, update_time, uid])
         else:
             return ''
 
-        pwgs = ','.join(sorted(pwgs))
-        update_time = int(time.time())
-        c.execute('UPDATE samples SET interested_pwgs = ?, updated = ? WHERE uid = ?', [pwgs, update_time, uid])
-        c.execute('INSERT INTO action_history VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                  [campaign,
-                   dataset,
-                   root_request,
-                   chained_request,
-                   username,
-                   role,
-                   'add' if checked else 'remove',
-                   pwg,
-                   update_time])
         conn.commit()
         conn.close()
     except Exception as ex:

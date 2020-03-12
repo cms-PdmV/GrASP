@@ -142,7 +142,8 @@ def insert_or_update(sql_args, cursor, table):
             new_pwgs = (original_interested_pwgs - all_removed).union(all_added)
             original_interested_pwgs_string = ','.join(sorted(original_interested_pwgs))
             new_interested_pwgs_string = ','.join(sorted(new_pwgs))
-            if original_interested_pwgs_string != new_interested_pwgs_string:
+            mcm_notes = mcm_request.get('notes')
+            if original_interested_pwgs_string != new_interested_pwgs_string or mcm_notes != current_notes:
                 print('Interested PWGs:')
                 print('  Reference: %s' % (','.join(original_interested_pwgs)))
                 print('  Samples added: %s' % (','.join(samples_added)))
@@ -153,6 +154,7 @@ def insert_or_update(sql_args, cursor, table):
                 print('  All removed: %s' % (','.join(all_removed)))
                 print('  New PWGs: %s' % (','.join(new_pwgs)))
                 print('%s must be updated in McM. Set interested PWGs to %s' % (mcm_request['prepid'], new_interested_pwgs_string))
+                print('%s must be updated in McM. Set notes to %s' % (mcm_request['prepid'], current_notes))
                 mcm_request['interested_pwg'] = list(new_pwgs)
                 mcm_request['notes'] = current_notes
                 print(mcm.update('requests', mcm_request))
