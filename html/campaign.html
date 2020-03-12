@@ -121,10 +121,9 @@
            {% endif %}
            <!-- Notes and comments from various groups -->
            <td>
-	     <input type="text" title="Add whatever is relevant for the interested PWGs about the sample" value="" name="notes">
-	     <button title="Freeze notes in text entry (they will be saved in the next cycle)" onclick="saveNotes(this, '{{row[17][0]}}')"> Save </button>
-	     <div>
-             <button title="Clear notes in text entry" onclick="clearNotes(this, '{{row[17][0]}}')"> Clear </button>
+	     <input type="text" title="Add whatever is relevant for the interested PWGs about the sample" value="{{row[18][0]}}" name="notes">
+	     <button title="Freeze notes in text entry (they will be saved in the next cycle)" onclick="saveNotes(this, '{{row[17][0]}}')">Save</button>
+             <button title="Clear notes in text entry" onclick="clearNotes(this, '{{row[17][0]}}')">Clear</button>
 	   </td>
           </tr>
         {% endfor %}
