@@ -133,7 +133,6 @@ def insert_or_update(sql_args, cursor, table):
             mcm_request = mcm.get('requests', existing_sample[4] if existing_sample[4] else existing_sample[3])
             print('Will check %s' % (mcm_request['prepid']))
             mcm_interested_pwgs = set([x.strip().upper() for x in mcm_request.get('interested_pwg', [])])
-            notes = mcm_request.get('notes') #notes are simply overwritten
             samples_added = current_interested_pwgs - original_interested_pwgs
             samples_removed = original_interested_pwgs - current_interested_pwgs
             mcm_added = mcm_interested_pwgs - original_interested_pwgs
@@ -155,20 +154,11 @@ def insert_or_update(sql_args, cursor, table):
                 print('  New PWGs: %s' % (','.join(new_pwgs)))
                 print('%s must be updated in McM. Set interested PWGs to %s' % (mcm_request['prepid'], new_interested_pwgs_string))
                 mcm_request['interested_pwg'] = list(new_pwgs)
+                mcm_request['notes'] = current_notes
                 print(mcm.update('requests', mcm_request))
                 new_request = sql_args[10] if sql_args[10] else sql_args[4]
                 if new_request == mcm_request['prepid']:
                     sql_args[16] = sql_args[17] = new_interested_pwgs_string
-                    sql_args[18] = notes
-
-                    #FIX HERE: you need also old_notes
-            if notes != current_notes:
-                new_request = sql_args[10] if sql_args[10] else sql_args[4]
-                mcm_request['notes'] = notes
-                print(mcm.update('requests', mcm_request))
-                if new_request == mcm_request['prepid']:
-                    sql_args[16] = sql_args[17] = new_interested_pwgs_string
-                    sql_args[18] = notes                    
 
         # interested_pwgs = ','.join(sorted(x.strip().upper() for x in sql_args[14].split(',') if x.strip()))
         # if table == 'samples' and samples_interested_pwgs != interested_pwgs:
@@ -288,12 +278,12 @@ def process_request(request, campaign, cursor, table):
         insert_or_update(sql_args, cursor, table)
 
 
-campaigns = [#'RunIISummer19UL16GEN', 'RunIISummer19UL16wmLHEGEN', 'RunIISummer19UL16pLHEGEN',
-             #'RunIISummer19UL17GEN', 'RunIISummer19UL17wmLHEGEN', 'RunIISummer19UL17pLHEGEN',
-             #'RunIISummer19UL18GEN', 'RunIISummer19UL18wmLHEGEN', 'RunIISummer19UL18pLHEGEN',
+campaigns = ['RunIISummer19UL16GEN', 'RunIISummer19UL16wmLHEGEN', 'RunIISummer19UL16pLHEGEN',
+             'RunIISummer19UL17GEN', 'RunIISummer19UL17wmLHEGEN', 'RunIISummer19UL17pLHEGEN',
+             'RunIISummer19UL18GEN', 'RunIISummer19UL18wmLHEGEN', 'RunIISummer19UL18pLHEGEN',
              #'RunIIFall18GS', 'RunIIFall18wmLHEGS', 'RunIIFall18pLHE'
              #'RunIIFall17GS', 'RunIIFall17wmLHEGS', 'RunIIFall17pLHE'
-             'RunIISummer15GS', 'RunIISummer15wmLHEGS', 'RunIIWinter15pLHE'
+             #'RunIISummer15GS', 'RunIISummer15wmLHEGS', 'RunIIWinter15pLHE'
          ]
 
 conn = sqlite3.connect('data.db')
