@@ -18,6 +18,7 @@ def main():
     c.execute('''CREATE TABLE IF NOT EXISTS twiki_samples
                  (prepid text PRIMARY KEY NOT NULL,
                   dataset text NOT NULL,
+                  extension text,
                   total_events integer NOT NULL,
                   campaign text NOT NULL,
                   resp_group text NOT NULL)''')
@@ -31,20 +32,34 @@ def main():
 
     total_events_threshold = 20000000
 
+    file_twiki = open("MainSamplesFall18.txt", "w")
+    
     for twiki_request in twiki_samples_fall_18_candidates:
 
         if(twiki_request['total_events']>total_events_threshold):
 
             logger.info('Inserting %s (%s)', twiki_request['dataset_name'], twiki_request['prepid'])
-            c.execute('INSERT INTO twiki_samples VALUES (?, ?, ?, ?, ?)',
+            c.execute('INSERT INTO twiki_samples VALUES (?, ?, ?, ?, ?, ?)',
                       [twiki_request['prepid'],
                        twiki_request['dataset_name'],
+                       twiki_request['extension'],
                        twiki_request['total_events'],
                        twiki_request['member_of_campaign'],
-                       twiki_request['prepid'].split('-')[0]])
+                       twiki_request['prepid'].split('-')[0]])                       
+
+            file_twiki.write("%s %s %s %s %s %s \n" %(twiki_request['dataset_name'],
+                                                      twiki_request['extension'],
+                                                      twiki_request['total_events'],
+                                                      twiki_request['member_of_campaign'],
+                                                      twiki_request['prepid'].split('-')[0],
+                                                      twiki_request['prepid'])
+                         )
 
     conn.commit()
     conn.close()
+    file_twiki.close()
+
+
 
 
 if __name__ == '__main__':
