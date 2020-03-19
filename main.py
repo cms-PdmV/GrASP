@@ -336,6 +336,31 @@ def run_flask():
             debug=debug,
             threaded=True)
 
+### FILE READ FUNCTIONALITY
+from flask import flash, redirect, url_for
+from werkzeug.utils import secure_filename
+ALLOWED_EXTENSIONS = {'txt'}
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+sample_names_in_file = []
+@app.route('/', methods=['GET', 'POST'])
+def upload_file():
+    if request.method == 'POST':
+        content=''
+        if 'file' not in request.files:
+            content = 'No File Selected!'
+            return redirect(request.url)
+        file = request.files['file']
+        if file.filename == '':
+            content = 'Wrong Format File(use .txt)!'
+            return redirect(request.url)
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            content = file.read()
+        return render_template("index.html", text = content)
+
+
 
 if __name__ == '__main__':
     run_flask()
