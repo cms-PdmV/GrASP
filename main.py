@@ -350,16 +350,34 @@ def upload_file():
         content=''
         if 'file' not in request.files:
             content = 'No File Selected!'
-            return redirect(request.url)
+            return redirect('/')
         file = request.files['file']
         if file.filename == '':
             content = 'Wrong Format File(use .txt)!'
-            return redirect(request.url)
+            return redirect('/')
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
             content = file.read()
-        return render_template("index.html", text = content)
+        conn = sqlite3.connect('data.db')
+        c = conn.cursor()
+        fullname = '%s (%s - %s)' % (request.headers.get('Adfs-Fullname', '???'),
+                                 request.headers.get('Adfs-Login', '???'),
+                                 get_user_role(request.headers.get('Adfs-Login', '???'), c))
 
+        campaigns = c.execute('SELECT campaign_group, campaign, COUNT(1) FROM samples GROUP BY campaign')
+        campaigns = add_counters(campaigns)
+        magic_sort(campaigns, 2)
+        magic(campaigns, 2)
+
+        return render_template("index.html",
+                           filecontent = content,
+                           campaigns=campaigns,
+                           campaign_groups=sorted(set(x[0][0] for x in campaigns)),
+                           pwgs=pwgs,
+                           fullname=fullname)
+    else:
+        return render_template("index.html")
+        
 
 
 if __name__ == '__main__':
