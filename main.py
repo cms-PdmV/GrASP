@@ -85,10 +85,18 @@ def split_chained_request_name(name):
 
 def get_short_name(name):
     spl = name.split('_')
-    renames = {'b': 'bbbar4l',
-               'ST': 'SingleTop'}
-    return renames.get(spl[0], spl[0])
+    short_name = spl
 
+    if(spl == 'b'):
+        short_name = 'bbbar4l'
+    elif(spl == 'ST'):
+        short_name = 'SingleTop'
+    elif(spl == 'QCD' and 'Flat' in name):
+        short_name = 'QCD P8'
+    elif(spl == 'QCD' and 'madgraph' in name):
+        short_name = 'QCD MG+P8'
+
+    return short_name
 
 def get_user_role(username, cursor):
     roles = cursor.execute('SELECT role FROM mcm_users WHERE username = ?', [username])
