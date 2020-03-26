@@ -358,6 +358,10 @@ def upload_file():
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
             content = file.read()
+            file.seek(0)
+            sample_names_in_file = file.readlines()
+            if (len(sample_names_in_file)>0 ):
+                content = sample_names_in_file[0]
         conn = sqlite3.connect('data.db')
         c = conn.cursor()
         fullname = '%s (%s - %s)' % (request.headers.get('Adfs-Fullname', '???'),
@@ -368,7 +372,10 @@ def upload_file():
         campaigns = add_counters(campaigns)
         magic_sort(campaigns, 2)
         magic(campaigns, 2)
-
+        
+        search_results = c.execute('SELECT * FROM samples WHERE dataset IN ("%s")' %(content))
+        fetch_search_results = search_results.fetchall()
+    
         return render_template("index.html",
                            filecontent = content,
                            campaigns=campaigns,
