@@ -38,6 +38,7 @@
           <th>Chained request</th>
           {% if endpoint == 'default' %}<th>Interested PWGs</th>{% endif %}
 	  <th>Notes and comments from groups </th>
+	  <th> Target number of events </th>
 	</tr>
         {% for row in table_rows %}
           <tr>
@@ -127,6 +128,10 @@
 	            <button title="Freeze notes in text entry (they will be saved in the next cycle)" onclick="saveNotes(this, '{{row[17][0]}}')">Save</button>
               <button title="Clear notes in text entry" onclick="clearNotes(this, '{{row[17][0]}}')">Clear</button>
 	          </td>
+	    <!-- Target number of events -->
+            <td>
+	    <p> {{row[19][0]}} </p>
+	    </td>
           </tr>
         {% endfor %}
       </table>

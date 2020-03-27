@@ -31,7 +31,9 @@ def main():
                   
                   cross_section float NOT NULL,
 
-                  fraction_negative_weight float NOT NULL   )''')
+                  fraction_negative_weight float NOT NULL,
+                  
+                  target_num_events real NOT NULL   )''')
 
     # Clear the table                                                                                                                                                                                                                         
     c.execute('DELETE FROM `twiki_samples`')
@@ -53,12 +55,26 @@ def main():
             search_rslt = xsdb_request.simple_search_to_dict(query)
             cross_section = 1
             frac_neg_wgts = 0
+            target_num_events = 0
             if(len(search_rslt)>1):
                 search_rslt_ = search_rslt[1]
-                cross_section = search_rslt_[u'cross_section']
-                frac_neg_wgts = search_rslt_[u'fraction_negative_weight']
-            logger.info('Inserting %s (%s) %s %s', twiki_request['dataset_name'], twiki_request['prepid'], cross_section, frac_neg_wgts)
-            c.execute('INSERT INTO twiki_samples VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                cross_section = float(search_rslt_[u'cross_section'])
+                frac_neg_wgts = float(search_rslt_[u'fraction_negative_weight'])
+            else:
+                try:
+                    cross_section = float(twiki_request['generator_parameters'][-1][u'cross_section'])
+                    frac_neg_wgts = float(twiki_request['generator_parameters'][-1][u'negative_weights_fraction'])
+                except:
+                    print(twiki_request['generator_parameters'])
+            def frac_not_minus(x):
+                if (x < 0):
+                    return 0
+                else:
+                    return x
+
+            target_num_events = (150000)*(cross_section)*(1-frac_not_minus(frac_neg_wgts)) 
+            logger.info('Inserting %s (%s) %s %s %s', twiki_request['dataset_name'], twiki_request['prepid'], cross_section, frac_neg_wgts, target_num_events)
+            c.execute('INSERT INTO twiki_samples VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
                       [twiki_request['prepid'],
                        twiki_request['dataset_name'],
                        twiki_request['extension'],
@@ -66,16 +82,18 @@ def main():
                        twiki_request['member_of_campaign'],
                        twiki_request['prepid'].split('-')[0],
                        cross_section,
-                       frac_neg_wgts])
+                       frac_neg_wgts,
+                       target_num_events])
 
-            file_twiki.write("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s \n" %(twiki_request['dataset_name'],
+            file_twiki.write("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s \n" %(twiki_request['dataset_name'],
                                                       twiki_request['extension'],
                                                       twiki_request['total_events'],
                                                       twiki_request['member_of_campaign'],
                                                       twiki_request['prepid'].split('-')[0],
                                                       twiki_request['prepid'],
                                                       cross_section,
-                                                      frac_neg_wgts  )
+                                                      frac_neg_wgts,
+                                                      target_num_events  )
                          )
 
     conn.commit()

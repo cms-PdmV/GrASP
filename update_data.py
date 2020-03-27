@@ -115,6 +115,7 @@ def insert_or_update(sql_args, cursor, table):
     16. interested_pwgs
     17. original_interested_pwgs
     18. notes
+
     """
     existing_sample = get_sample_if_exists(sql_args, cursor, table)
     nice_description = '%s %s %s %s' % (sql_args[0], sql_args[2], sql_args[3], sql_args[4])
@@ -198,9 +199,16 @@ def insert_or_update(sql_args, cursor, table):
                               original_interested_pwgs = ?,
                               notes = ? WHERE uid = ?''' % (table), sql_args)
     else:
-        print('Inserting %s' % (nice_description))
-        cursor.execute('''INSERT INTO %s
-                          VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)''' % (table), sql_args)
+        if(table != 'twiki_samples'):
+            print('Inserting %s' % (nice_description))
+            cursor.execute('''INSERT INTO %s
+                           VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)''' % (table), sql_args)
+        else:
+            sql_args.append(target_num_events)
+            print('Inserting %s' % (nice_description))
+            cursor.execute('''INSERT INTO %s
+                           VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)''' % (table), sql_args)
+
 
 
 def process_request(request, campaign, cursor, table):
@@ -256,6 +264,9 @@ def process_request(request, campaign, cursor, table):
             # If MiniAOD does not exist, use root request PWGs
             interested_pwgs = ','.join(root_request.get('interested_pwg', []))
             notes = root_request.get('notes')
+        
+        #defining the target num events variable and setting it to miniaod_total_events for the moment?
+        target_num_events = miniaod_total_events
         
         sql_args = [campaign,
                     campaign_group,
@@ -335,7 +346,8 @@ c.execute('''CREATE TABLE IF NOT EXISTS twiki_samples
               interested_pwgs text,
               original_interested_pwgs text,
               updated integer,
-              notes text)''')
+              notes text,
+              target_num_events float)''')
 
 c.execute('''CREATE TABLE IF NOT EXISTS action_history
              (campaign text NOT NULL,
@@ -380,7 +392,9 @@ for index, sample in enumerate(twiki_samples_fall_18):
         if int(req['total_events']) != int(sample[2]):
             # print('Total events is wrong %s != %s' % (req['total_events'], sample[2]))
             continue
-
+        
+        target_num_events = sample[-1]
+        #c.execute('INSERT INTO twiki_samples (target_num_events) VALUES (?)',                 [sample[-1]] )
         twiki_added_requests.add(prepid)
         print('Found %s' % (prepid))
         process_request(req, req['member_of_campaign'], c, 'twiki_samples')
