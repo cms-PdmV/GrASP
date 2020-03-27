@@ -68,7 +68,7 @@ def main():
                        cross_section,
                        frac_neg_wgts])
 
-            file_twiki.write("%s %s %s %s %s %s %s %s \n" %(twiki_request['dataset_name'],
+            file_twiki.write("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s \n" %(twiki_request['dataset_name'],
                                                       twiki_request['extension'],
                                                       twiki_request['total_events'],
                                                       twiki_request['member_of_campaign'],
