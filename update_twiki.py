@@ -72,7 +72,7 @@ def main():
                 else:
                     return x
 
-            target_num_events = (150000)*(cross_section)*(1-frac_not_minus(frac_neg_wgts)) 
+            target_num_events = (1500000)*(cross_section)/( (1- 2*frac_not_minus(frac_neg_wgts))**2 ) 
             logger.info('Inserting %s (%s) %s %s %s', twiki_request['dataset_name'], twiki_request['prepid'], cross_section, frac_neg_wgts, target_num_events)
             c.execute('INSERT INTO twiki_samples VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
                       [twiki_request['prepid'],
