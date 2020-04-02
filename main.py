@@ -85,17 +85,23 @@ def split_chained_request_name(name):
 
 def get_short_name(name):
     spl = name.split('_')
-    short_name = spl
+    short_name = spl[0]
 
-    if(spl == 'b'):
+    if spl[0] == 'b':
         short_name = 'bbbar4l'
-    elif(spl == 'ST'):
+    elif spl[0] == 'ST':
         short_name = 'SingleTop'
-    elif(spl == 'QCD' and 'Flat' in name):
+    elif spl[0] == 'QCD' and 'Flat' in name:
+        short_name = 'Flat QCD P8'
+    elif spl[0] == 'QCD' and '_Pt_' in name:
         short_name = 'QCD P8'
-    elif(spl == 'QCD' and 'madgraph' in name):
-        short_name = 'QCD MG+P8'
-
+    elif 'madgraphMLM' in name:
+        short_name +=' LO MG+P8'
+    elif 'FxFx' in name:
+        short_name += ' NLO MG+P8'
+    elif 'powheg' in name and 'pythia8' in name:
+        short_name += ' NLO PH+P8'
+    
     return short_name
 
 def get_user_role(username, cursor):
