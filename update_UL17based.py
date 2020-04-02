@@ -50,7 +50,7 @@ for pwg in pwgs:
         
         for request_UL18 in requests_UL18:
 
-            if(request_UL18['dataset_name']==dataset_name):
+            if(request_UL18['dataset_name'] == dataset_name):
                 request_UL18['interested_pwg'] = interested_pwgs
                 
                 update_response = mcm.update('requests', request_UL18)
@@ -58,7 +58,7 @@ for pwg in pwgs:
 
         for request_UL16 in requests_UL16:
             
-            if(request_UL16['dataset_name']==dataset_name):
+            if(request_UL16['dataset_name'] == dataset_name):
                 request_UL16['interested_pwgs'] = interested_pwgs
                 
                 update_response = mcm.update('requests', request_UL16)
