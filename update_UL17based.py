@@ -6,7 +6,28 @@ sys.stdout.flush()
 
 mcm = McM(dev=False)
 
-pwgs = ['TOP']
+pwgs = ["B2G", 
+        "BPH", 
+        "BRI",        
+        "BTV",        
+        "EGM",        
+        "EXO",        
+        "FSQ",                                                                                      
+        "HCA",
+        "HGC",   
+        "HIG",   
+        "HIN",   
+        "JME",   
+        "L1T",   
+        "LUM",   
+        "MUO",   
+        "PPS",   
+        "SMP",   
+        "SUS",   
+        "TAU",   
+        "TOP",   
+        "TRK",   
+        "TSG"] 
 
 query_UL18 = 'member_of_campaign=RunIISummer19UL18MiniAOD'
 query_UL16 = 'member_of_campaign=RunIISummer19UL16MiniAOD'
