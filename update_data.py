@@ -132,7 +132,7 @@ def insert_or_update(sql_args, cursor, table):
             # Get root request or MiniAOD request from McM that was used before
             mcm_request = mcm.get('requests', existing_sample[4] if existing_sample[4] else existing_sample[3])
             if not mcm_request:
-                print('Error fetching %s' $ (existing_sample[4] if existing_sample[4] else existing_sample[3]))
+                print('Error fetching %s' % (existing_sample[4] if existing_sample[4] else existing_sample[3]))
                 continue
 
             print('Will check %s' % (mcm_request['prepid']))
