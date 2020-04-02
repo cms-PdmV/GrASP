@@ -131,6 +131,10 @@ def insert_or_update(sql_args, cursor, table):
             current_notes = existing_sample[5]
             # Get root request or MiniAOD request from McM that was used before
             mcm_request = mcm.get('requests', existing_sample[4] if existing_sample[4] else existing_sample[3])
+            if not mcm_request:
+                print('Error fetching %s' $ (existing_sample[4] if existing_sample[4] else existing_sample[3]))
+                continue
+
             print('Will check %s' % (mcm_request['prepid']))
             mcm_interested_pwgs = set([x.strip().upper() for x in mcm_request.get('interested_pwg', [])])
             samples_added = current_interested_pwgs - original_interested_pwgs
