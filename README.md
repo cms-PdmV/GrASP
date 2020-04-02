@@ -26,7 +26,7 @@ Existing samples in McM. Each row represents a chained request.
 15. `miniaod_status` <text> - MiniAOD request status in McM
 16. `miniaod_output` <text> - MiniAOD request name of output dataset
 17. `interested_pwgs` <text> - comma separated list of interested PWGs of MiniAOD request if it exists, root request otherwise. This list is edited from Samples page
-18. `original_interested_pwgs` <text> - comma separated list of interested PWGs of MiniAOD request if it exists, root request otherwise. This list is updated from McM during each update and not touched until next update. It is used to know which PWGs were added and which ones were removed in Samples page
+18. `original_interested_pwgs` <text> - comma separated list of interested PWGs of MiniAOD request if it exists, root request otherwise. This list is updated from McM during each update and not touched until next update. It is used to know which PWGs were added and which ones were removed in Samples page and McM
 19. `updated` <integer> - timestamp of when this entry was last updated
 20. `notes` <text> - notes in McM of MiniAOD request if it exists, root request otherwise
   
