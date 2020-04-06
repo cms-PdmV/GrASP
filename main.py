@@ -96,7 +96,7 @@ def get_short_name(name):
     elif spl[0] == 'QCD' and '_Pt_' in name:
         short_name = 'QCD P8'
     elif 'madgraphMLM' in name:
-        short_name +=' LO MG+P8'
+        short_name += ' LO MG+P8'
     elif 'FxFx' in name:
         short_name += ' NLO MG+P8'
     elif 'powheg' in name and 'pythia8' in name:
@@ -328,11 +328,11 @@ def history():
 def Run3_page(pwg=None):
     conn = sqlite3.connect('Run3.db')
     c = conn.cursor()
-    sql_pwg_query = '%'+str(pwg)+'%'
+    sql_pwg_query = '%' + str(pwg) + '%'
     rows = [r for r in c.execute('''SELECT dataset,
-                       total_events,                                                                                                                                                         
-                       interested_PWGS
-                       FROM Run3samples WHERE interested_PWGS LIKE '%s' ''' % sql_pwg_query)] 
+                                           total_events,                                                                                                                                                         
+                                           interested_PWGS
+                                    FROM Run3samples WHERE interested_PWGS LIKE '%s' ''' % sql_pwg_query)] 
     return render_template('Run3.html',
                            rows=rows)
 

@@ -30,12 +30,12 @@ def main():
 
     for UL17_request in run3_samples_candidates:
 
-        if(len(UL17_request['interested_pwg'])>0):
+        if(len(UL17_request['interested_pwg']) > 0):
 
             text_pwg = ''
             
             for ul_pwg in UL17_request['interested_pwg']:
-                text_pwg+=ul_pwg+' '
+                text_pwg += ul_pwg + ' '
 
             logger.info('Inserting %s (%s)', UL17_request['dataset_name'], UL17_request['prepid'])
             c.execute('INSERT INTO Run3samples VALUES (?, ?, ?, ?)',
