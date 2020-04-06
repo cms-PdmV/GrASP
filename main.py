@@ -324,6 +324,17 @@ def history():
     return render_template('history.html',
                            rows=rows)
 
+@app.route('/Run3/<string:pwg>')
+def Run3_page(pwg=None):
+    conn = sqlite3.connect('Run3.db')
+    c = conn.cursor()
+    sql_pwg_query = '%'+str(pwg)+'%'
+    rows = [r for r in c.execute('''SELECT dataset,
+                       total_events,                                                                                                                                                         
+                       interested_PWGS
+                       FROM Run3samples WHERE interested_PWGS LIKE '%s' ''' % sql_pwg_query)] 
+    return render_template('Run3.html',
+                           rows=rows)
 
 def run_flask():
     logging.basicConfig(format='[%(asctime)s][%(levelname)s] %(message)s', level=logging.INFO)
