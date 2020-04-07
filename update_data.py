@@ -133,7 +133,7 @@ def insert_or_update(sql_args, cursor, table):
             mcm_request = mcm.get('requests', existing_sample[4] if existing_sample[4] else existing_sample[3])
             if not mcm_request:
                 print('Error fetching %s' % (existing_sample[4] if existing_sample[4] else existing_sample[3]))
-                continue
+                return
 
             print('Will check %s' % (mcm_request['prepid']))
             mcm_interested_pwgs = set([x.strip().upper() for x in mcm_request.get('interested_pwg', [])])
