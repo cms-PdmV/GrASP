@@ -29,6 +29,11 @@
           <b>physics working group</b>
         </div>
       {% endif %}
+      <p>
+      {% for row in table_rows %}
+	<a style="text-decoration: none" href="{{row[0][0]}}"> {{row[0][0]}} </a>
+      {% endfor %}	
+      </p>
       <table>
         <tr>
           <th>Short name</th>
@@ -43,8 +48,8 @@
           <tr>
             <!-- Short name -->
             {% if row[0][1] > 0 %}
-            <td rowspan={{row[0][1]}} title="All samples with {{row[0][0]}}_* datasets">
-                {{row[0][0]}}
+            <td rowspan={{row[0][1]}} title="All samples with {{row[0][0]}}_* datasets" id="{{row[0][0]}}">
+	      <a style="color:black;text-decoration: none" href="{{row[0][0]}}">{{row[0][0]}}</a>
             </td>
             {% endif %}
             <!-- Dataset name -->
