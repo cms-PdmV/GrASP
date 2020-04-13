@@ -102,10 +102,10 @@ def get_short_name(name):
     elif 'powheg' in name and 'pythia8' in name:
         short_name += ' NLO PH+P8'
     
-    short_name.replace("WW","VV")
-    short_name.replace("WZ","VV")
-    short_name.replace("ZZ","VV")
-    short_name.replace("ZW","VV")
+    short_name.replace("WW", "VV")
+    short_name.replace("WZ", "VV")
+    short_name.replace("ZZ", "VV")
+    short_name.replace("ZW", "VV")
 
     return short_name
 
