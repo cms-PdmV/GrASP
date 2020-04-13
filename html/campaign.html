@@ -19,7 +19,7 @@
       <h5>PdmV Samples - {% if endpoint != 'default' %}<b>missing</b> samples for {% endif %}{{ campaign }}{% if pwg %} where {{pwg}} is interested {% endif %}</h5>
       {% if endpoint == 'default' %}
         <div style="text-align: center; margin: 20px;">
-          <b>I am going to tag samples for</b>
+          <b>I am going to tag/untag samples for</b>
           <select onChange="selectPWG(this, this.value)">
             <option disabled selected value=''></option>
             {% for pwg in pwgs %}
