@@ -106,3 +106,9 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+# cookie file
+cookie.txt
+
+# all txt files
+*.txt

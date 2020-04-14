@@ -15,32 +15,18 @@
   </head>
   <body>
     <div>
-      <div style="text-align: right; margin: 10px;">Logged in as {{ fullname }}</div>
+      <div style="text-align: right; margin: 10px;">Logged in as {{ user_info.fullname }} ({{ user_info.role }})</div>
       <h3>PdmV Samples</h3>
       <h5>Existing samples</h5>
       <table>
         <tr>
           <th>Campaign group</th>
-        {% for row in campaigns %}
-          <!-- Campaign group -->
-          {% if row[0][1] > 0 %}
-          <th rowspan={{row[0][1]}}>
-          <a href="campaign_group/{{row[0][0]}}">{{row[0][0]}}</a>
-          </th>	    
-          {% endif %}
-        {% endfor %}
-	</tr>
-      </table>
-      <h5>Existing samples per PWG</h5>
-      <table>
-        <tr>
-          <th>Campaign group</th>
-          <th colspan={{pwgs | length}}>PWGs</th>
+          <th colspan={{pwgs | length}}>Interested PWGs</th>
         </tr>
         {% for campaign_group in campaign_groups %}
         <tr>
           <td>
-            {{campaign_group}}
+            <a href="campaign_group/{{campaign_group}}">{{campaign_group}}</a>
           </td>
           {% for pwg in pwgs %}
           <td>
@@ -50,22 +36,21 @@
         </tr>
         {% endfor %}
       </table>
-      <h5>Missing high-statistics samples with number of events bigger than 20M </h5> <!-- according to <a target="_blank" href="https://twiki.cern.ch/twiki/bin/viewauth/CMS/MainSamplesFall18">TWiki</a></h5> -->
+<!-- 
+      <h5>Missing high-statistics samples with number of events bigger than 20M </h5>
       <table>
         <tr>
           <th>Campaign group</th>
         </tr>
-        {% for row in campaigns %}
+        {% for campaign_group in campaign_groups %}
           <tr>
-            <!-- Campaign group -->
-            {% if row[0][1] > 0 %}
-            <td rowspan={{row[0][1]}}>
-              <a href="missing_group/{{row[0][0]}}">{{row[0][0]}}</a>
+            <td>
+              <a href="missing_group/{{campaign_group}}">{{campaign_group}}</a>
             </td>
-            {% endif %}
           </tr>
         {% endfor %}
       </table>
+ -->
     </div>
   </body>
 </html>
