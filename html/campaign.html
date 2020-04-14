@@ -19,7 +19,7 @@
       <h5>PdmV Samples - {% if endpoint != 'default' %}<b>missing</b> samples for {% endif %}{{ campaign }}{% if pwg %} where {{pwg}} is interested {% endif %}</h5>
       {% if endpoint == 'default' %}
         <div style="text-align: center; margin: 20px;">
-          <b>I am going to tag samples for</b>
+          <b>I am going to tag/untag samples for</b>
           <select onChange="selectPWG(this, this.value)">
             <option disabled selected value=''></option>
             {% for pwg in pwgs %}
@@ -29,6 +29,11 @@
           <b>physics working group</b>
         </div>
       {% endif %}
+      <p>
+      {% for row in table_rows %}
+        <a style="text-decoration: none" href="{{row[0][0]}}"> {{row[0][0]}} </a>
+      {% endfor %}	
+      </p>
       <table>
         <tr>
           <th>Short name</th>
@@ -43,8 +48,8 @@
           <tr>
             <!-- Short name -->
             {% if row[0][1] > 0 %}
-            <td rowspan={{row[0][1]}} title="All samples with {{row[0][0]}}_* datasets">
-                {{row[0][0]}}
+            <td rowspan={{row[0][1]}} title="All samples with {{row[0][0]}}_* datasets" id="{{row[0][0]}}">
+               <a style="color:black;text-decoration: none" href="{{row[0][0]}}">{{row[0][0]}}</a>
             </td>
             {% endif %}
             <!-- Dataset name -->
