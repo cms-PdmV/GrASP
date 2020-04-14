@@ -4,6 +4,8 @@ python:
 # command to install dependencies
 install:
   - pip install pylint
+  - pip install flask
+  - pip install flask_restful
 # command to run tests
 script:
-  - pylint --rcfile=.pylintrc $(git diff --name-only $TRAVIS_BRANCH...HEAD | grep .py)
+  - pylint --rcfile=.pylintrc *.py

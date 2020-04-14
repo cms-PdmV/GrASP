@@ -3,7 +3,7 @@ function changeInterestedPWG(element, uid, pwg, add) {
   $.ajax({
     type: "POST",
     contentType: "application/json",
-    url: "update",
+    url: "/samples/update",
     data: JSON.stringify(data),
   }).done(function (data) {
     if (!add) {
@@ -40,7 +40,7 @@ function clearNotes(element, uid) {
   $.ajax({
     type: "POST",
     contentType: "application/json",
-    url: "update",
+    url: "/samples/update",
     data: JSON.stringify(data),
   }).done(function (data) {
     alert('Text reset in the database');
@@ -58,11 +58,11 @@ function saveNotes(element, uid) {
     $.ajax({
         type: "POST",
         contentType: "application/json",
-        url: "update",
+        url: "/samples/update",
         data: JSON.stringify(data),
     }).done(function (data) {
         alert('Text saved in the database');
     }).fail(function(data) {
         alert('Error in saving');
-    })    
+    })
 }

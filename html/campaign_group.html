@@ -1,0 +1,137 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <meta name=viewport content="width=device-width,initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" integrity="sha384-PsH8R72JQ3SOdhVi3uxftmaW6Vc51MKb0q5P2rRUpPvrszuE4W1povHYgTpBfshb" crossorigin="anonymous">
+    <link rel="stylesheet" href="/samples/static/style.css">
+    <link rel="shortcut icon" type="image/x-icon" href="static/favicon.png">
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Roboto:300,400,700">
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+    <script src="/samples/static/script.js" type="text/javascript"></script>
+    <title>PdmV Samples - {{ campaign_group }}*</title>
+  </head>
+  <body>
+    <div >
+      <div style="text-align: right; margin: 10px;">Logged in as {{ user_info.fullname }} ({{ user_info.role }})</div>
+      <h5>PdmV Samples - {{ campaign_group }}*{% if pwg %} where {{pwg}} is interested {% endif %}</h5>
+      <div style="text-align: center; margin: 20px;">
+        <b>I am going to add or remove</b>
+        <select onChange="selectPWG(this, this.value)">
+          <option disabled selected value=''></option>
+          {% for pwg in pwgs %}
+            <option value="{{pwg}}">{{pwg}}</option>
+          {% endfor %}
+        </select>
+        <b>physics working group as interested PWG in samples</b>
+      </div>
+
+      <p style="margin: 8px;">
+      {% for row in table_rows %}
+        {% if row[0][1] > 0%}
+          <a style="text-decoration: none; margin: 4px;" href="#{{row[0][0]}}">{{row[0][0]}}</a>
+        {% endif %}
+      {% endfor %}
+      </p>
+
+      <table>
+        <tr>
+          <th>Short name</th>
+          <th>Dataset name</th>
+          <th>Root request</th>
+          <th>MiniAOD request</th>
+          <th>Chained request</th>
+          <th>Interested PWGs</th>
+          <th>Notes and comments from groups </th>
+        </tr>
+        {% for row in table_rows %}
+          <tr>
+            <!-- Short name -->
+            {% if row[0][1] > 0 %}
+            <td rowspan={{row[0][1]}} title="All samples with {{row[0][0]}}_* datasets" id="{{row[0][0]}}">
+               <a href="#{{row[0][0]}}">{{row[0][0]}}</a>
+            </td>
+            {% endif %}
+            <!-- Dataset name -->
+            {% if row[1][1] > 0 %}
+            <td rowspan={{row[1][1]}}>
+                <a target="_blank" href="https://cms-pdmv.cern.ch/mcm/requests?member_of_campaign={{campaign}}&dataset_name={{row[1][0]}}{% if pwg %}&interested_pwg={{pwg}}{% endif %}" title="Requests in McM with dataset name {{row[1][0]}} in campaign {{campaign}}">{{row[1][0]}}</a>
+            </td>
+            {% endif %}
+            <!-- Root request name -->
+            {% if row[2][1] > 0 %}
+            <td rowspan={{row[2][1]}}>
+              <div>
+                <a target="_blank" href="https://cms-pdmv.cern.ch/mcm/requests?prepid={{row[2][0]}}" title="Open {{row[2][0]}} in McM">{{row[2][0]}}</a><br>
+                <small>Status: {{row[7][0]}}</small><br>
+                <small>Priority: {{row[6][0]}}</small>
+                {% if row[10][0] %}
+                  <br>
+                  <small>Events: {{row[9][0]}}/{{row[8][0]}} ({{(row[9][0] / row[8][0] * 100) | round(1)}}%)</small><br>
+                  <small><a target="_blank" href="https://cmsweb.cern.ch/das/request?input={{row[10][0]}}">Output in DAS</a></small>
+                {% endif %}
+              </div>
+              <div class="progress-background {{row[7][0]}}-background" style="width: {{row[9][0] / row[8][0] * 100}}%;"></div>
+            </td>
+            {% endif %}
+            <!-- Mini AOD -->
+            {% if row[3][1] > 0 %}
+            <td rowspan={{row[3][1]}}>
+              {% if row[3][0] %}
+                <div>
+                  <a target="_blank" href="https://cms-pdmv.cern.ch/mcm/requests?prepid={{row[3][0]}}" title="Open {{row[3][0]}} in McM">{{row[3][0]}}</a><br>
+                  <small>Status: {{row[12][0]}}</small><br>
+                  <small>Priority: {{row[11][0]}}</small>
+                  {% if row[15][0] %}
+                    <br>
+                    <small>Events: {{row[14][0]}}/{{row[13][0]}} ({{(row[14][0] / row[13][0] * 100) | round(1)}}%)</small><br>
+                    <small><a target="_blank" href="https://cmsweb.cern.ch/das/request?input={{row[15][0]}}">Output in DAS</a></small>
+                  {% endif %}
+                </div>
+                {% if row[13][0] > 0 %}
+                  <div class="progress-background {{row[12][0]}}-background" style="width: {{row[14][0] / row[13][0] * 100}}%;"></div>
+                {% endif %}
+              {% endif %}
+            </td>
+            {% endif %}
+            <!-- Chained request -->
+            {% if row[4][1] > 0 %}
+            <td rowspan={{row[4][1]}}>
+                <a target="_blank" href="https://cms-pdmv.cern.ch/mcm/chained_requests?prepid={{row[4][0]}}" title="Open {{row[4][0]}} in McM">{{row[16][0]}}</a>
+            </td>
+            {% endif %}
+            <!-- Interested pwgs -->
+            <td>
+              <ul class="interested-list">
+                {% for pwg in row[17][0] %}
+                  <li>
+                    <span title="{{pwg}} is interested in this sample">{{pwg}}</span>&nbsp;<!--
+                 --><a class="group group-remove group-remove-{{pwg}}"
+                       style="display: none"
+                       title="Remove {{pwg}} from interested PWGs"
+                       onclick="changeInterestedPWG(this, '{{row[5][0]}}', '{{pwg}}', false)">Remove</a>
+                  </li>
+                {% endfor %}
+              </ul>
+              <ul>
+                {% for pwg in pwgs %}
+                  <li style="display: none" class="group group-add group-add-{{pwg}}">
+                    <a title="Add {{pwg}} to interested PWGs"
+                       onclick="changeInterestedPWG(this, '{{row[5][0]}}', '{{pwg}}', true)">Add {{pwg}}</a>
+                  </li>
+                {% endfor %}
+              </a>
+            </td>
+            <!-- Notes and comments from various groups -->
+            <td>
+              <textarea style="width: 100%; margin-bottom: 8px;" title="Add whatever is relevant for the interested PWGs about the sample" name="notes">{{row[18][0]}}</textarea>
+              <button title="Freeze notes in text entry (they will be saved in the next cycle)" onclick="saveNotes(this, '{{row[5][0]}}')">Save</button>
+              <button title="Clear notes in text entry" onclick="clearNotes(this, '{{row[5][0]}}')">Clear</button>
+            </td>
+          </tr>
+        {% endfor %}
+      </table>
+    </div>
+  </body>
+</html>
