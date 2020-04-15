@@ -139,14 +139,13 @@ def get_short_name(name):
 
     elif short_name == 'b':
         short_name = 'bbbar4l'
-    
     elif short_name == 'ST':
         short_name = 'SingleTop'
     elif short_name == 'QCD' and 'Flat' in name:
         short_name = 'Flat QCD P8'
     elif short_name == 'QCD' and '_Pt_' in name:
         short_name = 'QCD P8'
-    
+
     if 'madgraphMLM' in name:
         short_name += ' LO MG+P8'
     elif 'FxFx' in name or 'amcatnlo' in name:
