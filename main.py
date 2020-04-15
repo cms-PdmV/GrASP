@@ -116,6 +116,27 @@ def get_short_name(name):
     spl = name.split('_')
     short_name = spl[0]
 
+    if 'GluGluToH' in name:
+        short_name = 'GluGluToH'
+
+    if 'TTTo' in name:
+        short_name = 'TTbar'
+
+    if 'GluGluToPseudoScalarH' in name:
+        short_name = 'GluGluToPseudoScalarH'
+
+    if 'VBFHiggs' in name:
+        short_name = 'VBFHiggs'
+
+    if 'ZHiggs' in name:
+        short_name = 'ZHiggs'
+
+    if 'WHiggs' in name:
+        short_name = 'WHiggs'
+
+    if 'GluGluToMaxmixH' in name:
+        short_name = 'GluGluToMaxmixH'
+
     if short_name == 'b':
         short_name = 'bbbar4l'
     elif short_name == 'ST':
@@ -126,15 +147,17 @@ def get_short_name(name):
         short_name = 'QCD P8'
     elif 'madgraphMLM' in name:
         short_name += ' LO MG+P8'
-    elif 'FxFx' in name:
+    elif 'FxFx' in name or 'amcatnlo' in name:
         short_name += ' NLO MG+P8'
     elif 'powheg' in name and 'pythia8' in name:
         short_name += ' NLO PH+P8'
-    else:
-        short_name = short_name.replace('WW', 'VV')
-        short_name = short_name.replace('WZ', 'VV')
-        short_name = short_name.replace('ZZ', 'VV')
-        short_name = short_name.replace('ZW', 'VV')
+    elif 'sherpa' in name:
+        short_name += ' Sherpa'
+
+    short_name = short_name.replace('WW', 'VV')
+    short_name = short_name.replace('WZ', 'VV')
+    short_name = short_name.replace('ZZ', 'VV')
+    short_name = short_name.replace('ZW', 'VV')
 
     return short_name
 
