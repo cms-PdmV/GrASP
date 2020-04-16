@@ -155,10 +155,14 @@ def get_short_name(name):
     elif 'sherpa' in name:
         short_name += ' Sherpa'
 
-    short_name = short_name.startswith('WW', 'VV')
-    short_name = short_name.startswith('WZ', 'VV')
-    short_name = short_name.startswith('ZZ', 'VV')
-    short_name = short_name.startswith('ZW', 'VV')
+    if short_name.startswith('WW', 'VV'):
+        short_name = short_name.replace('WW', 'VV', 1)
+    elif short_name.startswith('WZ', 'VV'):
+        short_name = short_name.replace('WZ', 'VV', 1)
+    elif short_name.startswith('ZZ', 'VV'):
+        short_name = short_name.replace('ZZ', 'VV', 1)
+    elif short_name.startswith('ZW', 'VV'):
+        short_name = short_name.replace('ZW', 'VV', 1)
 
     return short_name
 
