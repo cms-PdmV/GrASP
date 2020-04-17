@@ -109,6 +109,8 @@ def split_chained_request_name(name):
     return '%s-...-%s' % (spl[0], spl[-1])
 
 
+#pylint: disable=too-many-branches
+# It is ok to have many ifs in this function
 def get_short_name(name):
     """
     Return short name of dataset name
@@ -118,6 +120,7 @@ def get_short_name(name):
 
     if 'GluGluToH' in name or 'GluGluH' in name:
         short_name = 'GluGluToH'
+<<<<<<< HEAD
 
     elif 'TTTo' in name:
         short_name = 'TTbar'
@@ -134,6 +137,18 @@ def get_short_name(name):
     elif 'WHiggs' in name:
         short_name = 'WHiggs'
 
+=======
+    elif 'TTTo' in name:
+        short_name = 'TTbar'
+    elif 'GluGluToPseudoScalarH' in name:
+        short_name = 'GluGluToPseudoScalarH'
+    elif 'VBFHiggs' in name:
+        short_name = 'VBFHiggs'
+    elif 'ZHiggs' in name:
+        short_name = 'ZHiggs'
+    elif 'WHiggs' in name:
+        short_name = 'WHiggs'
+>>>>>>> 23f40299f08f746d0d15fb4c6973b730d41a84b1
     elif 'GluGluToMaxmixH' in name:
         short_name = 'GluGluToMaxmixH'
 
@@ -155,6 +170,7 @@ def get_short_name(name):
     elif 'sherpa' in name:
         short_name += ' Sherpa'
 
+<<<<<<< HEAD
     if short_name.startswith('WW', 'VV'):
         short_name = short_name.replace('WW', 'VV', 1)
     elif short_name.startswith('WZ', 'VV'):
@@ -162,9 +178,20 @@ def get_short_name(name):
     elif short_name.startswith('ZZ', 'VV'):
         short_name = short_name.replace('ZZ', 'VV', 1)
     elif short_name.startswith('ZW', 'VV'):
+=======
+    if short_name.startswith('WW'):
+        short_name = short_name.replace('WW', 'VV', 1)
+    elif short_name.startswith('WZ'):
+        short_name = short_name.replace('WZ', 'VV', 1)
+    elif short_name.startswith('ZZ'):
+        short_name = short_name.replace('ZZ', 'VV', 1)
+    elif short_name.startswith('ZW'):
+>>>>>>> 23f40299f08f746d0d15fb4c6973b730d41a84b1
         short_name = short_name.replace('ZW', 'VV', 1)
 
     return short_name
+#pylint: enable=too-many-branches
+
 
 def get_user_role(username, cursor):
     """
