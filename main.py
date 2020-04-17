@@ -132,7 +132,16 @@ def get_short_name(name):
         short_name = 'WHiggs'
     elif 'GluGluToMaxmixH' in name:
         short_name = 'GluGluToMaxmixH'
-
+    elif 'GluGluToContin' in name:
+        short_name = 'GluGluToContin'
+    elif 'DiPhotonJets' in name:
+        short_name = 'DiPhotonJets'
+    elif 'JJH' in name:
+        short_name = 'JJHiggs'
+    elif 'GluGluToBulkGraviton' in name:
+        short_name = 'GluGluToBulkGraviton'
+    elif 'BulkGraviton' in name:
+        short_name = 'BulkGraviton'
     elif short_name == 'b':
         short_name = 'bbbar4l'
     elif short_name == 'ST':
@@ -150,6 +159,8 @@ def get_short_name(name):
         short_name += ' NLO PH+P8'
     elif 'sherpa' in name:
         short_name += ' Sherpa'
+    elif 'madgraph' in name:
+        short_name += ' LO MG+P8'
 
     if short_name.startswith('WW'):
         short_name = short_name.replace('WW', 'VV', 1)
@@ -162,7 +173,6 @@ def get_short_name(name):
 
     return short_name
 #pylint: enable=too-many-branches
-
 
 def get_user_role(username, cursor):
     """
