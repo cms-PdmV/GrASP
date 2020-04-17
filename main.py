@@ -120,24 +120,6 @@ def get_short_name(name):
 
     if 'GluGluToH' in name or 'GluGluH' in name:
         short_name = 'GluGluToH'
-<<<<<<< HEAD
-
-    elif 'TTTo' in name:
-        short_name = 'TTbar'
-
-    elif 'GluGluToPseudoScalarH' in name:
-        short_name = 'GluGluToPseudoScalarH'
-
-    elif 'VBFHiggs' in name:
-        short_name = 'VBFHiggs'
-
-    elif 'ZHiggs' in name:
-        short_name = 'ZHiggs'
-
-    elif 'WHiggs' in name:
-        short_name = 'WHiggs'
-
-=======
     elif 'TTTo' in name:
         short_name = 'TTbar'
     elif 'GluGluToPseudoScalarH' in name:
@@ -148,10 +130,18 @@ def get_short_name(name):
         short_name = 'ZHiggs'
     elif 'WHiggs' in name:
         short_name = 'WHiggs'
->>>>>>> 23f40299f08f746d0d15fb4c6973b730d41a84b1
     elif 'GluGluToMaxmixH' in name:
         short_name = 'GluGluToMaxmixH'
-
+    elif 'GluGluToContin' in name:
+        short_name = 'GluGluToContin'
+    elif 'DiPhotonJets' in name:
+        short_name = 'DiPhotonJets'
+    elif 'JJH' in name:
+        short_name = 'JJHiggs'
+    elif 'GluGluToBulkGraviton' in name:
+        short_name = 'GluGluToBulkGraviton'
+    elif 'BulkGraviton' in name:
+        short_name = 'BulkGraviton'
     elif short_name == 'b':
         short_name = 'bbbar4l'
     elif short_name == 'ST':
@@ -169,16 +159,9 @@ def get_short_name(name):
         short_name += ' NLO PH+P8'
     elif 'sherpa' in name:
         short_name += ' Sherpa'
+    elif 'madgraph' in name:
+        short_name += ' LO MG+P8'
 
-<<<<<<< HEAD
-    if short_name.startswith('WW', 'VV'):
-        short_name = short_name.replace('WW', 'VV', 1)
-    elif short_name.startswith('WZ', 'VV'):
-        short_name = short_name.replace('WZ', 'VV', 1)
-    elif short_name.startswith('ZZ', 'VV'):
-        short_name = short_name.replace('ZZ', 'VV', 1)
-    elif short_name.startswith('ZW', 'VV'):
-=======
     if short_name.startswith('WW'):
         short_name = short_name.replace('WW', 'VV', 1)
     elif short_name.startswith('WZ'):
@@ -186,12 +169,10 @@ def get_short_name(name):
     elif short_name.startswith('ZZ'):
         short_name = short_name.replace('ZZ', 'VV', 1)
     elif short_name.startswith('ZW'):
->>>>>>> 23f40299f08f746d0d15fb4c6973b730d41a84b1
         short_name = short_name.replace('ZW', 'VV', 1)
 
     return short_name
 #pylint: enable=too-many-branches
-
 
 def get_user_role(username, cursor):
     """
