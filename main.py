@@ -198,11 +198,6 @@ def campaign_page(campaign_name=None, campaign_group=None, pwg=None):
     logging.info(sql_query)
     logging.info(sql_args)
     rows = c.execute(sql_query, sql_args)
-    def target_num(r):
-        if(len(r)>17):
-            return r[17]
-        else:
-            return -1
     rows = [(get_short_name(r[0]),  # 0 Short name
              r[0],  # 1 Dataset
              r[1],  # 2 Root request
@@ -222,7 +217,7 @@ def campaign_page(campaign_name=None, campaign_group=None, pwg=None):
              [x for x in r[14].split(',') if x],  # 16 Interested pwgs
              r[15],  # 17 uid
              r[16],   # 18 notes
-             target_num(r) #19 target number of events
+             r[16]  #19 target number of events
          ) for r in rows]
          
     rows = add_counters(rows)
