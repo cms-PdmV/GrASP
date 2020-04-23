@@ -281,7 +281,6 @@ def campaign_group_page(campaign_group=None, pwg=None):
                            user_info=user_info)
 
 @app.route('/missing_page/<string:campaign_group>')
-@app.route('/missing_page/<string:campaign_group>')
 def missing_page(campaign_group=None, pwg=None):
     conn = sqlite3.connect('twiki.db')
     cursor = conn.cursor()
@@ -314,11 +313,12 @@ def missing_page(campaign_group=None, pwg=None):
              r[8],  # 7 target num events
              [x for x in r[5].split(',') if x],  # 17 Interested pwgs
             ) for r in rows]
-    logging.error('the following', rows)
     rows = sort_rows(rows, 5)
     rows = add_counters(rows)
     aggregate_rows(rows, 5)
-    user_info = 'null'
+    data_conn = sqlite3.connect('data.db')
+    data_cursor = data_conn.cursor()
+    user_info = get_user_info(data_cursor)
     conn.close()
     return render_template('missing_page.html',
                            campaign_group=campaign_group,

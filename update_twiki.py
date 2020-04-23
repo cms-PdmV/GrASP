@@ -51,7 +51,7 @@ def main():
             frac_neg_wgts = 0
             target_num_events = 0
             if len(search_rslt) > 1:
-                search_rslt_ = search_rslt[1]
+                search_rslt_ = search_rslt[-1]
                 cross_section = float(search_rslt_[u'cross_section'])
                 frac_neg_wgts = float(search_rslt_[u'fraction_negative_weight'])
             else:
@@ -59,7 +59,7 @@ def main():
                     cross_section = float(twiki_request['generator_parameters'][-1][u'cross_section'])
                     frac_neg_wgts = float(twiki_request['generator_parameters'][-1][u'negative_weights_fraction'])
                 except:
-                    print twiki_request['generator_parameters']
+                    logger.error(twiki_request['generator_parameters'])
             target_num_events = (1500000)*(cross_section) / ((1- 2*max(0, frac_neg_wgts))**2) 
             logger.info('Inserting %s (%s) %s %s %s', twiki_request['dataset_name'], twiki_request['prepid'], cross_section, frac_neg_wgts, target_num_events)
             c.execute('INSERT OR REPLACE INTO twiki_samples VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
