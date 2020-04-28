@@ -17,44 +17,58 @@ logging.basicConfig(format='[%(asctime)s][%(levelname)s] %(message)s', level=log
 logger = logging.getLogger()
 
 def create_table():
+    """
+    Create the twiki table
+    """
     conn = sqlite3.connect('twiki.db')
-    c = conn.cursor()
+    cursor = conn.cursor()
     # Create table if it does not exist
-    c.execute('''CREATE TABLE IF NOT EXISTS twiki_samples
-                 (prepid text NOT NULL,
-                  dataset text NOT NULL,
-                  extension text,
-                  total_events integer NOT NULL,
-                  campaign text NOT NULL,
-                  resp_group text NOT NULL,
-                  cross_section float NOT NULL,
-                  fraction_negative_weight float NOT NULL,
-                  target_num_events real NOT NULL   )''')
+    cursor.execute('''CREATE TABLE IF NOT EXISTS twiki_samples
+                  (prepid text NOT NULL,
+                   dataset text NOT NULL,
+                   extension text,
+                   total_events integer NOT NULL,
+                   campaign text NOT NULL,
+                   resp_group text NOT NULL,
+                   cross_section float NOT NULL,
+                   fraction_negative_weight float NOT NULL,
+                   target_num_events real NOT NULL   )''')
 
     # Clear the table
-    c.execute('DELETE FROM `twiki_samples`')
+    cursor.execute('DELETE FROM `twiki_samples`')
     conn.commit()
     conn.close()
 
 def insert_update(twiki_request, campaign, cross_section, frac_neg_wgts, target_num_events):
+    """
+    Fill the twiki table
+    """
     conn = sqlite3.connect('twiki.db')
-    c = conn.cursor()
-    logger.info('Inserting %s (%s) %s %s %s', twiki_request['dataset_name'], twiki_request['prepid'], cross_section, frac_neg_wgts, target_num_events)
-    c.execute('INSERT INTO twiki_samples VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-              [twiki_request['prepid'],
-               twiki_request['dataset_name'],
-               twiki_request['extension'],
-               twiki_request['total_events'],
-               campaign,
-               twiki_request['prepid'].split('-')[0],
-               cross_section,
-               frac_neg_wgts,
-               target_num_events])
+    cursor = conn.cursor()
+    logger.info('Inserting %s (%s) %s %s %s',
+                twiki_request['dataset_name'],
+                twiki_request['prepid'],
+                cross_section,
+                frac_neg_wgts,
+                target_num_events)
+    cursor.execute('INSERT INTO twiki_samples VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                   [twiki_request['prepid'],
+                    twiki_request['dataset_name'],
+                    twiki_request['extension'],
+                    twiki_request['total_events'],
+                    campaign,
+                    twiki_request['prepid'].split('-')[0],
+                    cross_section,
+                    frac_neg_wgts,
+                    target_num_events])
 
     conn.commit()
     conn.close()
 
 def operations():
+    """
+    Taking care of finding the missing samples by comparing ul16 and ul18 with ul17
+    """
     query_ul18 = 'member_of_campaign=RunIISummer19UL18MiniAOD'
     query_ul16 = 'member_of_campaign=RunIISummer19UL16MiniAOD'
     query_ul17 = 'member_of_campaign=RunIISummer19UL17MiniAOD'
@@ -69,14 +83,10 @@ def operations():
 
     # Get all needed requests
     total_events_threshold = 0#20000000
+    missing_ul16_and_ul18 = missing_ul16.union(missing_ul18)
     for twiki_request in requests_ul17:
         if twiki_request['total_events'] > total_events_threshold:
-            campaign = 'RunIISummer19UL17'
-            if twiki_request['dataset_name'] in missing_ul18:
-                campaign = 'RunIISummer19UL18'
-            if twiki_request['dataset_name'] in missing_ul16:
-                campaign = 'RunIISummer19UL16'
-            if campaign == 'RunIISummer19UL17':
+            if twiki_request['dataset_name'] not in missing_ul16_and_ul18:
                 continue
             #Getting the cross_section value from xsdb
             query = {'DAS': twiki_request['dataset_name']}
@@ -90,19 +100,33 @@ def operations():
                 frac_neg_wgts = float(search_rslt_[u'fraction_negative_weight'])
             else:
                 try:
-                    cross_section = float(twiki_request['generator_parameters'][-1][u'cross_section'])
-                    frac_neg_wgts = float(twiki_request['generator_parameters'][-1][u'negative_weights_fraction'])
-                except:
+                    cross_section = float(
+                        twiki_request['generator_parameters'][-1][u'cross_section']
+                    )
+                    frac_neg_wgts = float(
+                        twiki_request['generator_parameters'][-1][u'negative_weights_fraction']
+                    )
+                except Exception as ex:
+                    logger.error(ex)
                     logger.error(twiki_request['generator_parameters'])
+
             if frac_neg_wgts != 0.5:
                 target_num_events = (1500000)*(cross_section) / ((1- 2*max(0, frac_neg_wgts))**2)
             if twiki_request['dataset_name'] in missing_ul18:
                 campaign = 'RunIISummer19UL18'
-                insert_update(twiki_request, campaign, cross_section, frac_neg_wgts, target_num_events)
+                insert_update(twiki_request,
+                              campaign,
+                              cross_section,
+                              frac_neg_wgts,
+                              target_num_events)
 
             if twiki_request['dataset_name'] in missing_ul16:
                 campaign = 'RunIISummer19UL16'
-                insert_update(twiki_request, campaign, cross_section, frac_neg_wgts, target_num_events)
+                insert_update(twiki_request,
+                              campaign,
+                              cross_section,
+                              frac_neg_wgts,
+                              target_num_events)
 
 if __name__ == '__main__':
     create_table()

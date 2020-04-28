@@ -282,6 +282,9 @@ def campaign_group_page(campaign_group=None, pwg=None):
 
 @app.route('/missing_page/<string:campaign_group>')
 def missing_page(campaign_group=None):
+    """
+    Missing samples incorporating twiki 
+    """
     conn = sqlite3.connect('twiki.db')
     cursor = conn.cursor()
     sql_args = [campaign_group]
