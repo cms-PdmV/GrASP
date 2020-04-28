@@ -281,7 +281,7 @@ def campaign_group_page(campaign_group=None, pwg=None):
                            user_info=user_info)
 
 @app.route('/missing_page/<string:campaign_group>')
-def missing_page(campaign_group=None, pwg=None):
+def missing_page(campaign_group=None):
     conn = sqlite3.connect('twiki.db')
     cursor = conn.cursor()
     sql_args = [campaign_group]
@@ -296,10 +296,6 @@ def missing_page(campaign_group=None, pwg=None):
                           target_num_events
                    FROM twiki_samples
                    WHERE campaign = ?'''
-
-    if pwg and pwg in all_pwgs:
-        sql_query += ' AND interested_pwgs LIKE ?'
-        sql_args.append('%%%s%%' % (pwg))
 
     rows = cursor.execute(sql_query, sql_args)
     rows = [(get_short_name(r[1]),  # 0 Short name
@@ -324,7 +320,6 @@ def missing_page(campaign_group=None, pwg=None):
                            campaign_group=campaign_group,
                            table_rows=rows,
                            pwgs=all_pwgs,
-                           pwg=pwg,
                            user_info=user_info)
 
 
