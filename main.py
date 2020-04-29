@@ -280,6 +280,51 @@ def campaign_group_page(campaign_group=None, pwg=None):
                            pwg=pwg,
                            user_info=user_info)
 
+@app.route('/missing_page/<string:campaign_group>')
+def missing_page(campaign_group=None):
+    """
+    Missing samples incorporating twiki
+    """
+    conn = sqlite3.connect('twiki.db')
+    cursor = conn.cursor()
+    sql_args = [campaign_group]
+    sql_query = '''SELECT 1,
+                          dataset,
+                          ifnull(extension, ""),
+                          total_events,
+                          campaign,
+                          resp_group,
+                          cross_section,
+                          fraction_negative_weight,
+                          target_num_events
+                   FROM twiki_samples
+                   WHERE campaign = ?'''
+
+    rows = cursor.execute(sql_query, sql_args)
+    rows = [(get_short_name(r[1]),  # 0 Short name
+             r[1],  # 1 Dataset
+             r[2],  # 2 MiniAOD request
+             r[3],  # 3 total events
+             r[4],  # 4 campaign
+             r[5],  # 5 respective group
+             r[6],  # 6 cross section
+             r[7],  # 7 frac neg wgts
+             r[8],  # 7 target num events
+             [x for x in r[5].split(',') if x],  # 17 Interested pwgs
+            ) for r in rows]
+    rows = sort_rows(rows, 5)
+    rows = add_counters(rows)
+    aggregate_rows(rows, 5)
+    data_conn = sqlite3.connect('data.db')
+    data_cursor = data_conn.cursor()
+    user_info = get_user_info(data_cursor)
+    conn.close()
+    return render_template('missing_page.html',
+                           campaign_group=campaign_group,
+                           table_rows=rows,
+                           pwgs=all_pwgs,
+                           user_info=user_info)
+
 
 @app.route('/update', methods=['POST'])
 def update():
