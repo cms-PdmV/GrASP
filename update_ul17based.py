@@ -44,7 +44,7 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS missing_ul
                   root_request text NOT NULL,
                   chain text NOT NULL,  
                   missing_campaign text NOT NULL,
-                  resp_group text)''')
+                  resp_group text NOT NULL)''')
 conn.commit()
 
 for pwg in pwgs:
@@ -80,12 +80,16 @@ for pwg in pwgs:
 
         if  not present_ul18:
 
+            chained_request_id = request_ul17['member_of_chain'][0]
+            chained_request = mcm.get('chained_requests', query='prepid=%s' %chained_request_id)
+            root_id = chained_request[0]['chain'][0]
+
             cursor.execute('INSERT INTO missing_ul VALUES (?, ?, ?, ?, ?, ?, ?)',
                       [request_ul17['prepid']+'ul18',
                        request_ul17['dataset_name'],
                        request_ul17['total_events'],
-                       request_ul17['prepid'],#should be chain
-                       request_ul17['prepid'], #should be root request
+                       chained_request_id,#should be chain
+                       root_id, #should be root request
                        'RunIISummer19UL18',
                        text_pwg])
             
@@ -108,12 +112,16 @@ for pwg in pwgs:
             print ' ' 
             print 'Not present in the system - UL16'
 
+            chained_request_id = request_ul17['member_of_chain'][0]
+            chained_request = mcm.get('chained_requests', query='prepid=%s' %chained_request_id)
+            root_id = chained_request[0]['chain'][0]
+
             cursor.execute('INSERT INTO missing_ul VALUES (?, ?, ?, ?, ?, ?, ?)',
                       [request_ul17['prepid']+'ul16',
                        request_ul17['dataset_name'],
                        request_ul17['total_events'],
-                       request_ul17['prepid'],  #should be chain   
-                       request_ul17['prepid'],  #should be root request 
+                       chained_request_id,#should be chain                                                                                         
+                       root_id, #should be root request 
                        'RunIISummer19UL16',
                        text_pwg])
 
