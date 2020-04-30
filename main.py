@@ -16,7 +16,6 @@ app = Flask(__name__,
 api = Api(app)
 all_pwgs = ['B2G',
             'BPH',
-            'BRI',
             'BTV',
             'EGM',
             'EXO',

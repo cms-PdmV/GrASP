@@ -56,7 +56,7 @@
             <!-- Dataset name -->
             {% if row[1][1] > 0 %}
             <td rowspan={{row[1][1]}}>
-                <a target="_blank" href="https://cms-pdmv.cern.ch/mcm/requests?member_of_campaign={{campaign}}&dataset_name={{row[1][0]}}{% if pwg %}&interested_pwg={{pwg}}{% endif %}" title="Requests in McM with dataset name {{row[1][0]}} in campaign {{campaign}}">{{row[1][0]}}</a>
+                <a target="_blank" href="https://cms-pdmv.cern.ch/mcm/requests?member_of_campaign={{campaign_group}}*&dataset_name={{row[1][0]}}{% if pwg %}&interested_pwg={{pwg}}{% endif %}" title="Requests in McM with dataset name {{row[1][0]}} in campaign {{campaign}}">{{row[1][0]}}</a>
             </td>
             {% endif %}
             <!-- Root request name -->

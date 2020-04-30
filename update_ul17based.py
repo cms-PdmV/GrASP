@@ -6,8 +6,9 @@ import sys
 #pylint: disable=wrong-import-position,import-error
 sys.path.append('/afs/cern.ch/cms/PPD/PdmV/tools/McM/')
 from rest import McM
-#pylint: enable=wrong-import-position,import-error
+from update_data import *
 
+#pylint: enable=wrong-import-position,import-error
 
 # Logger
 logging.basicConfig(format='[%(asctime)s][%(levelname)s] %(message)s', level=logging.INFO)
@@ -16,7 +17,7 @@ logger = logging.getLogger()
 # McM instance
 mcm = McM(dev=False, cookie='cookie.txt')
 
-pwgs = ["B2G", "BPH", "BRI", "BTV", "EGM", "EXO", "FSQ", "HCA", "HGC",
+pwgs = ["B2G", "BPH", "BTV", "EGM", "EXO", "FSQ", "HCA", "HGC",
         "HIG", "HIN", "JME", "L1T", "LUM", "MUO", "PPS", "SMP", "SUS",
         "TAU", "TOP", "TRK", "TSG"]
 
@@ -32,6 +33,20 @@ if requests_ul18 is None:
 if requests_ul16 is None:
     requests_ul16 = []
 
+conn = sqlite3.connect('data.db')
+cursor = conn.cursor()
+# Create table
+#PRIMARY KEY
+cursor.execute('''CREATE TABLE IF NOT EXISTS missing_ul
+                  (prepid text NOT NULL, 
+                  dataset text NOT NULL,
+                  total_events integer NOT NULL,
+                  root_request text NOT NULL,
+                  chain text NOT NULL,  
+                  missing_campaign text NOT NULL,
+                  resp_group text)''')
+conn.commit()
+
 for pwg in pwgs:
     query_ul17 = 'prepid=%s*&member_of_campaign=RunIISummer19UL17MiniAOD' % (pwg)
     requests_ul17 = mcm.get('requests', query=query_ul17)
@@ -42,6 +57,16 @@ for pwg in pwgs:
         interested_pwgs = request_ul17['interested_pwg']
         dataset_name = request_ul17['dataset_name']
 
+        present_ul18 = False
+        present_ul16 = False
+
+        text_pwg=''
+
+        if request_ul17['interested_pwg']:                                                           
+            text_pwg = ','.join(request_ul17['interested_pwg'])                                      
+        else:                                                                                        
+            text_pwg = request_ul17['prepid'].split('-')[0] 
+
         for request_ul18 in requests_ul18:
             if request_ul18['dataset_name'] == dataset_name:
                 request_ul18['interested_pwg'] = interested_pwgs
@@ -51,6 +76,22 @@ for pwg in pwgs:
                 update_response = mcm.update('requests', request_ul18)
                 logger.info('Update response (UL18): %s', update_response)
 
+                present_ul18 = True
+
+        if  not present_ul18:
+
+            cursor.execute('INSERT INTO missing_ul VALUES (?, ?, ?, ?, ?, ?, ?)',
+                      [request_ul17['prepid']+'ul18',
+                       request_ul17['dataset_name'],
+                       request_ul17['total_events'],
+                       request_ul17['prepid'],#should be chain
+                       request_ul17['prepid'], #should be root request
+                       'RunIISummer19UL18',
+                       text_pwg])
+            
+            print ' '
+            print 'Not present in the system - UL18'
+            
         for request_ul16 in requests_ul16:
             if request_ul16['dataset_name'] == dataset_name:
                 request_ul16['interested_pwgs'] = interested_pwgs
@@ -59,3 +100,22 @@ for pwg in pwgs:
                             interested_pwgs)
                 update_response = mcm.update('requests', request_ul16)
                 logger.info('Update response (UL16): %s', update_response)
+        
+                present_ul16 = True
+
+        if not present_ul16:
+
+            print ' ' 
+            print 'Not present in the system - UL16'
+
+            cursor.execute('INSERT INTO missing_ul VALUES (?, ?, ?, ?, ?, ?, ?)',
+                      [request_ul17['prepid']+'ul16',
+                       request_ul17['dataset_name'],
+                       request_ul17['total_events'],
+                       request_ul17['prepid'],  #should be chain   
+                       request_ul17['prepid'],  #should be root request 
+                       'RunIISummer19UL16',
+                       text_pwg])
+
+conn.commit()
+conn.close()
