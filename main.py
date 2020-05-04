@@ -16,7 +16,6 @@ app = Flask(__name__,
 api = Api(app)
 all_pwgs = ['B2G',
             'BPH',
-            'BRI',
             'BTV',
             'EGM',
             'EXO',
@@ -242,8 +241,18 @@ def campaign_group_page(campaign_group=None, pwg=None):
                    FROM samples
                    WHERE campaign_group = ?'''
 
+    sql_query_ul = '''SELECT dataset,
+                   total_events,
+                   chain,
+                   missing_campaign,
+                   resp_group,
+                   root_request
+                   FROM missing_ul
+                   WHERE missing_campaign = ?'''
+
     if pwg and pwg in all_pwgs:
         sql_query += ' AND interested_pwgs LIKE ?'
+        sql_query_ul += ' AND resp_group LIKE ?'
         sql_args.append('%%%s%%' % (pwg))
 
     rows = cursor.execute(sql_query, sql_args)
@@ -268,14 +277,33 @@ def campaign_group_page(campaign_group=None, pwg=None):
              r[18]   # 18 notes
             ) for r in rows]
 
+    rows_ul = cursor.execute(sql_query_ul, sql_args)
+    rows_ul = [(get_short_name(r[0]), # 0 Short name
+                r[0], # 1 Dataset
+                r[1], # 2 Total events
+                r[3], # 3 Missing in campaign
+                r[2], # 4 Chain
+                r[5], # 5 Root request
+                split_chained_request_name(r[2]), # 6 Short chained request prepid
+                r[4], # 7 Interested PWGS
+                'Not in the system yet', # 8 A print out, if needed
+                [x for x in r[4].split(',') if x], # 9 Split interested pwgs
+               ) for r in rows_ul]
+
     rows = sort_rows(rows, 5)
     rows = add_counters(rows)
     aggregate_rows(rows, 5)
+
+    rows_ul = sort_rows(rows_ul, 5)
+    rows_ul = add_counters(rows_ul)
+    aggregate_rows(rows_ul, 5)
+
     user_info = get_user_info(cursor)
     conn.close()
     return render_template('campaign_group.html',
                            campaign_group=campaign_group,
                            table_rows=rows,
+                           table_ul_rows=rows_ul,
                            pwgs=all_pwgs,
                            pwg=pwg,
                            user_info=user_info)
