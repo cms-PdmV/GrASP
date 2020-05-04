@@ -278,17 +278,17 @@ def campaign_group_page(campaign_group=None, pwg=None):
             ) for r in rows]
 
     rows_ul = cursor.execute(sql_query_ul, sql_args)
-    rows_ul = [(get_short_name(r[0]),  # 0 Short name  
+    rows_ul = [(get_short_name(r[0]), # 0 Short name
                 r[0], # 1 Dataset
                 r[1], # 2 Total events
                 r[3], # 3 Missing in campaign
                 r[2], # 4 Chain
                 r[5], # 5 Root request
-                split_chained_request_name(r[2]),  # 6 Short chained request prepid 
+                split_chained_request_name(r[2]), # 6 Short chained request prepid
                 r[4], # 7 Interested PWGS
                 'Not in the system yet', # 8 A print out, if needed
-                [x for x in r[4].split(',') if x],  # 9 Split interested pwgs  
-                ) for r in rows_ul]
+                [x for x in r[4].split(',') if x], # 9 Split interested pwgs
+               ) for r in rows_ul]
 
     rows = sort_rows(rows, 5)
     rows = add_counters(rows)
