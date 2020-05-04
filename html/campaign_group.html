@@ -134,11 +134,11 @@
       </table>
     </div>
     <div style="text-align: center; margin: 20px;">
-        <b>Missing samples in the system</b>
+       <b>Missing samples in the system</b>
     </div>
     <div>
       <table>
-	<tr>
+        <tr>
           <th>Short name</th>
           <th>Dataset name</th>
 	  <th>Status</th>
@@ -146,7 +146,7 @@
           <th>Chained request</th>
           <th>Interested PWGs</th>
         </tr>
-	{% for row in table_ul_rows %}
+        {% for row in table_ul_rows %}
         <tr>
           <!-- Short name -->
           {% if row[0][1] > 0 %}
@@ -161,28 +161,29 @@
           </td>
           {% endif %}
 	  <!-- Status -->
-	  <td>
-	    Not in the system yet
-	  </td>
-	  <!-- Root request in UL17 -->
-	  {% if row[3][1] > 0 %}
-	  <td rowspan={{row[3][1]}}>
+          <td>
+           Not in the system yet
+          </td>
+          <!-- Root request in UL17 -->
+          {% if row[3][1] > 0 %}
+          <td rowspan={{row[3][1]}}>
             <a target="_blank" href="https://cms-pdmv.cern.ch/mcm/requests?prepid={{row[3][0]}}" title="Open {{row[3][0]}} in McM">{{row[3][0]}}</a><br>
-	  </td>
+          </td>
           {% endif %}
-	  <!-- Chained request -->
+          <!-- Chained request -->
           {% if row[4][1] > 0 %}
           <td rowspan={{row[4][1]}}>
-            <a target="_blank" href="https://cms-pdmv.cern.ch/mcm/chained_requests?prepid={{row[4][0]}}" title="Open {{row[4][0]}} in McM">{{row[6][0]}}</a>
+           <a target="_blank" href="https://cms-pdmv.cern.ch/mcm/chained_requests?prepid={{row[4][0]}}" title="Open {{row[4][0]}} in McM">{{row[6][0]}}</a>
           </td>
           {% endif %}
           <!-- Interested pwgs -->
           {% if row[7][1] > 0 %}
-	  <td>
-	    {{row[7][0]}}
+          <td>
+            {{row[7][0]}}
           </td>
-	  {% endif %}
-      </table>
-    </div>
+          {% endif %}
+          {% endfor %}   
+        </table>
+     </div>
   </body>
 </html>
