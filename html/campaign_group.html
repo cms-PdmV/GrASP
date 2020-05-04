@@ -134,7 +134,7 @@
       </table>
     </div>
     <div style="text-align: center; margin: 20px;">
-       <b>Missing samples in the system</b>
+       <b>Missing samples: present in RunIISummer19UL17 but not in {{campaign_group}}</b>
     </div>
     <div>
       <table>
@@ -142,6 +142,7 @@
           <th>Short name</th>
           <th>Dataset name</th>
 	  <th>Status</th>
+	  <th>Number of events</th>
           <th>Root request in UL17</th>
           <th>Chained request</th>
           <th>Interested PWGs</th>
@@ -164,10 +165,14 @@
           <td>
            Not in the system yet
           </td>
+          <!-- Number of events -->
+          <td>
+            {{row[3][0]}}
+          </td>
           <!-- Root request in UL17 -->
-          {% if row[3][1] > 0 %}
-          <td rowspan={{row[3][1]}}>
-            <a target="_blank" href="https://cms-pdmv.cern.ch/mcm/requests?prepid={{row[3][0]}}" title="Open {{row[3][0]}} in McM">{{row[3][0]}}</a><br>
+          {% if row[4][1] > 0 %}
+          <td rowspan={{row[4][1]}}>
+            <a target="_blank" href="https://cms-pdmv.cern.ch/mcm/requests?prepid={{row[5][0]}}" title="Open {{row[5][0]}} in McM">{{row[5][0]}}</a><br>
           </td>
           {% endif %}
           <!-- Chained request -->
