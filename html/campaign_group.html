@@ -133,5 +133,56 @@
         {% endfor %}
       </table>
     </div>
+    <div style="text-align: center; margin: 20px;">
+        <b>Missing samples in the system</b>
+    </div>
+    <div>
+      <table>
+	<tr>
+          <th>Short name</th>
+          <th>Dataset name</th>
+	  <th>Status</th>
+          <th>Root request in UL17</th>
+          <th>Chained request</th>
+          <th>Interested PWGs</th>
+        </tr>
+	{% for row in table_ul_rows %}
+        <tr>
+          <!-- Short name -->
+          {% if row[0][1] > 0 %}
+          <td rowspan={{row[0][1]}} title="All samples with {{row[0][0]}}_* datasets" id="{{row[0][0]}}">
+            {{row[0][0]}}
+          </td>
+          {% endif %}
+          <!-- Dataset name -->
+          {% if row[1][1] > 0 %}
+          <td rowspan={{row[1][1]}}>
+            <a target="_blank" href="https://cms-pdmv.cern.ch/mcm/requests?member_of_campaign={{campaign_group}}&dataset_name={{row[1][0]}}{% if pwg %}&interested_pwg={{pwg}}{% endif %}" title="Requests in McM with dataset name {{row[1][0]}} in campaign {{campaign}}">{{row[1][0]}}</a>
+          </td>
+          {% endif %}
+	  <!-- Status -->
+	  <td>
+	    Not in the system yet
+	  </td>
+	  <!-- Root request in UL17 -->
+	  {% if row[3][1] > 0 %}
+	  <td rowspan={{row[3][1]}}>
+            <a target="_blank" href="https://cms-pdmv.cern.ch/mcm/requests?prepid={{row[3][0]}}" title="Open {{row[3][0]}} in McM">{{row[3][0]}}</a><br>
+	  </td>
+          {% endif %}
+	  <!-- Chained request -->
+          {% if row[4][1] > 0 %}
+          <td rowspan={{row[4][1]}}>
+            <a target="_blank" href="https://cms-pdmv.cern.ch/mcm/chained_requests?prepid={{row[4][0]}}" title="Open {{row[4][0]}} in McM">{{row[6][0]}}</a>
+          </td>
+          {% endif %}
+          <!-- Interested pwgs -->
+          {% if row[7][1] > 0 %}
+	  <td>
+	    {{row[7][0]}}
+          </td>
+	  {% endif %}
+      </table>
+    </div>
   </body>
 </html>
