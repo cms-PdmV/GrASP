@@ -134,7 +134,11 @@
       </table>
     </div>
     <div style="text-align: center; margin: 20px;">
+<<<<<<< HEAD
        <b>Missing samples: present in RunIISummer19UL17 but not in {{campaign_group}}</b>
+=======
+       <b>Missing samples in the system</b>
+>>>>>>> c8a77eebb5f5664a8959ce5b186295ce11fb2287
     </div>
     <div>
       <table>
@@ -142,7 +146,10 @@
           <th>Short name</th>
           <th>Dataset name</th>
 	  <th>Status</th>
+<<<<<<< HEAD
 	  <th>Number of events</th>
+=======
+>>>>>>> c8a77eebb5f5664a8959ce5b186295ce11fb2287
           <th>Root request in UL17</th>
           <th>Chained request</th>
           <th>Interested PWGs</th>
@@ -165,6 +172,7 @@
           <td>
            Not in the system yet
           </td>
+<<<<<<< HEAD
           <!-- Number of events -->
           <td>
             {{row[3][0]}}
@@ -173,6 +181,12 @@
           {% if row[4][1] > 0 %}
           <td rowspan={{row[4][1]}}>
             <a target="_blank" href="https://cms-pdmv.cern.ch/mcm/requests?prepid={{row[5][0]}}" title="Open {{row[5][0]}} in McM">{{row[5][0]}}</a><br>
+=======
+          <!-- Root request in UL17 -->
+          {% if row[3][1] > 0 %}
+          <td rowspan={{row[3][1]}}>
+            <a target="_blank" href="https://cms-pdmv.cern.ch/mcm/requests?prepid={{row[3][0]}}" title="Open {{row[3][0]}} in McM">{{row[3][0]}}</a><br>
+>>>>>>> c8a77eebb5f5664a8959ce5b186295ce11fb2287
           </td>
           {% endif %}
           <!-- Chained request -->
