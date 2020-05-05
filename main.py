@@ -282,9 +282,9 @@ def campaign_group_page(campaign_group=None, pwg=None):
                 r[0], # 1 Dataset
                 r[1], # 2 Total events
                 r[3], # 3 Missing in campaign
-                r[2], # 4 Chain
-                r[5], # 5 Root request
-                split_chained_request_name(r[2]), # 6 Short chained request prepid
+                r[2], # 4 Root request
+                r[5], # 5 Chain
+                split_chained_request_name(r[5]), # 6 Short chained request prepid
                 r[4], # 7 Interested PWGS
                 'Not in the system yet', # 8 A print out, if needed
                 [x for x in r[4].split(',') if x], # 9 Split interested pwgs
