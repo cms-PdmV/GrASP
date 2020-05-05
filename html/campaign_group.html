@@ -167,18 +167,17 @@
           </td>
           <!-- Number of events -->
           <td>
-            {{row[3][0]}}
+            {{row[2][0]}}
           </td>
           <!-- Root request in UL17 -->
           {% if row[4][1] > 0 %}
           <td rowspan={{row[4][1]}}>
-            <a target="_blank" href="https://cms-pdmv.cern.ch/mcm/requests?prepid={{row[5][0]}}" title="Open {{row[5][0]}} in McM">{{row[5][0]}}</a><br>
+            <a target="_blank" href="https://cms-pdmv.cern.ch/mcm/requests?prepid={{row[4][0]}}" title="Open {{row[4][0]}} in McM">{{row[4][0]}}</a><br>
           </td>
           {% endif %}
-          <!-- Chained request -->
-          {% if row[4][1] > 0 %}
-          <td rowspan={{row[4][1]}}>
-           <a target="_blank" href="https://cms-pdmv.cern.ch/mcm/chained_requests?prepid={{row[4][0]}}" title="Open {{row[4][0]}} in McM">{{row[6][0]}}</a>
+          <!-- Chained request in UL17 --> 
+          <td>
+            <a target="_blank" href="https://cms-pdmv.cern.ch/mcm/chained_requests?prepid={{row[5][0]}}" title="Open {{row[5][0]}} in McM">{{row[6][0]}}</a>
           </td>
           {% endif %}
           <!-- Interested pwgs -->
