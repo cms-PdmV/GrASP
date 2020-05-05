@@ -6,6 +6,7 @@ install:
   - pip install pylint
   - pip install flask
   - pip install flask_restful
+  - apt-get install libgnutls28-dev
   - pip install pycurl
 # command to run tests
 script:
