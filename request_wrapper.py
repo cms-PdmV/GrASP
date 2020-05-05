@@ -21,6 +21,11 @@ class RequestWrapper:
     c.setopt(pycurl.COOKIEFILE, os.path.expanduser("~/private/xsdbdev-cookie.txt"))
     c.setopt(pycurl.HTTPHEADER, ['Content-Type:application/json', 'Accept:application/json'])
     #c.setopt(pycurl.VERBOSE, 0)
+    def __init__(self):
+        """
+        Constructor
+        """
+
     def simple_search_to_dict(self, keyval_dict):
         """
         Returning the search result from XSDB as a json
