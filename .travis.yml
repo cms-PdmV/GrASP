@@ -2,10 +2,13 @@ language: python
 python:
   - "2.7"
 # command to install dependencies
+before_install:
+  - sudo apt-get install libgnutls28-dev
 install:
   - pip install pylint
   - pip install flask
   - pip install flask_restful
+  - pip install pycurl
 # command to run tests
 script:
   - pylint --rcfile=.pylintrc *.py

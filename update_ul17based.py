@@ -7,6 +7,7 @@ import sqlite3
 #pylint: disable=wrong-import-position,import-error
 sys.path.append('/afs/cern.ch/cms/PPD/PdmV/tools/McM/')
 from rest import McM
+#pylint: enable=wrong-import-position,import-error
 
 # Logger
 logging.basicConfig(format='[%(asctime)s][%(levelname)s] %(message)s', level=logging.INFO)

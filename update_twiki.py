@@ -4,8 +4,10 @@ Twiki module: Creates a database for missing samples(too be expanded and complet
 import sys
 import sqlite3
 import logging
+#pylint: disable=wrong-import-position,import-error
 sys.path.append('/afs/cern.ch/cms/PPD/PdmV/tools/McM/')
 from rest import McM
+#pylint: enable=wrong-import-position,import-error
 #XSDB wrapper
 from request_wrapper import RequestWrapper
 #XSDB pycurl requester instance

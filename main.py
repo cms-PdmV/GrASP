@@ -108,7 +108,7 @@ def split_chained_request_name(name):
     return '%s-...-%s' % (spl[0], spl[-1])
 
 
-#pylint: disable=too-many-branches
+#pylint: disable=too-many-branches,too-many-statements
 # It is ok to have many ifs in this function
 def get_short_name(name):
     """
@@ -171,7 +171,7 @@ def get_short_name(name):
         short_name = short_name.replace('ZW', 'VV', 1)
 
     return short_name
-#pylint: enable=too-many-branches
+#pylint: enable=too-many-branches,too-many-statements
 
 def get_user_role(username, cursor):
     """
@@ -296,7 +296,7 @@ def campaign_group_page(campaign_group=None, pwg=None):
 
     rows_ul = sort_rows(rows_ul, 5)
     rows_ul = add_counters(rows_ul)
-    aggregate_rows(rows_ul, 5)
+    aggregate_rows(rows_ul, 2)
 
     user_info = get_user_info(cursor)
     conn.close()
