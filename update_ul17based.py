@@ -22,15 +22,20 @@ pwgs = ["B2G", "BPH", "BTV", "EGM", "EXO", "FSQ", "HCA", "HGC",
 
 query_ul18 = 'member_of_campaign=RunIISummer19UL18MiniAOD'
 query_ul16 = 'member_of_campaign=RunIISummer19UL16MiniAOD'
+query_ul16apv = 'member_of_campaign=RunIISummer19UL16MiniAODAPV'
 
 requests_ul18 = mcm.get('requests', query=query_ul18)
 requests_ul16 = mcm.get('requests', query=query_ul16)
+requests_ul16apv = mcm.get('requests', query=query_ul16apv)
 
 if requests_ul18 is None:
     requests_ul18 = []
 
 if requests_ul16 is None:
     requests_ul16 = []
+
+if requests_ul16apv is None:
+    requests_ul16apv = []
 
 conn = sqlite3.connect('data.db')
 cursor = conn.cursor()
@@ -61,6 +66,7 @@ for pwg in pwgs:
 
         present_ul18 = False
         present_ul16 = False
+        present_ul16apv = False
 
         if request_ul17['interested_pwg']:
             text_pwg = ','.join(request_ul17['interested_pwg'])
@@ -89,8 +95,18 @@ for pwg in pwgs:
 
                 present_ul16 = True
 
+        for request_ul16apv in requests_ul16apv:
+            if request_ul16apv['dataset_name'] == dataset_name:
+                request_ul16apv['interested_pwgs'] = interested_pwgs
+                logger.info('Will update (UL16 APV) %s interested PWGs to %s',
+                            request_ul16apv['prepid'],
+                            interested_pwgs)
+                update_response = mcm.update('requests', request_ul16apv)
+                logger.info('Update response (UL16 APV): %s', update_response)
 
-        if not present_ul16 or not present_ul18:
+                present_ul16apv = True
+
+        if not present_ul16 or not present_ul18 or not present_ul16apv:
 
             chained_request_id = request_ul17['member_of_chain'][0]
             chained_request = mcm.get('chained_requests', query='prepid=%s' %chained_request_id)
@@ -123,6 +139,19 @@ for pwg in pwgs:
                             text_pwg])
 
             logger.info('Not present in the system - UL16')
+
+        if not present_ul16apv:
+
+            cursor.execute('INSERT INTO missing_ul VALUES (?, ?, ?, ?, ?, ?, ?)',
+                           [request_ul17['prepid'],
+                            request_ul17['dataset_name'],
+                            request_ul17['total_events'],
+                            chained_request_id,
+                            root_id,
+                            'RunIISummer19UL16APV',
+                            text_pwg])
+
+            logger.info('Not present in the system - UL16 APV')
 
 
 conn.commit()
