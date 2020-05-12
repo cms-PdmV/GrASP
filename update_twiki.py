@@ -84,7 +84,7 @@ def operations():
     missing_ul16 = ul17_dataset_names - ul16_dataset_names
 
     # Get all needed requests
-    total_events_threshold = 0#20000000
+    total_events_threshold = 20000000
     missing_ul16_and_ul18 = missing_ul16.union(missing_ul18)
     for twiki_request in requests_ul17:
         if twiki_request['total_events'] > total_events_threshold:
@@ -102,11 +102,15 @@ def operations():
                 frac_neg_wgts = float(search_rslt_[u'fraction_negative_weight'])
             else:
                 try:
+                    gen_request = mcm.get('requests',
+                                          query='dataset_name=%s&member_of_campaign=RunII*GEN*'
+                                          % (twiki_request['dataset_name']))
+                    gen_request = gen_request[-1]
                     cross_section = float(
-                        twiki_request['generator_parameters'][-1][u'cross_section']
+                        gen_request[u'generator_parameters'][0][u'cross_section']
                     )
                     frac_neg_wgts = float(
-                        twiki_request['generator_parameters'][-1][u'negative_weights_fraction']
+                        gen_request[u'generator_parameters'][0][u'negative_weights_fraction']
                     )
                 except Exception as ex:
                     logger.error(ex)
