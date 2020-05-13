@@ -342,7 +342,7 @@ def missing_page(campaign_group=None):
             ) for r in rows]
     rows = sort_rows(rows, 5)
     rows = add_counters(rows)
-    aggregate_rows(rows, 5)
+    #aggregate_rows(rows, 5)
     data_conn = sqlite3.connect('data.db')
     data_cursor = data_conn.cursor()
     user_info = get_user_info(data_cursor)
