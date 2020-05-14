@@ -13,6 +13,7 @@ from flask_restful import Api
 app = Flask(__name__,
             static_folder='./html/static',
             template_folder='./html')
+app.jinja_env.add_extension('jinja2.ext.do')
 api = Api(app)
 all_pwgs = ['B2G',
             'BPH',

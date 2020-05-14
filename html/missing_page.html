@@ -21,10 +21,12 @@
       <h5>PdmV missing Samples - {{ campaign_group }}</h5>
 
       <p style="margin: 8px;">
+      {% set unique_rows = [] %}
       {% for row in table_rows %}
-        {% if row[0][1] > 0%}
+        {% if( (row[0][1] > 0) and (row[0][0] not in unique_rows) ) %}
+          {% do unique_rows.append(row[0][0]) %}
           <a style="text-decoration: none; margin: 4px;" href="#{{row[0][0]}}">{{row[0][0]}}</a>
-        {% endif %}
+ 	{% endif %}
       {% endfor %}
       </p>
 
