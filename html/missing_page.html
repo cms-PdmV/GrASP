@@ -33,6 +33,8 @@
           <th class="th-sm">Dataset name</th>
           <th class="th-sm">Target number of events</th>
           <th class="th-sm">Cross section</th>
+          <th class="th-sm">Notes and comments from groups </th>
+
 	  </tr>
         </thead>
 	<tbody>
@@ -55,6 +57,12 @@
             <!-- Cross section -->
             <td>
                 {{row[6]}}
+            </td>
+            <!-- Notes and comments from various groups -->
+            <td>
+              <textarea style="width: 100%; margin-bottom: 8px;" title="Add whatever is relevant for the interested PWGs about the sample" name="notes">{{row[9]}}</textarea>
+              <button title="Freeze notes in text entry (they will be saved in the next cycle)" onclick="saveNotesMissing(this, '{{row[1]}}', '{{row[4]}}')">Save</button>
+              <button title="Clear notes in text entry" onclick="clearNotesMissing(this, '{{row[1]}}', '{{row[4]}}')">Clear</button>
             </td>
           </tr>
         {% endfor %}

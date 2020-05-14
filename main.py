@@ -324,7 +324,8 @@ def missing_page(campaign_group=None):
                           resp_group,
                           cross_section,
                           fraction_negative_weight,
-                          target_num_events
+                          target_num_events,
+                          notes
                    FROM twiki_samples
                    WHERE campaign = ?'''
 
@@ -338,6 +339,7 @@ def missing_page(campaign_group=None):
              r[6],  # 6 cross section
              r[7],  # 7 frac neg wgts
              r[8],  # 8 target num events
+             r[9],  # 9 notes
              [x for x in r[5].split(',') if x],  # 17 Interested pwgs
             ) for r in rows]
     rows = sort_rows(rows, 5)
@@ -352,6 +354,29 @@ def missing_page(campaign_group=None):
                            user_info=user_info,
                            short_names=short_names)
 
+@app.route('/missing_update', methods=['POST'])
+def missing_update():
+    """
+    Endpoint to update interested notes for missing samples of the twiki database
+    """
+    data = json.loads(request.data)
+    update_time = int(time.time())
+    logging.info(data)
+    #Updating notes for missing samples
+    missing_dataset_name = data['dataset_name']
+    missing_campaign = data['campaign']
+    twiki_conn = sqlite3.connect('twiki.db')
+    twiki_cursor = twiki_conn.cursor()
+    if 'missing_nts' in data:
+        notes = data['missing_nts'].strip()
+        logging.info(notes)
+        twiki_cursor.execute('''UPDATE twiki_samples
+                          SET notes = ?, updated = ?
+                          WHERE dataset = ? AND campaign = ?''', [notes, update_time, missing_dataset_name, missing_campaign])
+
+    twiki_conn.commit()
+    twiki_conn.close()
+    return ''
 
 @app.route('/update', methods=['POST'])
 def update():

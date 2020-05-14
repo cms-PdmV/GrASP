@@ -39,7 +39,9 @@ def create_table():
                    resp_group text NOT NULL,
                    cross_section float NOT NULL,
                    fraction_negative_weight float NOT NULL,
-                   target_num_events real NOT NULL   )''')
+                   target_num_events real NOT NULL,
+                   updated integer,
+                   notes text)''')
 
     # Clear the table
     cursor.execute('DELETE FROM `twiki_samples`')
@@ -58,7 +60,7 @@ def insert_update(twiki_request, campaign, cross_section, frac_neg_wgts, target_
                 cross_section,
                 frac_neg_wgts,
                 target_num_events)
-    cursor.execute('INSERT INTO twiki_samples VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    cursor.execute('INSERT INTO twiki_samples VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                    [twiki_request['prepid'],
                     twiki_request['dataset_name'],
                     twiki_request['extension'],
@@ -67,7 +69,9 @@ def insert_update(twiki_request, campaign, cross_section, frac_neg_wgts, target_
                     twiki_request['prepid'].split('-')[0],
                     cross_section,
                     frac_neg_wgts,
-                    target_num_events])
+                    target_num_events,
+                    0,
+                    'Please fill in with your comments'])
 
     conn.commit()
     conn.close()

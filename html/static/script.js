@@ -67,6 +67,39 @@ function saveNotes(element, uid) {
   })
 }
 
+function clearNotesMissing(element, dataset_name, campaign) {
+  $(element).parent().find('textarea').get(0).value = '';
+  let data = {"dataset_name": dataset_name, "campaign": campaign, "missing_nts": notes};
+  $.ajax({
+    type: "POST",
+    contentType: "application/json",
+    url: "/samples/missing_update",
+    data: JSON.stringify(data),
+  }).done(function (data) {
+    alert('Text reset in the database');
+  }).fail(function(data) {
+    alert('Not reset');
+  })
+}
+
+function saveNotesMissing(element, dataset_name, campaign) {
+  // Take the value of the text box
+  let notes = $(element).parent().find('textarea').get(0).value;
+  console.log(notes);
+  console.log($(element).parent().find('textarea').get(0));
+  let data = {"dataset_name": dataset_name, "campaign": campaign, "missing_nts": notes};
+  $.ajax({
+    type: "POST",
+    contentType: "application/json",
+    url: "/samples/missing_update",
+    data: JSON.stringify(data),
+  }).done(function (data) {
+    alert('Text saved in the database');
+  }).fail(function(data) {
+    alert('Error in saving');
+  })
+}
+
 $(document).ready(function() {
   let domain = document.location.origin;
   if (domain && domain.includes('dev')) {
