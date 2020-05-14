@@ -13,7 +13,6 @@ from flask_restful import Api
 app = Flask(__name__,
             static_folder='./html/static',
             template_folder='./html')
-app.jinja_env.add_extension('jinja2.ext.do')
 api = Api(app)
 all_pwgs = ['B2G',
             'BPH',
@@ -338,12 +337,11 @@ def missing_page(campaign_group=None):
              r[5],  # 5 respective group
              r[6],  # 6 cross section
              r[7],  # 7 frac neg wgts
-             r[8],  # 7 target num events
+             r[8],  # 8 target num events
              [x for x in r[5].split(',') if x],  # 17 Interested pwgs
             ) for r in rows]
     rows = sort_rows(rows, 5)
-    rows = add_counters(rows)
-    #aggregate_rows(rows, 5)
+    short_names = sorted(list(set([r[0] for r in rows])))
     data_conn = sqlite3.connect('data.db')
     data_cursor = data_conn.cursor()
     user_info = get_user_info(data_cursor)
@@ -351,8 +349,8 @@ def missing_page(campaign_group=None):
     return render_template('missing_page.html',
                            campaign_group=campaign_group,
                            table_rows=rows,
-                           pwgs=all_pwgs,
-                           user_info=user_info)
+                           user_info=user_info,
+                           short_names=short_names)
 
 
 @app.route('/update', methods=['POST'])

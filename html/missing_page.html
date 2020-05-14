@@ -21,12 +21,8 @@
       <h5>PdmV missing Samples - {{ campaign_group }}</h5>
 
       <p style="margin: 8px;">
-      {% set unique_rows = [] %}
-      {% for row in table_rows %}
-        {% if( (row[0][1] > 0) and (row[0][0] not in unique_rows) ) %}
-          {% do unique_rows.append(row[0][0]) %}
-          <a style="text-decoration: none; margin: 4px;" href="#{{row[0][0]}}">{{row[0][0]}}</a>
- 	{% endif %}
+      {% for name in short_names %}
+          <a style="text-decoration: none; margin: 4px;" href="#{{name}}">{{name}}</a>
       {% endfor %}
       </p>
 
@@ -43,31 +39,23 @@
         {% for row in table_rows %}
           <tr>
             <!-- Short name -->
-            {% if row[0][1] > 0 %}
-            <td rowspan={{row[0][1]}} title="All samples with {{row[0][0]}}_* datasets" id="{{row[0][0]}}">
-               <a href="#{{row[0][0]}}">{{row[0][0]}}</a>
+            <td title="All samples with {{row[0]}}_* datasets" id="{{row[0]}}">
+               <a href="#{{row[0]}}">{{row[0]}}</a>
             </td>
-            {% endif %}
             <!-- Dataset name -->
-            {% if row[1][1] > 0 %}
-            <td rowspan={{row[1][1]}}>
-                {{row[1][0]}}
+            <td>
+                {{row[1]}}
             </td>
-            {% endif %}
             <!-- Target number of events -->
-            {% if row[8][1] > 0 %}
-            <td rowspan={{row[8][1]}}>
-              {% if row[8][0] %}
-                  {{row[8][0]}}
+            <td>
+              {% if row[8] %}
+                  {{row[8]}}
               {% endif %}
             </td>
-            {% endif %}
             <!-- Cross section -->
-            {% if row[6][1] > 0 %}
-            <td rowspan={{row[6][1]}}>
-                {{row[6][0]}}
+            <td>
+                {{row[6]}}
             </td>
-            {% endif %}
           </tr>
         {% endfor %}
         <tfoot>
