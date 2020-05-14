@@ -72,4 +72,8 @@ $(document).ready(function() {
   if (domain && domain.includes('dev')) {
     $('body').addClass('dev-ribbon');
   }
+  $("#missingSampleTable").DataTable({
+                                      "processing": true});
+  $('.dataTables_length').addClass('bs-select');
+
 });
