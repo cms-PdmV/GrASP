@@ -50,19 +50,26 @@ function clearNotes(element, uid) {
 }
 
 function saveNotes(element, uid) {
-    // Take the value of the text box
-    let notes = $(element).parent().find('textarea').get(0).value;
-    console.log(notes);
-    console.log($(element).parent().find('textarea').get(0));
-    let data = {"uid": uid, "notes": notes};
-    $.ajax({
-        type: "POST",
-        contentType: "application/json",
-        url: "/samples/update",
-        data: JSON.stringify(data),
-    }).done(function (data) {
-        alert('Text saved in the database');
-    }).fail(function(data) {
-        alert('Error in saving');
-    })
+  // Take the value of the text box
+  let notes = $(element).parent().find('textarea').get(0).value;
+  console.log(notes);
+  console.log($(element).parent().find('textarea').get(0));
+  let data = {"uid": uid, "notes": notes};
+  $.ajax({
+    type: "POST",
+    contentType: "application/json",
+    url: "/samples/update",
+    data: JSON.stringify(data),
+  }).done(function (data) {
+    alert('Text saved in the database');
+  }).fail(function(data) {
+    alert('Error in saving');
+  })
 }
+
+$(document).ready(function() {
+  let domain = document.location.origin;
+  if (domain && domain.includes('dev')) {
+    $('body').addClass('dev-ribbon');
+  }
+});

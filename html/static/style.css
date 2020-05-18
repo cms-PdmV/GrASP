@@ -38,7 +38,7 @@ button {
   border: none;
 }
 
-body:after {
+body.dev-ribbon:after {
     content: "work in progress";
     position: fixed;
     width: 400px;
