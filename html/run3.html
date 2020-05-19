@@ -32,9 +32,9 @@
         {% endfor %}
 	<!-- Space for free text inclusion -->  
 	<tr>
-	  <td> <textarea style="width: 100%; margin-bottom: 8px;" title="Add an identifier for the sample, e.g. name" name="datasetname"> Add here needed sample </textarea> </td>
-	  <td> <textarea style="width: 100%; margin-bottom: 8px;" title="Add the wished number of events" name="numberofevents"> Add here the number of events </textarea> </td>
-	  <td> <textarea style="width: 100%; margin-bottom: 8px;" title="Add the interested PWGs; if many, add them separated by a comma" name="pwginterested">Adding manually</textarea> </td>
+	  <td> <textarea style="width: 100%; margin-bottom: 8px;" title="Add an identifier for the sample, e.g. name" onblur="if(this.value=='')this.value='Add an identifier for the sample, e.g. name'" name="datasetname" onFocus="this.value=''"> Add here needed sample </textarea> </td>
+	  <td> <textarea style="width: 100%; margin-bottom: 8px;" title="Add the wished number of events" name="numberofevents" onblur="if(this.value=='')this.value='Add the wished number of events'" onFocus="this.value=''"> Add here the number of events </textarea> </td>
+	  <td> <textarea style="width: 100%; margin-bottom: 8px;" title="Add the interested PWGs; if many, add them separated by a comma" onblur="if(this.value=='')this.value='Add the interested PWGs; if many, add them separated by a comma'" name="pwginterested" onFocus="this.value=''">Adding manually</textarea> </td>
 	</tr>
 	<p style="text-align:right;"> 
 	  <button title="Save the new lines in the database  in text entry" onclick="addSample(this)">Save in database and add a new line</button> &nbsp; &nbsp;
