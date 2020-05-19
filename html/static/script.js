@@ -106,7 +106,13 @@ $(document).ready(function() {
     $('body').addClass('dev-ribbon');
   }
   $("#missingSampleTable").DataTable({
-                                      "processing": true});
+                                      "processing": true,
+                                      "pageLength": 20,
+                                      dom: 'Bfrtip',
+                                      buttons: [
+                                        'copy', 'csv', 'excel', 'pdf', 'print'
+                                      ]
+                                  });
   $('.dataTables_length').addClass('bs-select');
 
 });

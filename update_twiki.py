@@ -82,7 +82,7 @@ def operations():
     """
     query_ul18 = 'member_of_campaign=RunIISummer19UL18MiniAOD'
     query_ul16 = 'member_of_campaign=RunIISummer19UL16MiniAOD'
-    query_ul17 = 'member_of_campaign=RunIISummer19UL17MiniAOD'
+    query_ul17 = 'member_of_campaign=RunIIFall18*MiniAOD'
     requests_ul17 = mcm.get('requests', query=query_ul17)
     requests_ul18 = mcm.get('requests', query=query_ul18)
     requests_ul16 = mcm.get('requests', query=query_ul16)
