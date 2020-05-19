@@ -112,7 +112,7 @@ def operations():
             else:
                 try:
                     gen_request = mcm.get('requests',
-                                          query='dataset_name=%s&member_of_campaign=RunII*GEN*'
+                                          query='dataset_name=%s&member_of_campaign=*LHE*'
                                           % (twiki_request['dataset_name']))
                     gen_request = gen_request[-1]
                     cross_section = float(
@@ -121,6 +121,7 @@ def operations():
                     frac_neg_wgts = float(
                         gen_request[u'generator_parameters'][0][u'negative_weights_fraction']
                     )
+                    logger.info(gen_request[u'member_of_campaign'])
                 except Exception as ex:
                     logger.error(ex)
                     logger.error(twiki_request['generator_parameters'])
