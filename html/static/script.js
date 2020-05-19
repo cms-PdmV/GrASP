@@ -81,11 +81,11 @@ function addSample(element) {
     console.log(numberevents);
     let interested_pwgs = $(element).parent().find('pwginterested').get(0).value;
     console.log(interested_pwgs);
-    let data = {"dataset": datasetname, "total_events": numberevents, "interested_pwgs": interested_pwgs};
+    let data = {"dataset": datasetname, "numberofevents": numberevents, "pwginterested": interested_pwgs};
     $.ajax({
 	type: "POST",
 	contentType: "application/json",
-	url: "/run3/update",
+	url: "/run3/add_run3",
 	data: JSON.stringify(data),
     }).done(function (data) {
 	alert('Text saved in the database');

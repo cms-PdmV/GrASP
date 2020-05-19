@@ -427,8 +427,8 @@ def update():
     conn.close()
     return ''
 
-@app.route('/add', methods=['POST'])
-def add():
+@app.route('/add_run3', methods=['POST'])
+def add_run3():
     """
     Endpoint to add a free text sample in run3 planning sheet
     """
@@ -446,7 +446,7 @@ def add():
     update_time = int(time.time())
 
     dataset_name = data['datasetname']
-    number_events = data['number_events']
+    number_events = data['numberofevents']
 
     pwg_list = []
 
@@ -466,7 +466,7 @@ def add():
 
     #pwg checks: table is updated if there is at least 1 valid pwg
     if 'pwg' in data:
-        for pwg_split in data['pwg'].split(','):
+        for pwg_split in data['pwginterested'].split(','):
             pwg = pwg_split.upper()
             if pwg not in all_pwgs:
                 return 'Bad PWG %s' % (pwg), 400
