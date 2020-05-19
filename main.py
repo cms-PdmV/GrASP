@@ -427,6 +427,67 @@ def update():
     conn.close()
     return ''
 
+@app.route('/add', methods=['POST'])
+def add():
+    """
+    Endpoint to add a free text sample in run3 planning sheet
+    """
+    conn = sqlite3.connect('run3.db')
+    cursor = conn.cursor()
+    user_info = get_user_info(cursor)
+    if user_info['role'] == 'not a user':
+        logging.error('Could not find user %s, not doing anything', user_info)
+        return 'You are not a user of McM', 403
+
+    username = user_info['login']
+    role = user_info['role']
+    data = json.loads(request.data)
+
+    update_time = int(time.time())
+
+    dataset_name = data['datasetname']
+    number_events = data['number_events']
+
+    pwg_list = []
+
+    sql_query = '''SELECT dataset,
+                   FROM run3_samples
+                   WHERE  = ?''', [dataset_name]
+
+    rows = cursor.execute(sql_query)
+
+    #is the sample already in the list?
+    if rows is not None:
+        return ''
+
+    #input checks
+    if dataset_name is None or not(is_integer(number_events)):
+        return ''
+
+    #pwg checks: table is updated if there is at least 1 valid pwg
+    if 'pwg' in data:
+        for pwg_split in data['pwg'].split(','):
+            pwg = pwg_split.upper()
+            if pwg not in all_pwgs:
+                return 'Bad PWG %s' % (pwg), 400
+
+            else:
+                pwg_list.append(pwg)
+
+    if pwg_list is None:
+        #Nothing is added
+        return ''
+    else:
+        #Something is added
+        pwgs = ','.join(sorted(pwg_list))
+
+        cursor.execute('''INSERT INTO run3_samples
+        VALUES (? ? ? ?)''', ['fake_prep_id',dataset_name, number_events, pwgs])
+    
+    conn.commit()
+    conn.close()
+    return ''
+
 
 @app.route('/history')
 def history():

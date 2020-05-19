@@ -73,3 +73,23 @@ $(document).ready(function() {
     $('body').addClass('dev-ribbon');
   }
 });
+
+function addSample(element) {
+    let datasetname = $(element).parent().find('datasetname').get(0).value;
+    console.log(datasetname);
+    let numberevents = $(element).parent().find('numberofevents').get(0).value;
+    console.log(numberevents);
+    let interested_pwgs = $(element).parent().find('pwginterested').get(0).value;
+    console.log(interested_pwgs);
+    let data = {"dataset": datasetname, "total_events": numberevents, "interested_pwgs": interested_pwgs};
+    $.ajax({
+	type: "POST",
+	contentType: "application/json",
+	url: "/run3/update",
+	data: JSON.stringify(data),
+    }).done(function (data) {
+	alert('Text saved in the database');
+    }).fail(function(data) {
+	alert('Error in saving');
+    })
+}
