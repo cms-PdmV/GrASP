@@ -439,11 +439,7 @@ def add_run3():
         logging.error('Could not find user %s, not doing anything', user_info)
         return 'You are not a user of McM', 403
 
-    username = user_info['login']
-    role = user_info['role']
     data = json.loads(request.data)
-
-    update_time = int(time.time())
 
     dataset_name = data['datasetname']
     number_events = data['numberofevents']
@@ -461,7 +457,7 @@ def add_run3():
         return ''
 
     #input checks
-    if dataset_name is None or not(is_integer(number_events)):
+    if dataset_name is None or not number_events.is_integer():
         return ''
 
     #pwg checks: table is updated if there is at least 1 valid pwg
@@ -482,8 +478,8 @@ def add_run3():
         pwgs = ','.join(sorted(pwg_list))
 
         cursor.execute('''INSERT INTO run3_samples
-        VALUES (? ? ? ?)''', ['fake_prep_id',dataset_name, number_events, pwgs])
-    
+        VALUES (? ? ? ?)''', ['fake_prep_id', dataset_name, number_events, pwgs])
+
     conn.commit()
     conn.close()
     return ''
