@@ -75,21 +75,23 @@ $(document).ready(function() {
 });
 
 function addSample(element) {
-    let datasetname = $(element).parent().find('datasetname').get(0).value;
+    console.log($(element).parent().parent().parent());
+    let datasetname = $(element).parent().parent().parent().find('#datasetnamerun3').get(0).value;
     console.log(datasetname);
-    let numberevents = $(element).parent().find('numberofevents').get(0).value;
+    let numberevents = $(element).parent().parent().parent().find('#numberofevents').get(0).value;
     console.log(numberevents);
-    let interested_pwgs = $(element).parent().find('pwginterested').get(0).value;
+    let interested_pwgs = $(element).parent().parent().parent().find('#pwginterested').get(0).value;
     console.log(interested_pwgs);
-    let data = {"dataset": datasetname, "numberofevents": numberevents, "pwginterested": interested_pwgs};
+    let data = {"datasetname": datasetname, "numberofevents": numberevents, "pwginterested": interested_pwgs};
     $.ajax({
-	type: "POST",
-	contentType: "application/json",
-	url: "/run3/add_run3",
-	data: JSON.stringify(data),
+        type: "POST",
+        contentType: "application/json",
+        url: "/add_run3",
+        data: JSON.stringify(data),
     }).done(function (data) {
-	alert('Text saved in the database');
+        alert('Text saved in the database');
     }).fail(function(data) {
-	alert('Error in saving');
+        alert('Error in saving');
     })
 }
+

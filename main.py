@@ -145,8 +145,10 @@ def get_short_name(name):
         short_name = 'bbbar4l'
     elif short_name == 'ST':
         short_name = 'SingleTop'
-    elif short_name == 'QCD' and 'Flat' in name:
+    elif short_name == 'QCD' and 'Flat' in name and not 'herwig' in name:
         short_name = 'Flat QCD P8'
+    elif short_name == 'QCD' and 'Flat' in name and 'herwig' in name:
+        short_name = 'Flat QCD H7'
     elif short_name == 'QCD' and '_Pt_' in name:
         short_name = 'QCD P8'
 
@@ -446,23 +448,23 @@ def add_run3():
 
     pwg_list = []
 
-    sql_query = '''SELECT dataset,
+    sql_query = '''SELECT dataset
                    FROM run3_samples
-                   WHERE  = ?''', [dataset_name]
+                   WHERE  = ?'''
 
-    rows = cursor.execute(sql_query)
+    rows = cursor.execute(sql_query, [dataset_name])
 
     #is the sample already in the list?
     if rows is not None:
         return ''
 
     #input checks
-    if dataset_name is None or not number_events.is_integer():
+    if dataset_name is None or not number_events.replace(' ', '').isdigit():
         return ''
 
     #pwg checks: table is updated if there is at least 1 valid pwg
-    if 'pwg' in data:
-        for pwg_split in data['pwginterested'].split(','):
+    if 'pwginterested' in data:
+        for pwg_split in data['pwginterested'].replace(' ', '').split(','):
             pwg = pwg_split.upper()
             if pwg not in all_pwgs:
                 return 'Bad PWG %s' % (pwg), 400
@@ -477,8 +479,8 @@ def add_run3():
         #Something is added
         pwgs = ','.join(sorted(pwg_list))
 
-        cursor.execute('''INSERT INTO run3_samples
-        VALUES (? ? ? ?)''', ['fake_prep_id', dataset_name, number_events, pwgs])
+        cursor.execute('''INSERT INTO run3_samples VALUES (NULL, ?, ?, ?)''',
+                       [dataset_name, number_events, pwgs])
 
     conn.commit()
     conn.close()
