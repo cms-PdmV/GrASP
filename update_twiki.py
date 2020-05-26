@@ -82,7 +82,7 @@ def operations():
     """
     query_ul18 = 'member_of_campaign=RunIISummer19UL18MiniAOD'
     query_ul16 = 'member_of_campaign=RunIISummer19UL16MiniAOD'
-    query_ul17 = 'member_of_campaign=RunIIFall18*MiniAOD'
+    query_ul17 = 'member_of_campaign=RunIIAutumn18*MiniAOD'
     requests_ul17 = mcm.get('requests', query=query_ul17)
     requests_ul18 = mcm.get('requests', query=query_ul18)
     requests_ul16 = mcm.get('requests', query=query_ul16)
@@ -106,14 +106,30 @@ def operations():
             frac_neg_wgts = 0
             target_num_events = -1
             if search_rslt:
-                search_rslt_ = search_rslt[-1]
-                cross_section = float(search_rslt_[u'cross_section'])
-                frac_neg_wgts = float(search_rslt_[u'fraction_negative_weight'])
+                try:
+                    search_rslt_ = search_rslt[-1]
+                    cross_section = float(search_rslt_[u'cross_section'])
+                    frac_neg_wgts = float(search_rslt_[u'fraction_negative_weight'])
+                except Exception as ex:
+                    logger.error(ex)
             else:
                 try:
                     gen_request = mcm.get('requests',
                                           query='dataset_name=%s&member_of_campaign=*LHE*'
                                           % (twiki_request['dataset_name']))
+                    if not gen_request:
+                        gen_request = mcm.get('requests',
+                                              query='dataset_name=%s&member_of_campaign=*GEN*'
+                                              % (twiki_request['dataset_name']))
+                    if not gen_request:
+                        gen_request = mcm.get('requests',
+                                              query='dataset_name=%s&member_of_campaign=*GS*'
+                                              % (twiki_request['dataset_name']))
+                    if not gen_request:
+                        gen_request = mcm.get('requests',
+                                              query='dataset_name=%s&member_of_campaign=*FS*'
+                                              % (twiki_request['dataset_name']))
+
                     gen_request = gen_request[-1]
                     cross_section = float(
                         gen_request[u'generator_parameters'][0][u'cross_section']
