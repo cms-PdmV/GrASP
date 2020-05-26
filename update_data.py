@@ -401,7 +401,8 @@ def main():
 
         conn.commit()
 
-    to_be_deleted = [r for r in cursor.execute('SELECT COUNT(1) FROM samples WHERE updated = 0')][0][0]
+    to_be_deleted = [r for r in cursor.execute('SELECT COUNT(1) FROM samples WHERE updated = 0')]
+    to_be_deleted = to_be_deleted[0][0]
     logger.info('%s entries will be deleted', to_be_deleted)
     # Delete rows that were not updated
     cursor.execute('DELETE FROM samples WHERE updated = 0;')
