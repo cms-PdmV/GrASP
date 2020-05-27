@@ -434,7 +434,7 @@ def add_run3():
     """
     Endpoint to add a free text sample in run3 planning sheet
     """
-    conn = sqlite3.connect('run3.db')
+    conn = sqlite3.connect('data.db')
     cursor = conn.cursor()
     user_info = get_user_info(cursor)
     if user_info['role'] == 'not a user':
@@ -443,8 +443,8 @@ def add_run3():
 
     data = json.loads(request.data)
 
-    dataset_name = data['datasetname']
-    number_events = data['numberofevents']
+    dataset_name = data['datasetname'].strip()
+    number_events = data['numberofevents'].strip()
 
     pwg_list = []
 
@@ -456,31 +456,33 @@ def add_run3():
 
     #is the sample already in the list?
     if rows is not None:
-        return ''
+        return 'Dataset is already in the list', 409
 
     #input checks
     if dataset_name is None or not number_events.replace(' ', '').isdigit():
-        return ''
+        return 'Input format is wrong', 404
 
     #pwg checks: table is updated if there is at least 1 valid pwg
-    if 'pwginterested' in data:
-        for pwg_split in data['pwginterested'].replace(' ', '').split(','):
-            pwg = pwg_split.upper()
-            if pwg not in all_pwgs:
-                return 'Bad PWG %s' % (pwg), 400
+    # Get pwginterested or empty string, uppercase it and split on commas
+    for pwg in data.get('pwginterested', '').upper().split(','):
+        # Remove any surrounding whitespaces, if any
+        pwg = pwg.strip()
+        if not pwg:
+            # If nothing is left after strip, continue
+            continue
 
-            else:
-                pwg_list.append(pwg)
+        if pwg not in all_pwgs:
+            # If given PWG is not a valid one
+            return 'Bad PWG %s' % (pwg), 400
 
-    if pwg_list is None:
-        #Nothing is added
-        return ''
-    else:
-        #Something is added
-        pwgs = ','.join(sorted(pwg_list))
+        # Add PWG to a list
+        pwg_list.append(pwg)
 
-        cursor.execute('''INSERT INTO run3_samples VALUES (NULL, ?, ?, ?)''',
-                       [dataset_name, number_events, pwgs])
+    #Something is added
+    pwgs = ','.join(sorted(list(set(pwg_list))))
+
+    cursor.execute('''INSERT INTO run3_samples VALUES (NULL, ?, ?, ?)''',
+                   [dataset_name, number_events, pwgs])
 
     conn.commit()
     conn.close()
