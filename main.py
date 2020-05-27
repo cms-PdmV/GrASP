@@ -145,8 +145,10 @@ def get_short_name(name):
         short_name = 'bbbar4l'
     elif short_name == 'ST':
         short_name = 'SingleTop'
-    elif short_name == 'QCD' and 'Flat' in name:
+    elif short_name == 'QCD' and 'Flat' in name and not 'herwig' in name:
         short_name = 'Flat QCD P8'
+    elif short_name == 'QCD' and 'Flat' in name and 'herwig' in name:
+        short_name = 'Flat QCD H7'
     elif short_name == 'QCD' and '_Pt_' in name:
         short_name = 'QCD P8'
 
@@ -421,6 +423,65 @@ def update():
                         role,
                         'update notes',
                         update_time])
+
+    conn.commit()
+    conn.close()
+    return ''
+
+@app.route('/add_run3', methods=['POST'])
+def add_run3():
+    """
+    Endpoint to add a free text sample in run3 planning sheet
+    """
+    conn = sqlite3.connect('data.db')
+    cursor = conn.cursor()
+    user_info = get_user_info(cursor)
+    if user_info['role'] == 'not a user':
+        logging.error('Could not find user %s, not doing anything', user_info)
+        return 'You are not a user of McM', 403
+
+    data = json.loads(request.data)
+
+    dataset_name = data['datasetname'].strip()
+    number_events = data['numberofevents'].strip()
+
+    pwg_list = []
+
+    sql_query = '''SELECT dataset
+                   FROM run3_samples
+                   WHERE  = ?'''
+
+    rows = cursor.execute(sql_query, [dataset_name])
+
+    #is the sample already in the list?
+    if rows is not None:
+        return 'Dataset is already in the list', 409
+
+    #input checks
+    if dataset_name is None or not number_events.replace(' ', '').isdigit():
+        return 'Input format is wrong', 404
+
+    #pwg checks: table is updated if there is at least 1 valid pwg
+    # Get pwginterested or empty string, uppercase it and split on commas
+    for pwg in data.get('pwginterested', '').upper().split(','):
+        # Remove any surrounding whitespaces, if any
+        pwg = pwg.strip()
+        if not pwg:
+            # If nothing is left after strip, continue
+            continue
+
+        if pwg not in all_pwgs:
+            # If given PWG is not a valid one
+            return 'Bad PWG %s' % (pwg), 400
+
+        # Add PWG to a list
+        pwg_list.append(pwg)
+
+    #Something is added
+    pwgs = ','.join(sorted(list(set(pwg_list))))
+
+    cursor.execute('''INSERT INTO run3_samples VALUES (NULL, ?, ?, ?)''',
+                   [dataset_name, number_events, pwgs])
 
     conn.commit()
     conn.close()
