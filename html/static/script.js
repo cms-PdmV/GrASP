@@ -91,7 +91,7 @@ function addSample(element) {
     }).done(function (data) {
         alert('Text saved in the database');
     }).fail(function(data) {
-        alert('Error in saving');
+        alert('Error in saving the dictionary: ' + data);
     })
 }
 
