@@ -90,7 +90,7 @@ function addSample(element) {
     $.ajax({
         type: "POST",
         contentType: "application/json",
-        url: "/add_run3",
+        url: "/samples/add_run3",
         data: JSON.stringify(data),
     }).done(function (data) {
         alert('Text saved in the database');
