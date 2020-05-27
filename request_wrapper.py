@@ -7,7 +7,7 @@ import json
 from StringIO import StringIO
 import pycurl
 
-class RequestWrapper:
+class RequestWrapper(object):
     """ Wrapper for making http requests to xsdb api """
 
     base_url = 'https://cms-gen-dev.cern.ch/xsdb'
