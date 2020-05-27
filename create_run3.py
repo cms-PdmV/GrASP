@@ -1,5 +1,5 @@
 """
-TODO: create database for Run3 planning
+TODO: Document
 """
 import sys
 import sqlite3
@@ -26,7 +26,7 @@ def main():
     cursor = conn.cursor()
     # Create table if it does not exist
     cursor.execute('''CREATE TABLE IF NOT EXISTS run3_samples
-                      (uid integer PRIMARY KEY AUTOINCREMENT,
+                      (prepid text PRIMARY KEY NOT NULL,
                        dataset text NOT NULL,
                        total_events integer NOT NULL,
                        interested_pwgs text)''')

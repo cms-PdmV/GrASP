@@ -63,8 +63,7 @@
             {% if row[2][1] > 0 %}
             <td rowspan={{row[2][1]}}>
               <div>
-                <a target="_blank" href="https://cms-pdmv.cern.ch/mcm/requests?prepid={{row[2][0]}}" title="Open {{row[2][0]}} in McM"> Link to McM</a> &nbsp;
-                <a target="_blank" href="https://cms-pdmv.cern.ch/pmp/historical?r={{row[2][0]}}&showDoneRequestsList=true&estimateCompleted=true" title="Open {{row[2][0]}} in pMp"> Link to pMp</a><br>
+                <a target="_blank" href="https://cms-pdmv.cern.ch/mcm/requests?prepid={{row[2][0]}}" title="Open {{row[2][0]}} in McM">{{row[2][0]}}</a><br>
                 <small>Status: {{row[7][0]}}</small><br>
                 <small>Priority: {{row[6][0]}}</small>
                 {% if row[10][0] %}
@@ -81,8 +80,7 @@
             <td rowspan={{row[3][1]}}>
               {% if row[3][0] %}
                 <div>
-                  <a target="_blank" href="https://cms-pdmv.cern.ch/mcm/requests?prepid={{row[3][0]}}" title="Open {{row[3][0]}} in McM">Link to McM</a> &nbsp;
-		  <a target="_blank" href="https://cms-pdmv.cern.ch/pmp/historical?r={{row[3][0]}}&showDoneRequestsList=true&estimateCompleted=true" title="Open {{row[3][0]}} in pMp">Link to pMp</a><br>
+                  <a target="_blank" href="https://cms-pdmv.cern.ch/mcm/requests?prepid={{row[3][0]}}" title="Open {{row[3][0]}} in McM">{{row[3][0]}}</a><br>
                   <small>Status: {{row[12][0]}}</small><br>
                   <small>Priority: {{row[11][0]}}</small>
                   {% if row[15][0] %}
@@ -144,8 +142,8 @@
           <th>Short name</th>
           <th>Dataset name</th>
           <th>Status</th>
-          <th>Root request in UL17</th>
           <th>Number of events</th>
+          <th>Root request in UL17</th>
           <th>Chained request</th>
           <th>Interested PWGs</th>
         </tr>
@@ -160,20 +158,20 @@
           <!-- Dataset name -->
           {% if row[1][1] > 0 %}
             <td rowspan={{row[1][1]}}>
-              <a target="_blank" href="https://cms-pdmv.cern.ch/mcm/requests?dataset_name={{row[1][0]}}{% if pwg %}&interested_pwg={{pwg}}{% endif %}" title="Requests in McM with dataset name {{row[1][0]}}">{{row[1][0]}}</a>
+              <a target="_blank" href="https://cms-pdmv.cern.ch/mcm/requests?member_of_campaign={{campaign_group}}&dataset_name={{row[1][0]}}{% if pwg %}&interested_pwg={{pwg}}{% endif %}" title="Requests in McM with dataset name {{row[1][0]}} in campaign {{campaign}}">{{row[1][0]}}</a>
             </td>
           {% endif %}
           <!-- Status -->
           <td>
           Not in the system yet
           </td>
-          <!-- Root request in UL17 -->
-          <td rowspan={{row[4][1]}}>
-            <a target="_blank" href="https://cms-pdmv.cern.ch/mcm/requests?prepid={{row[4][0]}}" title="Open {{row[4][0]}} in McM">{{row[4][0]}}</a><br>
-          </td>
           <!-- Number of events -->
           <td>
             {{row[2][0]}}
+          </td>
+          <!-- Root request in UL17 -->
+          <td rowspan={{row[4][1]}}>
+            <a target="_blank" href="https://cms-pdmv.cern.ch/mcm/requests?prepid={{row[4][0]}}" title="Open {{row[4][0]}} in McM">{{row[4][0]}}</a><br>
           </td>
           <!-- Chained request in UL17 --> 
           <td>
