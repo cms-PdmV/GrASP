@@ -449,12 +449,12 @@ def add_run3():
 
     sql_query = '''SELECT dataset
                    FROM run3_samples
-                   WHERE  = ?'''
+                   WHERE dataset = ?'''
 
     rows = cursor.execute(sql_query, [dataset_name])
-
+    rows = [r for r in rows]
     #is the sample already in the list?
-    if rows is not None:
+    if rows:
         return 'Dataset is already in the list', 409
 
     #input checks

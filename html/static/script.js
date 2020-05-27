@@ -88,14 +88,15 @@ function addSample(element) {
     console.log(interested_pwgs);
     let data = {"datasetname": datasetname, "numberofevents": numberevents, "pwginterested": interested_pwgs};
     $.ajax({
-        type: "POST",
-        contentType: "application/json",
-        url: "/samples/add_run3",
-        data: JSON.stringify(data),
+      type: "POST",
+      contentType: "application/json",
+      url: "/samples/add_run3",
+      data: JSON.stringify(data),
     }).done(function (data) {
-        alert('Text saved in the database');
+      alert('Text saved in the database');
+      window.location.reload(true);
     }).fail(function(data) {
-        alert('Error in saving the dictionary: ' + data);
+      alert('Error in saving the dictionary: ' + data.responseText);
     })
 }
 
