@@ -90,7 +90,7 @@ for pwg in pwgs:
 
         for request_ul16 in requests_ul16:
             if request_ul16['dataset_name'] == dataset_name:
-                request_ul16['interested_pwgs'] = interested_pwgs
+                request_ul16['interested_pwg'] = interested_pwgs
                 logger.info('Will update (UL16) %s interested PWGs to %s',
                             request_ul16['prepid'],
                             interested_pwgs)
@@ -101,7 +101,7 @@ for pwg in pwgs:
 
         for request_ul16apv in requests_ul16apv:
             if request_ul16apv['dataset_name'] == dataset_name:
-                request_ul16apv['interested_pwgs'] = interested_pwgs
+                request_ul16apv['interested_pwg'] = interested_pwgs
                 logger.info('Will update (UL16 APV) %s interested PWGs to %s',
                             request_ul16apv['prepid'],
                             interested_pwgs)
