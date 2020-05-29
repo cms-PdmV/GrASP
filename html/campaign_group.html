@@ -66,9 +66,9 @@
                 <a target="_blank" href="https://cms-pdmv.cern.ch/mcm/requests?prepid={{row[2][0]}}" title="Open {{row[2][0]}} in McM">{{row[2][0]}}</a><br>
                 <small>Status: {{row[7][0]}}</small><br>
                 <small>Priority: {{row[6][0]}}</small>
+                <small>Events: {{row[9][0]}}/{{row[8][0]}} ({{(row[9][0] / row[8][0] * 100) | round(1)}}%)</small><br>
                 {% if row[10][0] %}
                   <br>
-                  <small>Events: {{row[9][0]}}/{{row[8][0]}} ({{(row[9][0] / row[8][0] * 100) | round(1)}}%)</small><br>
                   <small><a target="_blank" href="https://cmsweb.cern.ch/das/request?input={{row[10][0]}}">Output in DAS</a></small>
                 {% endif %}
               </div>
