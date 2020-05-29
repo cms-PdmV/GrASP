@@ -66,8 +66,8 @@
                 <a target="_blank" href="https://cms-pdmv.cern.ch/mcm/requests?prepid={{row[2][0]}}" title="Open {{row[2][0]}} in McM"> Link to McM</a> &nbsp;
                 <a target="_blank" href="https://cms-pdmv.cern.ch/pmp/historical?r={{row[2][0]}}&showDoneRequestsList=true&estimateCompleted=true" title="Open {{row[2][0]}} in pMp"> Link to pMp</a><br>
                 <small>Status: {{row[7][0]}}</small><br>
-                <small>Priority: {{row[6][0]}}</small>
-                <small>Events: {{row[9][0]}}/{{row[8][0]}} ({{(row[9][0] / row[8][0] * 100) | round(1)}}%)</small><br>
+                <small>Priority: {{row[6][0]}}</small><br>
+                <small>Events: {{row[8][0]}}</small><br>
                 {% if row[10][0] %}
                   <br>
                   <small><a target="_blank" href="https://cmsweb.cern.ch/das/request?input={{row[10][0]}}">Output in DAS</a></small>
