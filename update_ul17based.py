@@ -114,6 +114,10 @@ for pwg in pwgs:
 
             chained_request_id = request_ul17['member_of_chain'][0]
             chained_request = mcm.get('chained_requests', query='prepid=%s' %chained_request_id)
+            if not chained_request:
+                logging.error('%s is missing', chained_request_id)
+                continue
+
             root_id = chained_request[0]['chain'][0]
 
         else:

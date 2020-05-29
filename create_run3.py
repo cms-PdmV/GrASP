@@ -47,9 +47,8 @@ def main():
             text_pwg = ul17_request['prepid'].split('-')[0]
 
         logger.info('Inserting %s (%s)', ul17_request['dataset_name'], ul17_request['prepid'])
-        cursor.execute('INSERT INTO run3_samples VALUES (?, ?, ?, ?)',
-                       [ul17_request['prepid'],
-                        ul17_request['dataset_name'],
+        cursor.execute('INSERT INTO run3_samples VALUES (NULL, ?, ?, ?)',
+                       [ul17_request['dataset_name'],
                         ul17_request['total_events'],
                         text_pwg])
 
