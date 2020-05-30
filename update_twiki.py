@@ -71,7 +71,7 @@ def insert_update(twiki_request, campaign, cross_section, frac_neg_wgts, target_
                     frac_neg_wgts,
                     target_num_events,
                     0,
-                    'Please fill in with your comments'])
+                    ''])
 
     conn.commit()
     conn.close()

@@ -69,17 +69,8 @@ function saveNotes(element, uid) {
 
 function clearNotesMissing(element, dataset_name, campaign) {
   $(element).parent().find('textarea').get(0).value = '';
-  let data = {"dataset_name": dataset_name, "campaign": campaign, "missing_nts": notes};
-  $.ajax({
-    type: "POST",
-    contentType: "application/json",
-    url: "/samples/missing_update",
-    data: JSON.stringify(data),
-  }).done(function (data) {
-    alert('Text reset in the database');
-  }).fail(function(data) {
-    alert('Not reset');
-  })
+  let data = {"dataset_name": dataset_name, "campaign": campaign, "missing_nts": ''};
+  saveNotesMissing(element, dataset_name, campaign);
 }
 
 function saveNotesMissing(element, dataset_name, campaign) {
@@ -87,7 +78,7 @@ function saveNotesMissing(element, dataset_name, campaign) {
   let notes = $(element).parent().find('textarea').get(0).value;
   console.log(notes);
   console.log($(element).parent().find('textarea').get(0));
-  let data = {"dataset_name": dataset_name, "campaign": campaign, "missing_nts": notes};
+  let data = {"dataset_name": dataset_name, "campaign": campaign, "missing_nts": ''};
   $.ajax({
     type: "POST",
     contentType: "application/json",
@@ -96,7 +87,7 @@ function saveNotesMissing(element, dataset_name, campaign) {
   }).done(function (data) {
     alert('Text saved in the database');
   }).fail(function(data) {
-    alert('Error in saving');
+    alert('Error in saving: '+ data.responseText);
   })
 }
 
