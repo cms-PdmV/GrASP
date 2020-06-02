@@ -39,7 +39,9 @@ def create_table():
                    resp_group text NOT NULL,
                    cross_section float NOT NULL,
                    fraction_negative_weight float NOT NULL,
-                   target_num_events real NOT NULL   )''')
+                   target_num_events real NOT NULL,
+                   updated integer,
+                   notes text)''')
 
     # Clear the table
     cursor.execute('DELETE FROM `twiki_samples`')
@@ -58,7 +60,7 @@ def insert_update(twiki_request, campaign, cross_section, frac_neg_wgts, target_
                 cross_section,
                 frac_neg_wgts,
                 target_num_events)
-    cursor.execute('INSERT INTO twiki_samples VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    cursor.execute('INSERT INTO twiki_samples VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                    [twiki_request['prepid'],
                     twiki_request['dataset_name'],
                     twiki_request['extension'],
@@ -67,7 +69,9 @@ def insert_update(twiki_request, campaign, cross_section, frac_neg_wgts, target_
                     twiki_request['prepid'].split('-')[0],
                     cross_section,
                     frac_neg_wgts,
-                    target_num_events])
+                    target_num_events,
+                    0,
+                    ''])
 
     conn.commit()
     conn.close()
@@ -78,7 +82,7 @@ def operations():
     """
     query_ul18 = 'member_of_campaign=RunIISummer19UL18MiniAOD'
     query_ul16 = 'member_of_campaign=RunIISummer19UL16MiniAOD'
-    query_ul17 = 'member_of_campaign=RunIISummer19UL17MiniAOD'
+    query_ul17 = 'member_of_campaign=RunIIAutumn18*MiniAOD'
     requests_ul17 = mcm.get('requests', query=query_ul17)
     requests_ul18 = mcm.get('requests', query=query_ul18)
     requests_ul16 = mcm.get('requests', query=query_ul16)
@@ -102,14 +106,30 @@ def operations():
             frac_neg_wgts = 0
             target_num_events = -1
             if search_rslt:
-                search_rslt_ = search_rslt[-1]
-                cross_section = float(search_rslt_[u'cross_section'])
-                frac_neg_wgts = float(search_rslt_[u'fraction_negative_weight'])
+                try:
+                    search_rslt_ = search_rslt[-1]
+                    cross_section = float(search_rslt_[u'cross_section'])
+                    frac_neg_wgts = float(search_rslt_[u'fraction_negative_weight'])
+                except Exception as ex:
+                    logger.error(ex)
             else:
                 try:
                     gen_request = mcm.get('requests',
-                                          query='dataset_name=%s&member_of_campaign=RunII*GEN*'
+                                          query='dataset_name=%s&member_of_campaign=*LHE*'
                                           % (twiki_request['dataset_name']))
+                    if not gen_request:
+                        gen_request = mcm.get('requests',
+                                              query='dataset_name=%s&member_of_campaign=*GEN*'
+                                              % (twiki_request['dataset_name']))
+                    if not gen_request:
+                        gen_request = mcm.get('requests',
+                                              query='dataset_name=%s&member_of_campaign=*GS*'
+                                              % (twiki_request['dataset_name']))
+                    if not gen_request:
+                        gen_request = mcm.get('requests',
+                                              query='dataset_name=%s&member_of_campaign=*FS*'
+                                              % (twiki_request['dataset_name']))
+
                     gen_request = gen_request[-1]
                     cross_section = float(
                         gen_request[u'generator_parameters'][0][u'cross_section']
@@ -117,6 +137,7 @@ def operations():
                     frac_neg_wgts = float(
                         gen_request[u'generator_parameters'][0][u'negative_weights_fraction']
                     )
+                    logger.info(gen_request[u'member_of_campaign'])
                 except Exception as ex:
                     logger.error(ex)
                     logger.error(twiki_request['generator_parameters'])

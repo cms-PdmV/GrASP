@@ -67,13 +67,43 @@ function saveNotes(element, uid) {
   })
 }
 
+function clearNotesMissing(element, dataset_name, campaign) {
+  $(element).parent().find('textarea').get(0).value = '';
+  let data = {"dataset_name": dataset_name, "campaign": campaign, "missing_nts": ''};
+  saveNotesMissing(element, dataset_name, campaign);
+}
+
+function saveNotesMissing(element, dataset_name, campaign) {
+  // Take the value of the text box
+  let notes = $(element).parent().find('textarea').get(0).value;
+  console.log(notes);
+  console.log($(element).parent().find('textarea').get(0));
+  let data = {"dataset_name": dataset_name, "campaign": campaign, "missing_nts": ''};
+  $.ajax({
+    type: "POST",
+    contentType: "application/json",
+    url: "/samples/missing_update",
+    data: JSON.stringify(data),
+  }).done(function (data) {
+    alert('Text saved in the database');
+  }).fail(function(data) {
+    alert('Error in saving: '+ data.responseText);
+  })
+}
+
 $(document).ready(function() {
   let domain = document.location.origin;
   if (domain && domain.includes('dev')) {
     $('body').addClass('dev-ribbon');
   }
   $("#missingSampleTable").DataTable({
-                                      "processing": true});
+                                      "processing": true,
+                                      "pageLength": 20,
+                                      dom: 'Bfrtip',
+                                      buttons: [
+                                        'copy', 'csv', 'excel', 'pdf', 'print'
+                                      ]
+                                  });
   $('.dataTables_length').addClass('bs-select');
 
 });
