@@ -8,7 +8,7 @@ import json
 import time
 from flask import Flask, render_template, request
 from flask_restful import Api
-
+from create_phys_process import get_physics_process_name
 
 app = Flask(__name__,
             static_folder='./html/static',
@@ -310,6 +310,51 @@ def campaign_group_page(campaign_group=None, pwg=None):
                            pwg=pwg,
                            user_info=user_info)
 
+@app.route('/phys/<string:phys_process>')
+def phys_process_page(phys_process=None):
+    """
+    Physics process grouping
+    """
+    conn = sqlite3.connect('data.db')
+    cursor = conn.cursor()
+    sql_args = [get_physics_process_name(phys_process)[0]]
+
+    sql_query = '''SELECT 1,
+                          dataset,
+                          campaign, 
+                          shortname,
+                          interested_pwgs,
+                          output,
+                          total_events,
+                          physname,
+                          chained_request,
+                          phys_shortname
+                          FROM phys_process WHERE physname = ?'''
+
+    rows = cursor.execute(sql_query, sql_args)
+
+    rows = [(r[3],  # 0 Short name
+             r[1],  # 1 Dataset
+             r[2],  # 2 Campaign
+             r[5],  # 3 MiniAOD request
+             r[6],  # 4 MiniAOD total events
+             r[4],  # 5 Interested Pwgs
+             r[7],  # 6 physname
+             split_chained_request_name(r[8]) # 7 Short chained request prepid
+            ) for r in rows]
+
+    rows = sort_rows(rows, 5)
+    rows = add_counters(rows)
+    aggregate_rows(rows, 5)
+
+    user_info = get_user_info(cursor)
+    conn.close()
+    return render_template('phys.html',
+                           phys_process_long=phys_process,
+                           phys_process=get_physics_process_name(phys_process),
+                           table_rows=rows,
+                           user_info=user_info)
+
 @app.route('/missing_page/<string:campaign_group>')
 def missing_page(campaign_group=None):
     """
@@ -459,7 +504,11 @@ def add_run3():
     """
     Endpoint to add a free text sample in run3 planning sheet
     """
+<<<<<<< HEAD
+    conn = sqlite3.connect('run3.db')
+=======
     conn = sqlite3.connect('data.db')
+>>>>>>> 2e2f42b2d2dba0631a4fc073abbed411af7acb47
     cursor = conn.cursor()
     user_info = get_user_info(cursor)
     if user_info['role'] == 'not a user':
@@ -468,13 +517,51 @@ def add_run3():
 
     data = json.loads(request.data)
 
+<<<<<<< HEAD
+    dataset_name = data['datasetname']
+    number_events = data['numberofevents']
+=======
     dataset_name = data['datasetname'].strip()
     number_events = data['numberofevents'].strip()
+>>>>>>> 2e2f42b2d2dba0631a4fc073abbed411af7acb47
 
     pwg_list = []
 
     sql_query = '''SELECT dataset
                    FROM run3_samples
+<<<<<<< HEAD
+                   WHERE  = ?'''
+
+    rows = cursor.execute(sql_query, [dataset_name])
+
+    #is the sample already in the list?
+    if rows is not None:
+        return ''
+
+    #input checks
+    if dataset_name is None or not number_events.replace(' ', '').isdigit():
+        return ''
+
+    #pwg checks: table is updated if there is at least 1 valid pwg
+    if 'pwginterested' in data:
+        for pwg_split in data['pwginterested'].replace(' ', '').split(','):
+            pwg = pwg_split.upper()
+            if pwg not in all_pwgs:
+                return 'Bad PWG %s' % (pwg), 400
+
+            else:
+                pwg_list.append(pwg)
+
+    if pwg_list is None:
+        #Nothing is added
+        return ''
+    else:
+        #Something is added
+        pwgs = ','.join(sorted(pwg_list))
+
+        cursor.execute('''INSERT INTO run3_samples VALUES (NULL, ?, ?, ?)''',
+                       [dataset_name, number_events, pwgs])
+=======
                    WHERE dataset = ?'''
 
     rows = cursor.execute(sql_query, [dataset_name])
@@ -508,6 +595,7 @@ def add_run3():
 
     cursor.execute('''INSERT INTO run3_samples VALUES (NULL, ?, ?, ?)''',
                    [dataset_name, number_events, pwgs])
+>>>>>>> 2e2f42b2d2dba0631a4fc073abbed411af7acb47
 
     conn.commit()
     conn.close()
