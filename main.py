@@ -504,11 +504,7 @@ def add_run3():
     """
     Endpoint to add a free text sample in run3 planning sheet
     """
-<<<<<<< HEAD
-    conn = sqlite3.connect('run3.db')
-=======
     conn = sqlite3.connect('data.db')
->>>>>>> 2e2f42b2d2dba0631a4fc073abbed411af7acb47
     cursor = conn.cursor()
     user_info = get_user_info(cursor)
     if user_info['role'] == 'not a user':
@@ -517,56 +513,18 @@ def add_run3():
 
     data = json.loads(request.data)
 
-<<<<<<< HEAD
-    dataset_name = data['datasetname']
-    number_events = data['numberofevents']
-=======
     dataset_name = data['datasetname'].strip()
     number_events = data['numberofevents'].strip()
->>>>>>> 2e2f42b2d2dba0631a4fc073abbed411af7acb47
 
     pwg_list = []
 
     sql_query = '''SELECT dataset
                    FROM run3_samples
-<<<<<<< HEAD
                    WHERE  = ?'''
 
     rows = cursor.execute(sql_query, [dataset_name])
-
-    #is the sample already in the list?
-    if rows is not None:
-        return ''
-
-    #input checks
-    if dataset_name is None or not number_events.replace(' ', '').isdigit():
-        return ''
-
-    #pwg checks: table is updated if there is at least 1 valid pwg
-    if 'pwginterested' in data:
-        for pwg_split in data['pwginterested'].replace(' ', '').split(','):
-            pwg = pwg_split.upper()
-            if pwg not in all_pwgs:
-                return 'Bad PWG %s' % (pwg), 400
-
-            else:
-                pwg_list.append(pwg)
-
-    if pwg_list is None:
-        #Nothing is added
-        return ''
-    else:
-        #Something is added
-        pwgs = ','.join(sorted(pwg_list))
-
-        cursor.execute('''INSERT INTO run3_samples VALUES (NULL, ?, ?, ?)''',
-                       [dataset_name, number_events, pwgs])
-=======
-                   WHERE dataset = ?'''
-
-    rows = cursor.execute(sql_query, [dataset_name])
     rows = [r for r in rows]
-    #is the sample already in the list?
+
     if rows:
         return 'Dataset is already in the list', 409
 
@@ -595,12 +553,10 @@ def add_run3():
 
     cursor.execute('''INSERT INTO run3_samples VALUES (NULL, ?, ?, ?)''',
                    [dataset_name, number_events, pwgs])
->>>>>>> 2e2f42b2d2dba0631a4fc073abbed411af7acb47
 
     conn.commit()
     conn.close()
     return ''
-
 
 @app.route('/history')
 def history():
