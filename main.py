@@ -8,7 +8,7 @@ import json
 import time
 from flask import Flask, render_template, request
 from flask_restful import Api
-from create_phys_process import get_physics_process_name
+from create_physprocess import get_physics_process_name
 
 app = Flask(__name__,
             static_folder='./html/static',
