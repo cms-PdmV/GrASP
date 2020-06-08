@@ -17,7 +17,7 @@ mcm = McM(dev=False, cookie='cookie.txt')
 logging.basicConfig(format='[%(asctime)s][%(levelname)s] %(message)s', level=logging.INFO)
 logger = logging.getLogger()
 
-Physics_process = ['DrellYan',
+physics_process = ['DrellYan',
                    'Top pair production',
                    'Single Top',
                    'Diboson',
@@ -28,9 +28,7 @@ Physics_process = ['DrellYan',
                    'Particle guns',
                    'Photon production',
                    'Meson production',
-                   'Others'
-                   #can be extended                                                                                                                                                                                                           
-]
+                   'Others']
 
 def get_physics_process_name(datasetname):
 
@@ -49,12 +47,12 @@ def get_physics_process_name(datasetname):
         physname = 'Drell Yan'
         phys_shortname = 'DY'
 
-    return physname,phys_shortname
+    return physname, phys_shortname
 
 
 def main():
     """
-    Create the list according to physics processes 
+    Create the list according to physics processes
     """
     conn = sqlite3.connect('data.db')
     cursor = conn.cursor()
@@ -74,18 +72,21 @@ def main():
                        interested_pwgs text)''')
 
     # Get all needed requests
-    campaigns_to_include = ['RunIISummer19UL17MiniAOD', 'RunIISummer19UL18MiniAOD', 'RunIISummer19UL16MiniAOD', 'RunIISummer19UL16MiniAODAPV']
+    campaigns_to_include = ['RunIISummer19UL17MiniAOD',
+                            'RunIISummer19UL18MiniAOD',
+                            'RunIISummer19UL16MiniAOD',
+                            'RunIISummer19UL16MiniAODAPV']
 
     cursor.execute('DELETE FROM `phys_process`')
     conn.commit()
 
     for campaign in campaigns_to_include:
-        phys_samples_candidates = mcm.get('requests', query='member_of_campaign=%s&status=done' %campaign)
+        phys_samples_candidates = mcm.get('requests',
+                                          query='member_of_campaign=%s&status=done' %campaign)
         if not phys_samples_candidates:
             return
-            
+
         for miniaod_request in phys_samples_candidates:
-            
             if miniaod_request['interested_pwg']:
                 text_pwg = ','.join(miniaod_request['interested_pwg'])
             else:
@@ -95,7 +96,10 @@ def main():
             physname = get_physics_process_name(miniaod_request['dataset_name'])[0]
             phys_shortname = get_physics_process_name(miniaod_request['dataset_name'])[1]
 
-            logger.info('Inserting %s (%s)', miniaod_request['dataset_name'], miniaod_request['prepid'])
+            logger.info('Inserting %s (%s)',
+                        miniaod_request['dataset_name'],
+                        miniaod_request['prepid'])
+
             cursor.execute('INSERT INTO phys_process VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                            [miniaod_request['prepid'],
                             miniaod_request['dataset_name'],
