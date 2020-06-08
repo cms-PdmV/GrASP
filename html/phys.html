@@ -52,26 +52,25 @@
             </td>
 	    <!-- Number of events -->
             <td>
-	      {{row[4][0]}}
+	      {{row[3][0]}}
             </td>
-
-            <!-- Mini AOD -->
-            {% if row[3][1] > 0 %}
-            <td rowspan={{row[3][1]}}>
-              {% if row[3][0] %}
-              <small><a target="_blank" href="https://cmsweb.cern.ch/das/request?input={{row[3][0]}}">Output in DAS</a></small>
+            <!-- Mini AOD output -->
+            {% if row[4][1] > 0 %}
+            <td rowspan={{row[4][1]}}>
+              {% if row[4][0] %}
+              <small><a target="_blank" href="https://cmsweb.cern.ch/das/request?input={{row[4][0]}}">Output in DAS</a></small>
               {% endif %}
             </td>
             {% endif %}
             <!-- Chained request -->
-            {% if row[7][1] > 0 %}
-            <td rowspan={{row[7][1]}}>
-                <a target="_blank" href="https://cms-pdmv.cern.ch/mcm/chained_requests?prepid={{row[4][0]}}" title="Open {{row[7][0]}} in McM">{{row[7][0]}}</a>
+            {% if row[5][1] > 0 %}
+            <td rowspan={{row[5][1]}}>
+                <a target="_blank" href="https://cms-pdmv.cern.ch/mcm/chained_requests?prepid={{row[5][0]}}" title="Open {{row[5][0]}} in McM">{{row[7][0]}}</a>
             </td>
             {% endif %}
             <!-- Interested pwgs -->
             <td>
-	      {{row[5][0]}}
+	      {{row[6][0]}}
             </td>
           </tr>
         {% endfor %}

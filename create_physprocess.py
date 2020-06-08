@@ -1,13 +1,13 @@
-B"""
+"""
 Create the list according to physics processes
 """
 import sys
 import sqlite3
 import logging
+from utils import get_physics_process_name, get_short_name
 #pylint: disable=wrong-import-position,import-error
 sys.path.append('/afs/cern.ch/cms/PPD/PdmV/tools/McM/')
 from rest import McM
-from main import get_short_name
 #pylint: enable=wrong-import-position,import-error
 
 # McM instance
@@ -30,25 +30,6 @@ physics_process = ['DrellYan',
                    'Meson production',
                    'Others']
 
-def get_physics_process_name(datasetname):
-
-    shortname = get_short_name(datasetname)
-
-    physname = 'Others'
-    phys_shortname = 'Others'
-
-    if 'QCD' in shortname:
-        physname = 'QCD'
-        phys_shortname = 'QCD'
-    elif 'TTbar' in shortname or 'tt' in shortname:
-        physname = 'Top pair production'
-        phys_shortname = 'TopPair'
-    elif 'DY' in shortname:
-        physname = 'Drell Yan'
-        phys_shortname = 'DY'
-
-    return physname, phys_shortname
-
 
 def main():
     """
@@ -57,8 +38,6 @@ def main():
     conn = sqlite3.connect('data.db')
     cursor = conn.cursor()
     # Create table if it does not exist
-    cursor.execute('DROP TABLE phys_process')
-
     cursor.execute('''CREATE TABLE IF NOT EXISTS phys_process
                       (prepid text PRIMARY KEY NOT NULL,
                        dataset text NOT NULL,
@@ -82,9 +61,9 @@ def main():
 
     for campaign in campaigns_to_include:
         phys_samples_candidates = mcm.get('requests',
-                                          query='member_of_campaign=%s&status=done' %campaign)
+                                          query='member_of_campaign=%s&status=done' % campaign)
         if not phys_samples_candidates:
-            return
+            continue
 
         for miniaod_request in phys_samples_candidates:
             if miniaod_request['interested_pwg']:
@@ -92,9 +71,8 @@ def main():
             else:
                 text_pwg = miniaod_request['prepid'].split('-')[0]
 
-            shortname = miniaod_request['dataset_name'] #placeholder
-            physname = get_physics_process_name(miniaod_request['dataset_name'])[0]
-            phys_shortname = get_physics_process_name(miniaod_request['dataset_name'])[1]
+            shortname = get_short_name(miniaod_request['dataset_name']) #placeholder
+            physname, phys_shortname = get_physics_process_name(miniaod_request['dataset_name'])
 
             logger.info('Inserting %s (%s)',
                         miniaod_request['dataset_name'],
