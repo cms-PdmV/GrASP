@@ -11,7 +11,7 @@ from rest import McM
 #pylint: enable=wrong-import-position,import-error
 
 # McM instance
-mcm = McM(dev=False, cookie='cookie.txt')
+mcm = McM(dev=('--dev' in sys.argv), cookie='cookie.txt')
 
 # Logger
 logging.basicConfig(format='[%(asctime)s][%(levelname)s] %(message)s', level=logging.INFO)
