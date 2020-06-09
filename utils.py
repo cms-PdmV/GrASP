@@ -72,8 +72,11 @@ def get_short_name(name):
 #pylint: enable=too-many-branches,too-many-statements
 
 
-def get_physics_process_name(datasetname):
-    shortname = get_short_name(datasetname)
+def get_physics_process_name(dataset_name):
+    """
+    Get physics process name and process short name from a dataset name
+    """
+    shortname = get_short_name(dataset_name)
 
     if 'QCD' in shortname:
         physname = 'QCD'
@@ -89,4 +92,3 @@ def get_physics_process_name(datasetname):
         phys_shortname = 'Others'
 
     return physname, phys_shortname
-

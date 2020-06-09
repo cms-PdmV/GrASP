@@ -449,7 +449,7 @@ def add_run3():
 
     sql_query = '''SELECT dataset
                    FROM run3_samples
-                   WHERE  = ?'''
+                   WHERE dataset = ?'''
 
     rows = cursor.execute(sql_query, [dataset_name])
     rows = [r for r in rows]
