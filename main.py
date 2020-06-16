@@ -190,6 +190,10 @@ def campaign_group_page(campaign_group=None, pwg=None):
         sql_query_ul += ' AND resp_group LIKE ?'
         sql_args.append('%%%s%%' % (pwg))
 
+    only_with_miniaod = request.args.get('only_with_miniaod', '').lower().strip() == 'true'
+    if only_with_miniaod:
+        sql_query += ' AND miniaod != ""'
+
     rows = cursor.execute(sql_query, sql_args)
     rows = [(get_short_name(r[1]),  # 0 Short name
              r[1],  # 1 Dataset
