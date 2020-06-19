@@ -92,3 +92,6 @@ def get_physics_process_name(dataset_name):
         phys_shortname = 'Others'
 
     return physname, phys_shortname
+
+
+tags = ['test_PPD']
