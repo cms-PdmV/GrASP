@@ -36,8 +36,6 @@ all_pwgs = ['B2G',
             'TRK',
             'TSG']
 
-from utils import tags
-
 def sort_rows(rows, depth):
     """
     Sort tuples based on first "depth" elements in them

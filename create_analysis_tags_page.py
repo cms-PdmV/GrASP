@@ -6,10 +6,10 @@ import sqlite3
 import logging
 #pylint: disable=wrong-import-position,import-error
 sys.path.append('/afs/cern.ch/cms/PPD/PdmV/tools/McM/')
+from utils import tags
 from rest import McM
 #pylint: enable=wrong-import-position,import-error
 
-from utils import tags
 
 # McM instance
 mcm = McM(dev=('--dev' in sys.argv), cookie='cookie.txt')
