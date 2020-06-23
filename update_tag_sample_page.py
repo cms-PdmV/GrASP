@@ -1,22 +1,19 @@
 import sys
 import argparse
-from rest import McM
 sys.path.append('/afs/cern.ch/cms/PPD/PdmV/tools/McM/')
+from rest import McM
 
 parser = argparse.ArgumentParser(description='Tag samples for an analysis subgroup')
 parser.add_argument('--input_file', required=True,
                     help='input file where miniAOD names are stored')
-parser.add_argument('--tag', default='default_tag', required=True,
+parser.add_argument('--tag', required=True,
                     help='tag to include in McM for the specified samples')
 parser.add_argument('--dev', default=False, required=False, action='store_true',
                     help='Run in dev. McM')
 
 args = parser.parse_args()
 
-mcm = McM(dev=False)
-
-if args.dev:
-    mcm = McM(dev=True, cookie='dev_cookie.txt')
+mcm = McM(dev=args.dev)
 
 #read the input file and collect the inputs
 file_inputs = open(args.input_file, 'r')
