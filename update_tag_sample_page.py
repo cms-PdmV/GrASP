@@ -31,14 +31,13 @@ for sample in samples:
 
     # Tagging samples according to the input
     request_prepid_to_update = requests[0]['prepid']
+    field_to_update = 'tags'
 
     if args.tag in requests[0][field_to_update]:
         continue
 
     print ('You are going to tag the request %s with the tag %s'
-           % (request_prepid_to_update, args.tag)
-
-    field_to_update = 'tags'
+           % (request_prepid_to_update, args.tag))
 
     # Modify what we want
     requests[0][field_to_update].append(args.tag)
