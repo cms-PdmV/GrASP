@@ -545,7 +545,7 @@ def analysis_tag_page(tag=None):
                                          LIKE ? ''',
                                       [sql_pwg_query])]
     conn.close()
-    return render_template('analysis.html', rows=rows)
+    return render_template('analysis.html', rows=rows, tag=tag)
 
 
 def run_flask():
