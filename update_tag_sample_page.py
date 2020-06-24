@@ -23,7 +23,7 @@ samples = file_inputs.readlines()
 for sample in samples:
 
     #get requests from McM
-    query_tag = 'produce=%s' % (sample.rstrip())
+    query_tag = 'produce=%s' % (sample.strip())
     requests = mcm.get('requests', query=query_tag)
 
     if not requests:
