@@ -36,7 +36,6 @@ all_pwgs = ['B2G',
             'TRK',
             'TSG']
 
-
 def sort_rows(rows, depth):
     """
     Sort tuples based on first "depth" elements in them
@@ -514,7 +513,7 @@ def history():
 @app.route('/run3/<string:pwg>')
 def run3_page(pwg=None):
     """
-    TODO: Document
+    Document used for planning future campaigns
     """
     conn = sqlite3.connect('data.db')
     cursor = conn.cursor()
@@ -528,6 +527,25 @@ def run3_page(pwg=None):
                                       [sql_pwg_query])]
     conn.close()
     return render_template('run3.html', rows=rows)
+
+
+@app.route('/analysis/<string:tag>')
+def analysis_tag_page(tag=None):
+    """
+    Document used for displaying samples for specific analyses
+    """
+    conn = sqlite3.connect('data.db')
+    cursor = conn.cursor()
+    sql_pwg_query = '%%%s%%' % (tag)
+    rows = [r for r in cursor.execute('''SELECT dataset,
+                                                total_events,
+                                                interested_pwgs
+                                         FROM analysis_samples
+                                         WHERE tag
+                                         LIKE ? ''',
+                                      [sql_pwg_query])]
+    conn.close()
+    return render_template('analysis.html', rows=rows, tag=tag)
 
 
 def run_flask():
