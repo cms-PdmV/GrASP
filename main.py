@@ -540,7 +540,7 @@ def analysis_tag_page(tag=None):
     rows = [r for r in cursor.execute('''SELECT dataset,
                                                 total_events,
                                                 interested_pwgs
-                                         FROM analysis_samples
+                                         FROM analysis_tables
                                          WHERE tag
                                          LIKE ? ''',
                                       [sql_pwg_query])]
