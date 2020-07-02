@@ -1,0 +1,80 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <meta name=viewport content="width=device-width,initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" integrity="sha384-PsH8R72JQ3SOdhVi3uxftmaW6Vc51MKb0q5P2rRUpPvrszuE4W1povHYgTpBfshb" crossorigin="anonymous">
+    <link rel="stylesheet" href="/samples/static/style.css">
+    <link rel="shortcut icon" type="image/x-icon" href="static/favicon.png">
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Roboto:300,400,700">
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+    <script src="/samples/static/script.js" type="text/javascript"></script>
+    <title>PdmV Samples - {{ phys_process_long }}*</title>
+  </head>
+  <body>
+
+      <p style="margin: 8px;">
+      {% for row in table_rows %}
+        {% if row[0][1] > 0%}
+          <a style="text-decoration: none; margin: 4px;" href="#{{row[0][0]}}">{{row[0][0]}}</a>
+        {% endif %}
+      {% endfor %}
+      </p>
+
+      <table>
+        <tr>
+          <th>Short name</th>
+          <th>Dataset name</th>
+	  <th>Campaign</th>
+	  <th>Number of events</th>
+          <th>MiniAOD request</th>
+          <th>Chained request</th>
+          <th>Interested PWGs</th>
+        </tr>
+        {% for row in table_rows %}
+          <tr>
+            <!-- Short name -->
+            {% if row[0][1] > 0 %}
+            <td rowspan={{row[0][1]}} title="All samples with {{row[0][0]}}_* datasets" id="{{row[0][0]}}">
+               <a href="#{{row[0][0]}}">{{row[0][0]}}</a>
+            </td>
+            {% endif %}
+            <!-- Dataset name -->
+            {% if row[1][1] > 0 %}
+            <td rowspan={{row[1][1]}}>
+                <a target="_blank" href="https://cms-pdmv.cern.ch/mcm/requests?member_of_campaign={{row[2][0]}}*&dataset_name={{row[1][0]}}" title="Requests in McM with dataset name {{row[1][0]}} in campaign {{campaign}}">{{row[1][0]}}</a>
+            </td>
+            {% endif %}
+	    <!-- Campaign -->
+            <td>
+              {{row[2][0]}}
+            </td>
+	    <!-- Number of events -->
+            <td>
+	      {{row[3][0]}}
+            </td>
+            <!-- Mini AOD output -->
+            {% if row[4][1] > 0 %}
+            <td rowspan={{row[4][1]}}>
+              {% if row[4][0] %}
+              <small><a target="_blank" href="https://cmsweb.cern.ch/das/request?input={{row[4][0]}}">Output in DAS</a></small>
+              {% endif %}
+            </td>
+            {% endif %}
+            <!-- Chained request -->
+            {% if row[5][1] > 0 %}
+            <td rowspan={{row[5][1]}}>
+                <a target="_blank" href="https://cms-pdmv.cern.ch/mcm/chained_requests?prepid={{row[5][0]}}" title="Open {{row[5][0]}} in McM">{{row[7][0]}}</a>
+            </td>
+            {% endif %}
+            <!-- Interested pwgs -->
+            <td>
+	      {{row[6][0]}}
+            </td>
+          </tr>
+        {% endfor %}
+      </table>
+    </div>
+  </body>
+</html>

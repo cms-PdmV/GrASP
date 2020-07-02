@@ -10,11 +10,7 @@ from rest import McM
 #pylint: enable=wrong-import-position,import-error
 
 # McM instance
-mcm = McM(dev=False, cookie='prod_cookie.txt')
-
-for i in sys.argv:
-    if i == '--dev':
-        mcm = McM(dev=True, cookie='dev_cookie.txt')
+mcm = McM(dev=('--dev' in sys.argv), cookie='cookie.txt')
 
 # Logger
 logging.basicConfig(format='[%(asctime)s][%(levelname)s] %(message)s', level=logging.INFO)
@@ -206,8 +202,10 @@ def insert_or_update(sql_args, cursor):
 
         logger.info('Updating %s in local database', nice_description)
         sql_args.append(existing_sample[0])
+        # Set updated to 1 for updated entry
         cursor.execute('''UPDATE samples
-                          SET campaign = ?,
+                          SET updated = 1,
+                              campaign = ?,
                               campaign_group = ?,
                               chained_request = ?,
                               dataset = ?,
@@ -228,7 +226,8 @@ def insert_or_update(sql_args, cursor):
                               notes = ? WHERE uid = ?''', sql_args)
     else:
         logger.info('Inserting %s to local database', nice_description)
-        cursor.execute('INSERT INTO samples VALUES (NULL, 0 %s)' % (', ?' * len(sql_args)),
+        # Set updated to 1 for inserted entry
+        cursor.execute('INSERT INTO samples VALUES (NULL, 1 %s)' % (', ?' * len(sql_args)),
                        sql_args)
 
 
@@ -377,6 +376,8 @@ def main():
                        original_interested_pwgs text,
                        notes text)''')
 
+    # Mark all entries in samples table as updated = 0
+    cursor.execute('UPDATE samples SET updated = 0')
     conn.commit()
     # Iterate through campaigns and add or update requests
     for campaign_name in campaigns:
@@ -396,6 +397,13 @@ def main():
 
         conn.commit()
 
+    to_be_deleted = [r for r in cursor.execute('SELECT COUNT(1) FROM samples WHERE updated = 0')]
+    to_be_deleted = to_be_deleted[0][0]
+    logger.info('%s entries will be deleted', to_be_deleted)
+    # Delete rows that were not updated
+    cursor.execute('DELETE FROM samples WHERE updated = 0;')
+    # Vacuum to reclaim some space
+    cursor.execute('VACUUM;')
     conn.commit()
     conn.close()
 

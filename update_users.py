@@ -15,11 +15,7 @@ logging.basicConfig(format='[%(asctime)s][%(levelname)s] %(message)s', level=log
 logger = logging.getLogger()
 
 # McM instance
-mcm = McM(dev=False, cookie='prod_cookie.txt')
-
-for i in sys.argv:
-    if i == '--dev':
-        mcm = McM(dev=True, cookie='dev_cookie.txt')
+mcm = McM(dev=('--dev' in sys.argv), cookie='cookie.txt')
 
 def main():
     """

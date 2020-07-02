@@ -14,11 +14,7 @@ logging.basicConfig(format='[%(asctime)s][%(levelname)s] %(message)s', level=log
 logger = logging.getLogger()
 
 # McM instance
-mcm = McM(dev=False, cookie='prod_cookie.txt')
-
-for i in sys.argv:
-    if i == '--dev':
-        mcm = McM(dev=True, cookie='dev_cookie.txt')
+mcm = McM(dev=('--dev' in sys.argv), cookie='cookie.txt')
 
 pwgs = ["B2G", "BPH", "BTV", "EGM", "EXO", "FSQ", "HCA", "HGC",
         "HIG", "HIN", "JME", "L1T", "LUM", "MUO", "PPS", "SMP", "SUS",
@@ -90,7 +86,7 @@ for pwg in pwgs:
 
         for request_ul16 in requests_ul16:
             if request_ul16['dataset_name'] == dataset_name:
-                request_ul16['interested_pwgs'] = interested_pwgs
+                request_ul16['interested_pwg'] = interested_pwgs
                 logger.info('Will update (UL16) %s interested PWGs to %s',
                             request_ul16['prepid'],
                             interested_pwgs)
@@ -101,7 +97,7 @@ for pwg in pwgs:
 
         for request_ul16apv in requests_ul16apv:
             if request_ul16apv['dataset_name'] == dataset_name:
-                request_ul16apv['interested_pwgs'] = interested_pwgs
+                request_ul16apv['interested_pwg'] = interested_pwgs
                 logger.info('Will update (UL16 APV) %s interested PWGs to %s',
                             request_ul16apv['prepid'],
                             interested_pwgs)
@@ -114,6 +110,10 @@ for pwg in pwgs:
 
             chained_request_id = request_ul17['member_of_chain'][0]
             chained_request = mcm.get('chained_requests', query='prepid=%s' %chained_request_id)
+            if not chained_request:
+                logging.error('%s is missing', chained_request_id)
+                continue
+
             root_id = chained_request[0]['chain'][0]
 
         else:
