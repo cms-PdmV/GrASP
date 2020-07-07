@@ -16,7 +16,6 @@ mcm = McM(dev=('--dev' in sys.argv), cookie='cookie.txt')
 logging.basicConfig(format='[%(asctime)s][%(levelname)s] %(message)s', level=logging.INFO)
 logger = logging.getLogger()
 
-
 def pick_chained_requests(chained_requests):
     """
     Select chained requests with newest NanoAOD version

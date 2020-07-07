@@ -36,6 +36,28 @@
         </tr>
         {% endfor %}
       </table>
+      <table>
+        <tr>
+          <th>Campaign group</th>
+          <th colspan={{phys_processes | length}}>Physics processes</th>
+          <th colspan={{tags | length}}>Analysis tags</th>
+        </tr>
+        <tr>
+          <td>
+            Run2 Legacy
+          </td>
+          {% for phys_process in phys_processes %}
+          <td>
+            <a href="phys/{{phys_process}}">{{phys_process}}</a>
+          </td>
+          {% endfor %}
+          {% for tag in tags %}
+          <td>
+            <a href="analysis/{{tag}}">{{tag}}</a>
+          </td>
+          {% endfor %}
+        </tr>
+      </table>
       <h5>Missing high-statistics samples with number of events bigger than 20M </h5>
       <table>
         <tr>
@@ -47,6 +69,17 @@
             <a href="missing_page/{{campaign_group}}">{{campaign_group}}</a>
           </td>
         </tr>
+        {% endfor %}
+      </table>
+      <h5> Run3 campaign planning </h5>
+      <table>
+        <tr>
+          <th colspan={{pwgs | length}}> Physics working groups </th>
+        </tr>
+        {% for pwg in pwgs %}
+          <td>
+            <a href="run3/{{pwg}}">{{pwg}}</a>
+          </td>
         {% endfor %}
       </table>
     </div>

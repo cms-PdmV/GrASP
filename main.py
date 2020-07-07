@@ -8,7 +8,7 @@ import json
 import time
 from flask import Flask, render_template, request
 from flask_restful import Api
-from utils import get_physics_process_name, get_short_name
+from utils import get_physics_process_name, get_short_name, tags
 
 app = Flask(__name__,
             static_folder='./html/static',
@@ -138,9 +138,15 @@ def index():
     user_info = get_user_info(cursor)
     campaign_groups = cursor.execute('SELECT DISTINCT(campaign_group) FROM samples')
     campaign_groups = sorted([r[0] for r in campaign_groups])
+
+    phys_processes = cursor.execute('SELECT DISTINCT(physname) FROM phys_process')
+    phys_processes = sorted([r[0] for r in phys_processes])
+
     return render_template('index.html',
                            campaign_groups=campaign_groups,
                            pwgs=all_pwgs,
+                           phys_processes=phys_processes,
+                           tags=tags,
                            user_info=user_info)
 
 
