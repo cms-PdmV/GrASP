@@ -78,22 +78,30 @@ def operations():
     """
     query_ul18 = 'member_of_campaign=RunIISummer19UL18MiniAOD'
     query_ul16 = 'member_of_campaign=RunIISummer19UL16MiniAOD'
-    query_ul17 = 'member_of_campaign=RunIIAutumn18*MiniAOD'
+    #query_ul16APV = 'member_of_campaign=RunIISummer19UL16APVMiniAOD'
+    query_ul17 = 'member_of_campaign=RunIISummer19UL17MiniAOD'
+    query_ref = 'member_of_campaign=RunIIAutumn18*MiniAOD'
     requests_ul17 = mcm.get('requests', query=query_ul17)
     requests_ul18 = mcm.get('requests', query=query_ul18)
     requests_ul16 = mcm.get('requests', query=query_ul16)
+    #requests_ul16APV = mcm.get('requests', query=query_ul16APV)
+    requests_ref = mcm.get('requests', query=query_ref)
     ul17_dataset_names = {x['dataset_name'] for x in requests_ul17}
     ul16_dataset_names = {x['dataset_name'] for x in requests_ul16}
+    #ul16APV_dataset_names = {x['dataset_name'] for x in requests_ul16APV}
     ul18_dataset_names = {x['dataset_name'] for x in requests_ul18}
-    missing_ul18 = ul17_dataset_names - ul18_dataset_names
-    missing_ul16 = ul17_dataset_names - ul16_dataset_names
-
+    ref_dataset_names = {x['dataset_name'] for x in requests_ref}
+    missing_ul18 = ref_dataset_names - ul18_dataset_names
+    missing_ul16 = ref_dataset_names - ul16_dataset_names
+    #missing_ul16APV = ref_dataset_names - ul16APV_dataset_names
+    missing_ul17 = ref_dataset_names - ul17_dataset_names
     # Get all needed requests
     total_events_threshold = 20000000
     missing_ul16_and_ul18 = missing_ul16.union(missing_ul18)
-    for twiki_request in requests_ul17:
+    missing_ul16_and_ul18_and_ul17 = missing_ul17.union(missing_ul16_and_ul18)
+    for twiki_request in requests_ref:
         if twiki_request['total_events'] > total_events_threshold:
-            if twiki_request['dataset_name'] not in missing_ul16_and_ul18:
+            if twiki_request['dataset_name'] not in missing_ul16_and_ul18_and_ul17:
                 continue
             #Getting the cross_section value from xsdb
             query = {'DAS': twiki_request['dataset_name']}
@@ -140,8 +148,19 @@ def operations():
 
             if frac_neg_wgts != 0.5:
                 target_num_events = (1500000)*(cross_section) / ((1- 2*max(0, frac_neg_wgts))**2)
+                target_num_events = round(target_num_events)
+                if target_num_events > 2*twiki_request['total_events'] or cross_section == 1.0:
+                    target_num_events = twiki_request['total_events']
             if twiki_request['dataset_name'] in missing_ul18:
                 campaign = 'RunIISummer19UL18'
+                insert_update(twiki_request,
+                              campaign,
+                              cross_section,
+                              frac_neg_wgts,
+                              target_num_events)
+
+            if twiki_request['dataset_name'] in missing_ul17:
+                campaign = 'RunIISummer19UL17'
                 insert_update(twiki_request,
                               campaign,
                               cross_section,
