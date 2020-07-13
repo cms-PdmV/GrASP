@@ -96,5 +96,11 @@ class RequestWrapper(object):
         self.c.perform()
         body = response.getvalue()
         if body:
-            return json.loads(body)
+            try:
+                return json.loads(body)
+            except ValueError as ve:
+                print(body)
+                print(ve)
+                raise ve
+
         return None # Or return {} in case response is empty
