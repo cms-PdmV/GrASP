@@ -11,27 +11,32 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
     <script src="static/script.js" type="text/javascript"></script>
-    <title>PdmV Samples - Run 3 planning</title>
+    <title>PdmV Samples - Planning of a (generic) future campaign</title>
   </head>
   <body>
     <div>
       <div style="margin: 10px;"></div>
-      <h5>Run 3 sample planning</h5>
+      <h5>Future campaign sample planning</h5>
       <table>
         <tr>
+          <th></th>
           <th>Dataset</th>
           <th>Number of Events</th>
           <th>Interested PWGs</th>
         </tr>
         {% for row in rows %}
           <tr>
+            <td> <button style="position: absolute; right: 0;" title="Remove the line from the database" onclick="removeSample(this, row[3])"> Remove line</button></td>
+            </td>
             <td>{{row[0]}}</td>
             <td>{{row[1]}}</td>
-            <td>{{row[2]}}</td>
+            <td>{{row[2]}} <td><textarea style="width: 100%; margin-bottom: 8px;" placeholder="Add additional interested PWGs; if many, add them separated by a comma" id="pwginterested"></textarea>
+              <button style="position: absolute; right: 0;" title="Append the interested PWGs in the database" onclick="updateSample(this, row[3])">Save in database and add a new line</button></td>
           </tr>
         {% endfor %}
         <!-- Space for free text inclusion -->
         <tr>
+          <td></td>
           <td><textarea style="width: 100%; margin-bottom: 8px;" placeholder="Add an identifier for the sample, e.g. name" id="datasetnamerun3"></textarea></td>
           <td><textarea style="width: 100%; margin-bottom: 8px;" placeholder="Add the wished number of events" id="numberofevents"></textarea></td>
           <td><textarea style="width: 100%; margin-bottom: 8px;" placeholder="Add the interested PWGs; if many, add them separated by a comma" id="pwginterested"></textarea></td>
@@ -39,7 +44,7 @@
         <tr>
           <td colspan="3">
             <button style="position: absolute; right: 0;" title="Save the new lines in the database in text entry" onclick="addSample(this)">Save in database and add a new line</button>
-            Please refresh the page after saving!
+            Please refresh the page after any saving!
           </td>
         </tr>
       </table>
