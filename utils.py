@@ -87,6 +87,24 @@ def get_physics_process_name(dataset_name):
     elif 'DY' in shortname:
         physname = 'Drell Yan'
         phys_shortname = 'DY'
+    elif 'ST' in shortname or 'SingleTop' in shortname:
+        physname = 'Single Top'
+        phys_shortname = 'ST'
+    elif 'VV' in shortname:
+        physname = 'Diboson'
+        phys_shortname = 'Diboson'
+    elif 'Higgs' in shortname:
+        physname = 'Higgs production'
+        phys_shortname = 'Higgs'
+    elif 'Photon' in shortname:
+        physname = 'Photon production'
+        phys_shortname = 'Gamma'
+    elif 'Radion' in shortname or 'NMSSM' in shortname or 'prime' in shortname:
+        physname = 'Beyond Standard Model'
+        phys_shortname = 'BSM'
+    elif 'W' in shortname:
+        physname = 'W-boson production'
+        phys_shortname = 'W'
     else:
         physname = 'Others'
         phys_shortname = 'Others'
@@ -94,4 +112,5 @@ def get_physics_process_name(dataset_name):
     return physname, phys_shortname
 
 
-tags = ['test_PPD','PPD-XX-001']
+tags = ['test_PPD',
+        'PPD-XX-001']
