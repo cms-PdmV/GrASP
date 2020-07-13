@@ -522,7 +522,36 @@ def update_run3():
 
     data = json.loads(request.data)
 
-    #here do something
+    pwg_list = []
+
+    for pwg in data.get('pwginterested', '').upper().split(','):
+        pwg = pwg.strip()
+        if not pwg:
+            continue
+        if pwg not in all_pwgs:
+            return 'Bad PWG %s' % (pwg), 400
+
+        pwg_list.append(pwg)
+
+    pwgs = ','.join(sorted(list(set(pwg_list))))
+
+    sample_uid = data['uid']
+
+    pwg_existent = cursor.execute('''SELECT interested_pwgs
+                                     FROM run3_samples
+                                     WHERE uid = ?''',
+                                  [sample_uid])
+
+    pwgs = str(pwg_existent[0][0]) + ',' + str(pwgs)
+
+    cursor.execute('''UPDATE run3_samples
+                      SET interested_pwgs = ?
+                      WHERE uid = ?''',
+                   [pwgs, sample_uid])
+
+    conn.commit()
+    conn.close()
+    return ''
 
 @app.route('/remove_run3', methods=['POST'])
 def remove_run3():
@@ -538,9 +567,15 @@ def remove_run3():
 
     data = json.loads(request.data)
 
-    #here do something
+    sample_uid = data['uid']
 
+    cursor.execute('''DELETE FROM run3_samples
+                      WHERE uid = ?''',
+                   [sample_uid])
 
+    conn.commit()
+    conn.close()
+    return ''
 
 @app.route('/history')
 def history():
