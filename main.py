@@ -328,7 +328,7 @@ def missing_page(campaign_group=None):
              [x for x in r[5].split(',') if x],  # 10 Interested pwgs
             ) for r in rows]
     rows = sort_rows(rows, 5)
-    short_names = sorted(list(set([r[0] for r in rows])))
+    short_names = sorted(list({r[0] for r in rows}))
     data_conn = sqlite3.connect('data.db')
     data_cursor = data_conn.cursor()
     user_info = get_user_info(data_cursor)
