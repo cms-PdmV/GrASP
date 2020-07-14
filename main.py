@@ -8,7 +8,7 @@ import json
 import time
 from flask import Flask, render_template, request
 from flask_restful import Api
-from utils import get_physics_process_name, get_short_name, tags
+from utils import get_short_name, tags, get_physics_process_name, get_physics_short_name
 
 app = Flask(__name__,
             static_folder='./html/static',
@@ -139,13 +139,21 @@ def index():
     campaign_groups = cursor.execute('SELECT DISTINCT(campaign_group) FROM samples')
     campaign_groups = sorted([r[0] for r in campaign_groups])
 
-    phys_processes = cursor.execute('SELECT DISTINCT(physname) FROM phys_process')
-    phys_processes = sorted([r[0] for r in phys_processes])
+    phys_processes = cursor.execute('''SELECT dataset
+                                       FROM phys_process''')
+
+    phys_processes = sorted(list({get_physics_process_name(r[0])[0] for r in phys_processes}))
+
+    phys_processes_short = []
+
+    for process in phys_processes:
+        phys_processes_short.append(get_physics_short_name(process))
 
     return render_template('index.html',
                            campaign_groups=campaign_groups,
                            pwgs=all_pwgs,
                            phys_processes=phys_processes,
+                           phys_processes_short=phys_processes_short,
                            tags=tags,
                            user_info=user_info)
 
@@ -259,7 +267,7 @@ def phys_process_page(phys_process=None):
     """
     conn = sqlite3.connect('data.db')
     cursor = conn.cursor()
-    sql_args = [get_physics_process_name(phys_process)[0]]
+    sql_args = [phys_process]
 
     sql_query = '''SELECT shortname,
                           dataset,
@@ -268,7 +276,7 @@ def phys_process_page(phys_process=None):
                           output,
                           chained_request,
                           interested_pwgs
-                          FROM phys_process WHERE physname = ?'''
+                          FROM phys_process WHERE phys_shortname = ?'''
 
     rows = cursor.execute(sql_query, sql_args)
 
@@ -289,18 +297,21 @@ def phys_process_page(phys_process=None):
     user_info = get_user_info(cursor)
     conn.close()
     return render_template('phys.html',
-                           phys_process_long=phys_process,
+                           phys_process=phys_process,
                            table_rows=rows,
                            user_info=user_info)
 
+
 @app.route('/missing_page/<string:campaign_group>')
-def missing_page(campaign_group=None):
+@app.route('/missing_page/<string:campaign_group>/<string:pwg>')
+def missing_page(campaign_group=None, pwg=None):
     """
-    Missing samples incorporating twiki
+    Missing samples incorporating Autumn18 comparison reference
     """
     conn = sqlite3.connect('twiki.db')
     cursor = conn.cursor()
     sql_args = [campaign_group]
+
     sql_query = '''SELECT 1,
                           dataset,
                           ifnull(extension, ""),
@@ -313,6 +324,10 @@ def missing_page(campaign_group=None):
                           notes
                    FROM twiki_samples
                    WHERE campaign = ?'''
+
+    if pwg and pwg in all_pwgs:
+        sql_query += ' AND resp_group LIKE ?'
+        sql_args.append('%%%s%%' % (pwg))
 
     rows = cursor.execute(sql_query, sql_args)
     rows = [(get_short_name(r[1]),  # 0 Short name
@@ -496,6 +511,78 @@ def add_run3():
     conn.close()
     return ''
 
+@app.route('/update_run3', methods=['POST'])
+def update_run3():
+    """
+    Endpoint to update interested pwgs in an existing sample in run3 planning sheet
+    """
+    conn = sqlite3.connect('data.db')
+    cursor = conn.cursor()
+    user_info = get_user_info(cursor)
+    if user_info['role'] == 'not a user':
+        logging.error('Could not find user %s, not doing anything', user_info)
+        return 'You are not a user of McM', 403
+
+    data = json.loads(request.data)
+
+    pwg_list = []
+
+    for pwg in data.get('pwginterested', '').upper().split(','):
+        pwg = pwg.strip()
+        if not pwg:
+            continue
+        if pwg not in all_pwgs:
+            return 'Bad PWG %s' % (pwg), 400
+
+        pwg_list.append(pwg)
+
+    sample_uid = data['uid']
+
+    pwg_existent = cursor.execute('''SELECT interested_pwgs
+                                     FROM run3_samples
+                                     WHERE uid = ?''',
+                                  [sample_uid])
+
+    pwg_existent = [p[0] for p in pwg_existent]
+    if not pwg_existent:
+        return 'Bad UID', 400
+
+    pwgs = pwg_existent[0].split(',') + pwg_list
+    pwgs = ','.join(sorted(list({p for p in pwgs if p})))
+
+    cursor.execute('''UPDATE run3_samples
+                      SET interested_pwgs = ?
+                      WHERE uid = ?''',
+                   [pwgs, sample_uid])
+
+    conn.commit()
+    conn.close()
+    return ''
+
+@app.route('/remove_run3', methods=['POST'])
+def remove_run3():
+    """
+    Endpoint to remove a sample in run3 planning sheet
+    """
+    conn = sqlite3.connect('data.db')
+    cursor = conn.cursor()
+    user_info = get_user_info(cursor)
+    if user_info['role'] == 'not a user':
+        logging.error('Could not find user %s, not doing anything', user_info)
+        return 'You are not a user of McM', 403
+
+    data = json.loads(request.data)
+
+    sample_uid = data['uid']
+
+    cursor.execute('''DELETE FROM run3_samples
+                      WHERE uid = ?''',
+                   [sample_uid])
+
+    conn.commit()
+    conn.close()
+    return ''
+
 @app.route('/history')
 def history():
     """
@@ -516,24 +603,35 @@ def history():
                            rows=rows)
 
 
-@app.route('/run3/<string:pwg>')
+@app.route('/future_campaign')
+@app.route('/future_campaign/<string:pwg>')
 def run3_page(pwg=None):
     """
     Document used for planning future campaigns
     """
     conn = sqlite3.connect('data.db')
     cursor = conn.cursor()
-    sql_pwg_query = '%%%s%%' % (pwg)
+    user_info = get_user_info(cursor)
     rows = [r for r in cursor.execute('''SELECT dataset,
-                                                total_events,
-                                                interested_pwgs
-                                         FROM run3_samples
-                                         WHERE interested_pwgs
-                                         LIKE ? ''',
-                                      [sql_pwg_query])]
-    conn.close()
-    return render_template('run3.html', rows=rows)
+                                             total_events,
+                                             interested_pwgs,
+                                             uid
+                                             FROM run3_samples''')]
 
+    if pwg and pwg in all_pwgs:
+
+        sql_pwg_query = '%%%s%%' % (pwg)
+        rows = [r for r in cursor.execute('''SELECT dataset,
+                                             total_events,
+                                             interested_pwgs,
+                                             uid
+                                             FROM run3_samples
+                                             WHERE interested_pwgs
+                                             LIKE ? ''',
+                                          [sql_pwg_query])]
+
+    conn.close()
+    return render_template('run3.html', rows=rows, user_info=user_info)
 
 @app.route('/analysis/<string:tag>')
 def analysis_tag_page(tag=None):
@@ -542,6 +640,7 @@ def analysis_tag_page(tag=None):
     """
     conn = sqlite3.connect('data.db')
     cursor = conn.cursor()
+    user_info = get_user_info(cursor)
     sql_pwg_query = '%%%s%%' % (tag)
     rows = [r for r in cursor.execute('''SELECT dataset,
                                                 total_events
@@ -550,7 +649,7 @@ def analysis_tag_page(tag=None):
                                          LIKE ? ''',
                                       [sql_pwg_query])]
     conn.close()
-    return render_template('analysis.html', rows=rows, tag=tag)
+    return render_template('analysis.html', rows=rows, tag=tag, user_info=user_info)
 
 
 def run_flask():

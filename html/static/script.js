@@ -130,3 +130,34 @@ function addSample(element) {
     })
 }
 
+function removeSample(element, uid) {
+    let data = {"uid": uid};
+    $.ajax({
+      type: "POST",
+      contentType: "application/json",
+      url: "/samples/remove_run3",
+      data: JSON.stringify(data),
+    }).done(function (data) {
+      alert('Text removed from the database');
+      window.location.reload(true);
+    }).fail(function(data) {
+      alert('Error in removing from the dictionary: ' + data.responseText);
+    })
+}
+
+function updateSample(element, uid) {
+    let interested_pwgs = $(element).parent().parent().parent().find('#pwginterested').get(0).value;
+    console.log(interested_pwgs);
+    let data = {"uid": uid, "pwginterested": interested_pwgs};
+    $.ajax({
+      type: "POST",
+      contentType: "application/json",
+      url: "/samples/update_run3",
+      data: JSON.stringify(data),
+    }).done(function (data) {
+      alert('Text updated in the database');
+      window.location.reload(true);
+    }).fail(function(data) {
+      alert('Error in updating the dictionary: ' + data.responseText);
+    })
+}

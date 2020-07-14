@@ -79,7 +79,9 @@
                   <small><a target="_blank" href="https://cmsweb.cern.ch/das/request?input={{row[10][0]}}">Output in DAS</a></small>
                 {% endif %}
               </div>
-              <div class="progress-background {{row[7][0]}}-background" style="width: {{row[9][0] / row[8][0] * 100}}%;"></div>
+              {% if row[8][0] > 0 %}
+                <div class="progress-background {{row[7][0]}}-background" style="width: {{row[9][0] / row[8][0] * 100}}%;"></div>
+              {% endif %}
             </td>
             {% endif %}
             <!-- Mini AOD -->

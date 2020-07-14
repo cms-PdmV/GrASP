@@ -46,9 +46,9 @@
           <td>
             Run2 Legacy
           </td>
-          {% for phys_process in phys_processes %}
+          {% for index in range(0, phys_processes | length) %}
           <td>
-            <a href="phys/{{phys_process}}">{{phys_process}}</a>
+            <a href="phys/{{phys_processes_short[index]}}">{{phys_processes[index]}}</a>
           </td>
           {% endfor %}
           {% for tag in tags %}
@@ -71,16 +71,21 @@
         </tr>
         {% endfor %}
       </table>
-      <h5> Run3 campaign planning </h5>
+      <h5> Future campaign planning </h5>
       <table>
         <tr>
-          <th colspan={{pwgs | length}}> Physics working groups </th>
+          <th colspan={{1 + pwgs | length}}> Physics working groups </th>
         </tr>
-        {% for pwg in pwgs %}
+        <tr>
           <td>
-            <a href="run3/{{pwg}}">{{pwg}}</a>
+            <a href="future_campaign"> Full list </a>
           </td>
-        {% endfor %}
+          {% for pwg in pwgs %}
+          <td>
+            <a href="future_campaign/{{pwg}}">{{pwg}}</a>
+          </td>
+          {% endfor %}
+        </tr>
       </table>
     </div>
   </body>

@@ -10,9 +10,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
     <script src="/samples/static/script.js" type="text/javascript"></script>
-    <title>PdmV Samples - {{ phys_process_long }}*</title>
+    <title>PdmV Samples - {{ phys_process }}*</title>
   </head>
   <body>
+      <div style="text-align: right; margin: 10px;">Logged in as {{ user_info.fullname }} ({{ user_info.role }})</div>
+      <h5>PdmV Samples - {{ phys_process }}</h5>
 
       <p style="margin: 8px;">
       {% for row in table_rows %}
@@ -58,7 +60,7 @@
             {% if row[4][1] > 0 %}
             <td rowspan={{row[4][1]}}>
               {% if row[4][0] %}
-              <small><a target="_blank" href="https://cmsweb.cern.ch/das/request?input={{row[4][0]}}">Output in DAS</a></small>
+                <a target="_blank" href="https://cmsweb.cern.ch/das/request?input={{row[4][0]}}">Output in DAS</a>
               {% endif %}
             </td>
             {% endif %}

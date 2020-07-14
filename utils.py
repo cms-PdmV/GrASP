@@ -87,11 +87,57 @@ def get_physics_process_name(dataset_name):
     elif 'DY' in shortname:
         physname = 'Drell Yan'
         phys_shortname = 'DY'
+    elif 'ST' in shortname or 'SingleTop' in shortname:
+        physname = 'Single Top'
+        phys_shortname = 'ST'
+    elif 'VV' in shortname:
+        physname = 'Diboson'
+        phys_shortname = 'Diboson'
+    elif 'Higgs' in shortname:
+        physname = 'Higgs production'
+        phys_shortname = 'Higgs'
+    elif 'Photon' in shortname:
+        physname = 'Photon production'
+        phys_shortname = 'Gamma'
+    elif 'Radion' in shortname or 'NMSSM' in shortname or 'prime' in shortname:
+        physname = 'Beyond Standard Model'
+        phys_shortname = 'BSM'
+    elif 'W' in shortname:
+        physname = 'W-boson production'
+        phys_shortname = 'W'
     else:
         physname = 'Others'
         phys_shortname = 'Others'
 
     return physname, phys_shortname
 
+def get_physics_short_name(physname):
+    """
+    Get physics process short name from a physics name
+    """
 
-tags = ['test_PPD']
+    if physname == "QCD":
+        phys_shortname = "QCD"
+    elif physname == "Top pair production":
+        phys_shortname = "TopPair"
+    elif physname == "Drell Yan":
+        phys_shortname = "DY"
+    elif physname == "Single Top":
+        phys_shortname = "ST"
+    elif physname == "Diboson":
+        phys_shortname = "Diboson"
+    elif physname == "Higgs production":
+        phys_shortname = "Higgs"
+    elif physname == "Photon production":
+        phys_shortname = "Gamma"
+    elif physname == "Beyond Standard Model":
+        phys_shortname = "BSM"
+    elif physname == "W-boson production":
+        phys_shortname = "W"
+    else:
+        phys_shortname = "Others"
+
+    return phys_shortname
+
+tags = ['test_PPD',
+        'PPD-XX-001']
