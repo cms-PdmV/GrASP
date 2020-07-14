@@ -142,8 +142,8 @@ def index():
     phys_processes = cursor.execute('''SELECT dataset
                                        FROM phys_process''')
 
-    phys_processes = sorted(list(set(set([get_physics_process_name(r[0])[0] for r in phys_processes]))))
-    phys_processes_short = sorted(list(set(set([get_physics_process_name(r[0])[1] for r in phys_processes]))))
+    phys_processes = sorted(list({get_physics_process_name(r[0])[0] for r in phys_processes}))
+    phys_processes_short = sorted(list({get_physics_process_name(r[0])[1] for r in phys_processes}))
 
     return render_template('index.html',
                            campaign_groups=campaign_groups,
@@ -272,7 +272,7 @@ def phys_process_page(phys_process=None):
                           output,
                           chained_request,
                           interested_pwgs
-                          FROM phys_process WHERE physname_short = ?'''
+                          FROM phys_process WHERE phys_shortname = ?'''
 
     rows = cursor.execute(sql_query, sql_args)
 
