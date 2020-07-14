@@ -155,9 +155,9 @@ function updateSample(element, uid) {
       url: "/samples/update_run3",
       data: JSON.stringify(data),
     }).done(function (data) {
-      alert('Text removed from the database');
+      alert('Text updated in the database');
       window.location.reload(true);
     }).fail(function(data) {
-      alert('Error in removing from the dictionary: ' + data.responseText);
+      alert('Error in updating the dictionary: ' + data.responseText);
     })
 }

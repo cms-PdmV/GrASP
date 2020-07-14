@@ -536,8 +536,6 @@ def update_run3():
 
         pwg_list.append(pwg)
 
-    pwgs = ','.join(sorted(list(set(pwg_list))))
-
     sample_uid = data['uid']
 
     pwg_existent = cursor.execute('''SELECT interested_pwgs
@@ -545,7 +543,12 @@ def update_run3():
                                      WHERE uid = ?''',
                                   [sample_uid])
 
-    pwgs = str(pwg_existent[0][0]) + ',' + str(pwgs)
+    pwg_existent = [p[0] for p in pwg_existent]
+    if not pwg_existent:
+        return 'Bad UID', 400
+
+    pwgs = pwg_existent[0].split(',') + pwg_list
+    pwgs = ','.join(sorted(list({p for p in pwgs if p})))
 
     cursor.execute('''UPDATE run3_samples
                       SET interested_pwgs = ?

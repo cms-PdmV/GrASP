@@ -19,19 +19,17 @@
       <h5>Future campaign sample planning</h5>
       <table>
         <tr>
-          <th></th>
+          <td> </td>
           <th>Dataset</th>
           <th>Number of Events</th>
           <th>Interested PWGs</th>
         </tr>
         {% for row in rows %}
           <tr>
-            <td> <button style="position: absolute; right: 0;" title="Remove the line from the database" onclick="removeSample(this, {{row[3]}})"> Remove line</button></td>
-            </td>
+            <td><button style="position: absolute; right: 0;" title="Remove the line from the database" onclick="removeSample(this, {{row[3]}})">Remove line</button></td>
             <td>{{row[0]}}</td>
             <td>{{row[1]}}</td>
-            <td>{{row[2]}} <td><textarea style="width: 100%; margin-bottom: 8px;" placeholder="Add additional interested PWGs; if many, add them separated by a comma" id="pwginterested"></textarea>
-              <button style="position: absolute; right: 0;" title="Append the interested PWGs in the database" onclick="updateSample(this, {{row[3]}})">Update PWGs</button></td>
+            <td>{{row[2]}}<div class="horizontalgap" style="width:1px"></div><textarea style="width: 100%; margin-bottom: 8px;" placeholder="Add additional interested PWGs; if many, add them separated by a comma" id="pwginterested"></textarea><div class="horizontalgap" style="width:1px"></div><button style="position: absolute; right: 0;" title="Append the interested PWGs in the database" onclick="updateSample(this, {{row[3]}})">Update PWGs</button></td>
           </tr>
         {% endfor %}
         <!-- Space for free text inclusion -->
@@ -42,7 +40,7 @@
           <td><textarea style="width: 100%; margin-bottom: 8px;" placeholder="Add the interested PWGs; if many, add them separated by a comma" id="pwginterested"></textarea></td>
         </tr>
         <tr>
-          <td colspan="3">
+          <td colspan="4">
             <button style="position: absolute; right: 0;" title="Save the new lines in the database in text entry" onclick="addSample(this)">Save in database and add a new line</button>
             Please refresh the page after any saving!
           </td>
