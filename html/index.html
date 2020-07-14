@@ -46,7 +46,7 @@
           <td>
             Run2 Legacy
           </td>
-          {% for index in range(0, len(phys_processes)) %}
+          {% for index in range(0, phys_processes | length) %}
           <td>
             <a href="phys/{{phys_processes_short[index]}}">{{phys_processes[index]}}</a>
           </td>

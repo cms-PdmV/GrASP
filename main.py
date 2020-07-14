@@ -8,7 +8,7 @@ import json
 import time
 from flask import Flask, render_template, request
 from flask_restful import Api
-from utils import get_short_name, tags, get_physics_process_name
+from utils import get_short_name, tags, get_physics_process_name, get_physics_short_name
 
 app = Flask(__name__,
             static_folder='./html/static',
@@ -143,7 +143,11 @@ def index():
                                        FROM phys_process''')
 
     phys_processes = sorted(list({get_physics_process_name(r[0])[0] for r in phys_processes}))
-    phys_processes_short = sorted(list({get_physics_process_name(r[0])[1] for r in phys_processes}))
+
+    phys_processes_short = []
+
+    for process in phys_processes:
+        phys_processes_short.append(get_physics_short_name(process))
 
     return render_template('index.html',
                            campaign_groups=campaign_groups,
