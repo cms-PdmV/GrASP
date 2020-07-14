@@ -13,6 +13,8 @@
     <title>PdmV Samples - {{ phys_process }}*</title>
   </head>
   <body>
+      <div style="text-align: right; margin: 10px;">Logged in as {{ user_info.fullname }} ({{ user_info.role }})</div>
+      <h5>PdmV Samples - {{ phys_process }}</h5>
 
       <p style="margin: 8px;">
       {% for row in table_rows %}
@@ -58,7 +60,7 @@
             {% if row[4][1] > 0 %}
             <td rowspan={{row[4][1]}}>
               {% if row[4][0] %}
-              <small><a target="_blank" href="https://cmsweb.cern.ch/das/request?input={{row[4][0]}}">Output in DAS</a></small>
+                <a target="_blank" href="https://cmsweb.cern.ch/das/request?input={{row[4][0]}}">Output in DAS</a>
               {% endif %}
             </td>
             {% endif %}

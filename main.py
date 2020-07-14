@@ -611,7 +611,7 @@ def run3_page(pwg=None):
     """
     conn = sqlite3.connect('data.db')
     cursor = conn.cursor()
-
+    user_info = get_user_info(cursor)
     rows = [r for r in cursor.execute('''SELECT dataset,
                                              total_events,
                                              interested_pwgs,
@@ -631,7 +631,7 @@ def run3_page(pwg=None):
                                           [sql_pwg_query])]
 
     conn.close()
-    return render_template('run3.html', rows=rows)
+    return render_template('run3.html', rows=rows, user_info=user_info)
 
 @app.route('/analysis/<string:tag>')
 def analysis_tag_page(tag=None):
@@ -640,6 +640,7 @@ def analysis_tag_page(tag=None):
     """
     conn = sqlite3.connect('data.db')
     cursor = conn.cursor()
+    user_info = get_user_info(cursor)
     sql_pwg_query = '%%%s%%' % (tag)
     rows = [r for r in cursor.execute('''SELECT dataset,
                                                 total_events
@@ -648,7 +649,7 @@ def analysis_tag_page(tag=None):
                                          LIKE ? ''',
                                       [sql_pwg_query])]
     conn.close()
-    return render_template('analysis.html', rows=rows, tag=tag)
+    return render_template('analysis.html', rows=rows, tag=tag, user_info=user_info)
 
 
 def run_flask():
