@@ -26,12 +26,12 @@
         </tr>
         {% for row in rows %}
           <tr>
-            <td> <button style="position: absolute; right: 0;" title="Remove the line from the database" onclick="removeSample(this, row[3])"> Remove line</button></td>
+            <td> <button style="position: absolute; right: 0;" title="Remove the line from the database" onclick="removeSample(this, {{row[3]}})"> Remove line</button></td>
             </td>
             <td>{{row[0]}}</td>
             <td>{{row[1]}}</td>
             <td>{{row[2]}} <td><textarea style="width: 100%; margin-bottom: 8px;" placeholder="Add additional interested PWGs; if many, add them separated by a comma" id="pwginterested"></textarea>
-              <button style="position: absolute; right: 0;" title="Append the interested PWGs in the database" onclick="updateSample(this, row[3])">Update PWGs</button></td>
+              <button style="position: absolute; right: 0;" title="Append the interested PWGs in the database" onclick="updateSample(this, {{row[3]}})">Update PWGs</button></td>
           </tr>
         {% endfor %}
         <!-- Space for free text inclusion -->
