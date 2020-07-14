@@ -136,7 +136,7 @@ def get_physics_short_name(physname):
         phys_shortname = "W"
     else:
         phys_shortname = "Others"
-        
+
     return phys_shortname
 
 tags = ['test_PPD',
