@@ -62,12 +62,18 @@
       <table>
         <tr>
           <th>Campaign group</th>
+          <th colspan={{pwgs | length}}>Interested PWGs</th>
         </tr>
         {% for campaign_group in campaign_groups %}
         <tr>
           <td>
             <a href="missing_page/{{campaign_group}}">{{campaign_group}}</a>
           </td>
+          {% for pwg in pwgs %}
+          <td>
+            <a href="missing_page/{{campaign_group}}/{{pwg}}">{{pwg}}</a>
+          </td>
+          {% endfor %}
         </tr>
         {% endfor %}
       </table>
