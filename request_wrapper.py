@@ -4,6 +4,7 @@ Wrapper for making http requests to xsdb api
 import subprocess
 import os
 import json
+import logging
 from StringIO import StringIO
 import pycurl
 
@@ -25,6 +26,7 @@ class RequestWrapper(object):
         """
         Constructor
         """
+        self.logger = logging.getLogger()
 
     def simple_search_to_dict(self, keyval_dict):
         """
@@ -96,5 +98,11 @@ class RequestWrapper(object):
         self.c.perform()
         body = response.getvalue()
         if body:
-            return json.loads(body)
+            try:
+                return json.loads(body)
+            except ValueError as value_error:
+                self.logger.error(body)
+                self.logger.error(value_error)
+                raise value_error
+
         return None # Or return {} in case response is empty

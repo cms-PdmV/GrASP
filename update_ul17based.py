@@ -14,11 +14,7 @@ logging.basicConfig(format='[%(asctime)s][%(levelname)s] %(message)s', level=log
 logger = logging.getLogger()
 
 # McM instance
-mcm = McM(dev=False, cookie='prod_cookie.txt')
-
-for i in sys.argv:
-    if i == '--dev':
-        mcm = McM(dev=True, cookie='dev_cookie.txt')
+mcm = McM(dev=('--dev' in sys.argv), cookie='cookie.txt')
 
 pwgs = ["B2G", "BPH", "BTV", "EGM", "EXO", "FSQ", "HCA", "HGC",
         "HIG", "HIN", "JME", "L1T", "LUM", "MUO", "PPS", "SMP", "SUS",
@@ -114,6 +110,10 @@ for pwg in pwgs:
 
             chained_request_id = request_ul17['member_of_chain'][0]
             chained_request = mcm.get('chained_requests', query='prepid=%s' %chained_request_id)
+            if not chained_request:
+                logging.error('%s is missing', chained_request_id)
+                continue
+
             root_id = chained_request[0]['chain'][0]
 
         else:

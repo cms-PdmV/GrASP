@@ -51,3 +51,21 @@ Copy of McM users and their roles list.
 #### Columns:
 0. `username` <text> (PRIMARY KEY NOT NULL) - username (CERN login)
 1. `role` <text> - role in McM
+
+## Usage of the tagging script
+Instructions for using the available script for tagging a list of samples used by a certain analysis
+
+#### Prerequisites:
+1. Create a text file with the list of samples that you want to tag; the samples should be listed as they appear in DAS; they can be miniAOD or nanoAOD (e.g. example.txt).
+2. Decide a tag:
+- if a CADI number is available, please use that (format: PPD-XX-001)
+- if a CADI number is not yet available, please use a format like this: analysis-summary_PWG (example: boosted-hadronic-ttbar_TOP)
+
+#### Running the script:
+1. git clone https://github.com/cms-PdmV/samples.git
+2. source getCookie.sh
+3. python update_tag_sample_page.py --input_file your_text_file.txt --tag YOUR_TAG
+
+#### To see the page:
+1. Communicate the tag to the PdmV team (write a mail to: cms-ppd-pdmv-prod@cern.ch)
+2. After positive reaction to your mail, go to the page: https://cms-pdmv.cern.ch/samples/analysis/YOUR_TAG

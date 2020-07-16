@@ -36,21 +36,63 @@
         </tr>
         {% endfor %}
       </table>
-<!-- 
+      <table>
+        <tr>
+          <th>Campaign group</th>
+          <th colspan={{phys_processes | length}}>Physics processes</th>
+          <th colspan={{tags | length}}>Analysis tags</th>
+        </tr>
+        <tr>
+          <td>
+            Run2 Legacy
+          </td>
+          {% for index in range(0, phys_processes | length) %}
+          <td>
+            <a href="phys/{{phys_processes_short[index]}}">{{phys_processes[index]}}</a>
+          </td>
+          {% endfor %}
+          {% for tag in tags %}
+          <td>
+            <a href="analysis/{{tag}}">{{tag}}</a>
+          </td>
+          {% endfor %}
+        </tr>
+      </table>
       <h5>Missing high-statistics samples with number of events bigger than 20M </h5>
       <table>
         <tr>
           <th>Campaign group</th>
+          <th colspan={{pwgs | length}}>Interested PWGs</th>
         </tr>
         {% for campaign_group in campaign_groups %}
-          <tr>
-            <td>
-              <a href="missing_group/{{campaign_group}}">{{campaign_group}}</a>
-            </td>
-          </tr>
+        <tr>
+          <td>
+            <a href="missing_page/{{campaign_group}}">{{campaign_group}}</a>
+          </td>
+          {% for pwg in pwgs %}
+          <td>
+            <a href="missing_page/{{campaign_group}}/{{pwg}}">{{pwg}}</a>
+          </td>
+          {% endfor %}
+        </tr>
         {% endfor %}
       </table>
- -->
+      <h5> Future campaign planning </h5>
+      <table>
+        <tr>
+          <th colspan={{1 + pwgs | length}}> Physics working groups </th>
+        </tr>
+        <tr>
+          <td>
+            <a href="future_campaign"> Full list </a>
+          </td>
+          {% for pwg in pwgs %}
+          <td>
+            <a href="future_campaign/{{pwg}}">{{pwg}}</a>
+          </td>
+          {% endfor %}
+        </tr>
+      </table>
     </div>
   </body>
 </html>

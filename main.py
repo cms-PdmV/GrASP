@@ -8,7 +8,7 @@ import json
 import time
 from flask import Flask, render_template, request
 from flask_restful import Api
-
+from utils import get_short_name, tags, get_physics_process_name, get_physics_short_name
 
 app = Flask(__name__,
             static_folder='./html/static',
@@ -35,7 +35,6 @@ all_pwgs = ['B2G',
             'TOP',
             'TRK',
             'TSG']
-
 
 def sort_rows(rows, depth):
     """
@@ -108,71 +107,6 @@ def split_chained_request_name(name):
     return '%s-...-%s' % (spl[0], spl[-1])
 
 
-#pylint: disable=too-many-branches,too-many-statements
-# It is ok to have many ifs in this function
-def get_short_name(name):
-    """
-    Return short name of dataset name
-    """
-    spl = name.split('_')
-    short_name = spl[0]
-
-    if 'GluGluToH' in name or 'GluGluH' in name:
-        short_name = 'GluGluToH'
-    elif 'TTTo' in name:
-        short_name = 'TTbar'
-    elif 'GluGluToPseudoScalarH' in name:
-        short_name = 'GluGluToPseudoScalarH'
-    elif 'VBFHiggs' in name:
-        short_name = 'VBFHiggs'
-    elif 'ZHiggs' in name:
-        short_name = 'ZHiggs'
-    elif 'WHiggs' in name:
-        short_name = 'WHiggs'
-    elif 'GluGluToMaxmixH' in name:
-        short_name = 'GluGluToMaxmixH'
-    elif 'GluGluToContin' in name:
-        short_name = 'GluGluToContin'
-    elif 'DiPhotonJets' in name:
-        short_name = 'DiPhotonJets'
-    elif 'JJH' in name:
-        short_name = 'JJHiggs'
-    elif 'GluGluToBulkGraviton' in name:
-        short_name = 'GluGluToBulkGraviton'
-    elif 'BulkGraviton' in name:
-        short_name = 'BulkGraviton'
-    elif short_name == 'b':
-        short_name = 'bbbar4l'
-    elif short_name == 'ST':
-        short_name = 'SingleTop'
-    elif short_name == 'QCD' and 'Flat' in name:
-        short_name = 'Flat QCD P8'
-    elif short_name == 'QCD' and '_Pt_' in name:
-        short_name = 'QCD P8'
-
-    if 'madgraphMLM' in name:
-        short_name += ' LO MG+P8'
-    elif 'FxFx' in name or 'amcatnlo' in name:
-        short_name += ' NLO MG+P8'
-    elif 'powheg' in name and 'pythia8' in name:
-        short_name += ' NLO PH+P8'
-    elif 'sherpa' in name:
-        short_name += ' Sherpa'
-    elif 'madgraph' in name:
-        short_name += ' LO MG+P8'
-
-    if short_name.startswith('WW'):
-        short_name = short_name.replace('WW', 'VV', 1)
-    elif short_name.startswith('WZ'):
-        short_name = short_name.replace('WZ', 'VV', 1)
-    elif short_name.startswith('ZZ'):
-        short_name = short_name.replace('ZZ', 'VV', 1)
-    elif short_name.startswith('ZW'):
-        short_name = short_name.replace('ZW', 'VV', 1)
-
-    return short_name
-#pylint: enable=too-many-branches,too-many-statements
-
 def get_user_role(username, cursor):
     """
     Return a user role from username
@@ -204,9 +138,23 @@ def index():
     user_info = get_user_info(cursor)
     campaign_groups = cursor.execute('SELECT DISTINCT(campaign_group) FROM samples')
     campaign_groups = sorted([r[0] for r in campaign_groups])
+
+    phys_processes = cursor.execute('''SELECT dataset
+                                       FROM phys_process''')
+
+    phys_processes = sorted(list({get_physics_process_name(r[0])[0] for r in phys_processes}))
+
+    phys_processes_short = []
+
+    for process in phys_processes:
+        phys_processes_short.append(get_physics_short_name(process))
+
     return render_template('index.html',
                            campaign_groups=campaign_groups,
                            pwgs=all_pwgs,
+                           phys_processes=phys_processes,
+                           phys_processes_short=phys_processes_short,
+                           tags=tags,
                            user_info=user_info)
 
 
@@ -254,6 +202,10 @@ def campaign_group_page(campaign_group=None, pwg=None):
         sql_query += ' AND interested_pwgs LIKE ?'
         sql_query_ul += ' AND resp_group LIKE ?'
         sql_args.append('%%%s%%' % (pwg))
+
+    only_with_miniaod = request.args.get('only_with_miniaod', '').lower().strip() == 'true'
+    if only_with_miniaod:
+        sql_query += ' AND miniaod != ""'
 
     rows = cursor.execute(sql_query, sql_args)
     rows = [(get_short_name(r[1]),  # 0 Short name
@@ -308,14 +260,58 @@ def campaign_group_page(campaign_group=None, pwg=None):
                            pwg=pwg,
                            user_info=user_info)
 
-@app.route('/missing_page/<string:campaign_group>')
-def missing_page(campaign_group=None):
+@app.route('/phys/<string:phys_process>')
+def phys_process_page(phys_process=None):
     """
-    Missing samples incorporating twiki
+    Physics process grouping
+    """
+    conn = sqlite3.connect('data.db')
+    cursor = conn.cursor()
+    sql_args = [phys_process]
+
+    sql_query = '''SELECT shortname,
+                          dataset,
+                          campaign,
+                          total_events,
+                          output,
+                          chained_request,
+                          interested_pwgs
+                          FROM phys_process WHERE phys_shortname = ?'''
+
+    rows = cursor.execute(sql_query, sql_args)
+
+    rows = [(r[0],  # 0 Short name
+             r[1],  # 1 Dataset
+             r[2],  # 2 Campaign
+             r[3],  # 3 MiniAOD total events
+             r[4],  # 4 MiniAOD output dataset
+             r[5],  # 5 Chained request prepid
+             r[6],  # 6 Interested Pwgs
+             split_chained_request_name(r[5]) # 7 Short chained request prepid
+            ) for r in rows]
+
+    rows = sort_rows(rows, 5)
+    rows = add_counters(rows)
+    aggregate_rows(rows, 5)
+
+    user_info = get_user_info(cursor)
+    conn.close()
+    return render_template('phys.html',
+                           phys_process=phys_process,
+                           table_rows=rows,
+                           user_info=user_info)
+
+
+@app.route('/missing_page/<string:campaign_group>')
+@app.route('/missing_page/<string:campaign_group>/<string:pwg>')
+def missing_page(campaign_group=None, pwg=None):
+    """
+    Missing samples incorporating Autumn18 comparison reference
     """
     conn = sqlite3.connect('twiki.db')
     cursor = conn.cursor()
     sql_args = [campaign_group]
+
     sql_query = '''SELECT 1,
                           dataset,
                           ifnull(extension, ""),
@@ -324,9 +320,14 @@ def missing_page(campaign_group=None):
                           resp_group,
                           cross_section,
                           fraction_negative_weight,
-                          target_num_events
+                          target_num_events,
+                          notes
                    FROM twiki_samples
                    WHERE campaign = ?'''
+
+    if pwg and pwg in all_pwgs:
+        sql_query += ' AND resp_group LIKE ?'
+        sql_args.append('%%%s%%' % (pwg))
 
     rows = cursor.execute(sql_query, sql_args)
     rows = [(get_short_name(r[1]),  # 0 Short name
@@ -337,12 +338,12 @@ def missing_page(campaign_group=None):
              r[5],  # 5 respective group
              r[6],  # 6 cross section
              r[7],  # 7 frac neg wgts
-             r[8],  # 7 target num events
-             [x for x in r[5].split(',') if x],  # 17 Interested pwgs
+             r[8],  # 8 target num events
+             r[9],  # 9 notes
+             [x for x in r[5].split(',') if x],  # 10 Interested pwgs
             ) for r in rows]
     rows = sort_rows(rows, 5)
-    rows = add_counters(rows)
-    aggregate_rows(rows, 5)
+    short_names = sorted(list({r[0] for r in rows}))
     data_conn = sqlite3.connect('data.db')
     data_cursor = data_conn.cursor()
     user_info = get_user_info(data_cursor)
@@ -350,9 +351,33 @@ def missing_page(campaign_group=None):
     return render_template('missing_page.html',
                            campaign_group=campaign_group,
                            table_rows=rows,
-                           pwgs=all_pwgs,
-                           user_info=user_info)
+                           user_info=user_info,
+                           short_names=short_names)
 
+@app.route('/missing_update', methods=['POST'])
+def missing_update():
+    """
+    Endpoint to update interested notes for missing samples of the twiki database
+    """
+    data = json.loads(request.data)
+    if 'missing_nts' not in data:
+        return 'Request with empty or non-existing notes!', 400
+    update_time = int(time.time())
+    logging.info(data)
+    #Updating notes for missing samples
+    missing_dataset_name = data['dataset_name']
+    missing_campaign = data['campaign']
+    twiki_conn = sqlite3.connect('twiki.db')
+    twiki_cursor = twiki_conn.cursor()
+    notes = data['missing_nts'].strip()
+    twiki_cursor.execute('''UPDATE twiki_samples
+                         SET notes = ?, updated = ?
+                         WHERE dataset = ? AND campaign = ?''',
+                         [notes, update_time, missing_dataset_name, missing_campaign])
+
+    twiki_conn.commit()
+    twiki_conn.close()
+    return ''
 
 @app.route('/update', methods=['POST'])
 def update():
@@ -427,6 +452,136 @@ def update():
     conn.close()
     return ''
 
+@app.route('/add_run3', methods=['POST'])
+def add_run3():
+    """
+    Endpoint to add a free text sample in run3 planning sheet
+    """
+    conn = sqlite3.connect('data.db')
+    cursor = conn.cursor()
+    user_info = get_user_info(cursor)
+    if user_info['role'] == 'not a user':
+        logging.error('Could not find user %s, not doing anything', user_info)
+        return 'You are not a user of McM', 403
+
+    data = json.loads(request.data)
+
+    dataset_name = data['datasetname'].strip()
+    number_events = data['numberofevents'].strip()
+
+    pwg_list = []
+
+    sql_query = '''SELECT dataset
+                   FROM run3_samples
+                   WHERE dataset = ?'''
+
+    rows = cursor.execute(sql_query, [dataset_name])
+    rows = [r for r in rows]
+
+    if rows:
+        return 'Dataset is already in the list', 409
+
+    #input checks
+    if dataset_name is None or not number_events.replace(' ', '').isdigit():
+        return 'Input format is wrong', 404
+
+    #pwg checks: table is updated if there is at least 1 valid pwg
+    # Get pwginterested or empty string, uppercase it and split on commas
+    for pwg in data.get('pwginterested', '').upper().split(','):
+        # Remove any surrounding whitespaces, if any
+        pwg = pwg.strip()
+        if not pwg:
+            # If nothing is left after strip, continue
+            continue
+
+        if pwg not in all_pwgs:
+            # If given PWG is not a valid one
+            return 'Bad PWG %s' % (pwg), 400
+
+        # Add PWG to a list
+        pwg_list.append(pwg)
+
+    #Something is added
+    pwgs = ','.join(sorted(list(set(pwg_list))))
+
+    cursor.execute('''INSERT INTO run3_samples VALUES (NULL, ?, ?, ?)''',
+                   [dataset_name, number_events, pwgs])
+
+    conn.commit()
+    conn.close()
+    return ''
+
+@app.route('/update_run3', methods=['POST'])
+def update_run3():
+    """
+    Endpoint to update interested pwgs in an existing sample in run3 planning sheet
+    """
+    conn = sqlite3.connect('data.db')
+    cursor = conn.cursor()
+    user_info = get_user_info(cursor)
+    if user_info['role'] == 'not a user':
+        logging.error('Could not find user %s, not doing anything', user_info)
+        return 'You are not a user of McM', 403
+
+    data = json.loads(request.data)
+
+    pwg_list = []
+
+    for pwg in data.get('pwginterested', '').upper().split(','):
+        pwg = pwg.strip()
+        if not pwg:
+            continue
+        if pwg not in all_pwgs:
+            return 'Bad PWG %s' % (pwg), 400
+
+        pwg_list.append(pwg)
+
+    sample_uid = data['uid']
+
+    pwg_existent = cursor.execute('''SELECT interested_pwgs
+                                     FROM run3_samples
+                                     WHERE uid = ?''',
+                                  [sample_uid])
+
+    pwg_existent = [p[0] for p in pwg_existent]
+    if not pwg_existent:
+        return 'Bad UID', 400
+
+    pwgs = pwg_existent[0].split(',') + pwg_list
+    pwgs = ','.join(sorted(list({p for p in pwgs if p})))
+
+    cursor.execute('''UPDATE run3_samples
+                      SET interested_pwgs = ?
+                      WHERE uid = ?''',
+                   [pwgs, sample_uid])
+
+    conn.commit()
+    conn.close()
+    return ''
+
+@app.route('/remove_run3', methods=['POST'])
+def remove_run3():
+    """
+    Endpoint to remove a sample in run3 planning sheet
+    """
+    conn = sqlite3.connect('data.db')
+    cursor = conn.cursor()
+    user_info = get_user_info(cursor)
+    if user_info['role'] == 'not a user':
+        logging.error('Could not find user %s, not doing anything', user_info)
+        return 'You are not a user of McM', 403
+
+    data = json.loads(request.data)
+
+    sample_uid = data['uid']
+
+    cursor.execute('''DELETE FROM run3_samples
+                      WHERE uid = ?''',
+                   [sample_uid])
+
+    conn.commit()
+    conn.close()
+    return ''
 
 @app.route('/history')
 def history():
@@ -448,23 +603,53 @@ def history():
                            rows=rows)
 
 
-@app.route('/run3/<string:pwg>')
+@app.route('/future_campaign')
+@app.route('/future_campaign/<string:pwg>')
 def run3_page(pwg=None):
     """
-    TODO: Document
+    Document used for planning future campaigns
     """
     conn = sqlite3.connect('data.db')
     cursor = conn.cursor()
-    sql_pwg_query = '%%%s%%' % (pwg)
+    user_info = get_user_info(cursor)
     rows = [r for r in cursor.execute('''SELECT dataset,
-                                                total_events,
-                                                interested_pwgs
-                                         FROM run3_samples
-                                         WHERE interested_pwgs
+                                             total_events,
+                                             interested_pwgs,
+                                             uid
+                                             FROM run3_samples''')]
+
+    if pwg and pwg in all_pwgs:
+
+        sql_pwg_query = '%%%s%%' % (pwg)
+        rows = [r for r in cursor.execute('''SELECT dataset,
+                                             total_events,
+                                             interested_pwgs,
+                                             uid
+                                             FROM run3_samples
+                                             WHERE interested_pwgs
+                                             LIKE ? ''',
+                                          [sql_pwg_query])]
+
+    conn.close()
+    return render_template('run3.html', rows=rows, user_info=user_info)
+
+@app.route('/analysis/<string:tag>')
+def analysis_tag_page(tag=None):
+    """
+    Document used for displaying samples for specific analyses
+    """
+    conn = sqlite3.connect('data.db')
+    cursor = conn.cursor()
+    user_info = get_user_info(cursor)
+    sql_pwg_query = '%%%s%%' % (tag)
+    rows = [r for r in cursor.execute('''SELECT dataset,
+                                                total_events
+                                         FROM analysis_tables
+                                         WHERE tag
                                          LIKE ? ''',
                                       [sql_pwg_query])]
     conn.close()
-    return render_template('run3.html', rows=rows)
+    return render_template('analysis.html', rows=rows, tag=tag, user_info=user_info)
 
 
 def run_flask():
