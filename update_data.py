@@ -192,6 +192,7 @@ def insert_or_update(sql_args, cursor):
                             samples_notes)
                 logger.info('Will use Samples notes')
                 mcm_request['notes'] = samples_notes.strip()
+                sql_args[18] = mcm_request['notes']
                 request_changed = True
 
             if request_changed:
