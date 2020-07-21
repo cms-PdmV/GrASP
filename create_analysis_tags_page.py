@@ -1,5 +1,5 @@
 """
-TODO: create database for Run3 planning
+create database for analysis tags
 """
 import sys
 import sqlite3
