@@ -56,7 +56,7 @@ Copy of McM users and their roles list.
 Instructions for using the available script for tagging a list of samples used by a certain analysis
 
 #### Prerequisites:
-1. Create a text file with the list of samples that you want to tag; the samples should be listed as they appear in DAS; they can be miniAOD or nanoAOD.
+1. Create a text file with the list of samples that you want to tag; the samples should be listed as they appear in DAS; they can be miniAOD or nanoAOD (e.g. example.txt).
 2. Decide a tag:
 - if a CADI number is available, please use that (format: PPD-XX-001)
 - if a CADI number is not yet available, please use a format like this: analysis-summary_PWG (example: boosted-hadronic-ttbar_TOP)
