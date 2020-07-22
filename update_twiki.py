@@ -13,7 +13,7 @@ from request_wrapper import RequestWrapper
 #XSDB pycurl requester instance
 xsdb_request = RequestWrapper()
 # McM instance
-mcm = McM(dev=('--dev' in sys.argv), cookie='cookie.txt', debug=True)
+mcm = McM(dev=('--dev' in sys.argv), cookie='cookie.txt')
 
 # Logger
 logging.basicConfig(format='[%(asctime)s][%(levelname)s] %(message)s', level=logging.INFO)
