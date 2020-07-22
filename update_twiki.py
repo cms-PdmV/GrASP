@@ -122,6 +122,24 @@ def get_xs(req):
     return cross_section, frac_neg_wgts, target_num_events
 
 
+def get_requests(query):
+    """
+    Fetch requests and remove unnecessary fields to save memory
+    """
+    all_requests = []
+    requests = [{}]
+    page = 0
+    keys = ('prepid', 'dataset_name', 'total_events', 'extension')
+    while requests:
+        requests = mcm.get('requests', query=query, page=page)
+        for request in requests:
+            all_requests.append({k: request[k] for k in keys})
+
+        page += 1
+
+    return all_requests
+
+
 def operations():
     """
     Taking care of finding the missing samples by comparing ul16 and ul18 with ul17
@@ -131,11 +149,11 @@ def operations():
     #query_ul16APV = 'member_of_campaign=RunIISummer19UL16APVMiniAOD'
     query_ul17 = 'member_of_campaign=RunIISummer19UL17MiniAOD'
     query_ref = 'member_of_campaign=RunIIAutumn18*MiniAOD'
-    requests_ul17 = mcm.get('requests', query=query_ul17)
-    requests_ul18 = mcm.get('requests', query=query_ul18)
-    requests_ul16 = mcm.get('requests', query=query_ul16)
+    requests_ul17 = get_requests(query=query_ul17)
+    requests_ul18 = get_requests(query=query_ul18)
+    requests_ul16 = get_requests(query=query_ul16)
     #requests_ul16APV = mcm.get('requests', query=query_ul16APV)
-    requests_ref = mcm.get('requests', query=query_ref)
+    requests_ref = get_requests(query=query_ref)
     ul17_dataset_names = {x['dataset_name'] for x in requests_ul17}
     ul16_dataset_names = {x['dataset_name'] for x in requests_ul16}
     #ul16APV_dataset_names = {x['dataset_name'] for x in requests_ul16APV}
