@@ -52,6 +52,77 @@ Copy of McM users and their roles list.
 0. `username` <text> (PRIMARY KEY NOT NULL) - username (CERN login)
 1. `role` <text> - role in McM
 
+## Table: `run3_samples'
+
+#### Description
+Table used for planning a future campaign (samples not in McM but taken from an old camapign). Table can be updated from the web interface
+
+#### Columns
+0. `uid' <integer> - unique identifier
+1. `dataset' <text> (NOT NULL) - name of the dataset
+2. `total_events' <integer> - events to be produced for the dataset 
+3. `interested_pwgs' <text> - list of interested groups for the dataset 
+
+## Table: `phys_process'
+
+#### Description
+Table used for categorization of the samples according to physics processes
+
+#### Columns
+0. `prepid' <text> NOT NULL - prepid of the sample in McM
+1. `dataset' <text> (NOT NULL) - name of the dataset
+2. `total_events' <integer> - produced events for the dataset
+3. `output' <text> (NOT NULL) - full name of the sample in DAS
+4. `campaign' <text> - campaign under which the sample was produced
+5. `shortname' <text> - shortname for the sample (as in the samples table)
+6. `physname' <text> - physics name (specifics to this table)
+7. `phys_shortname' <text> - abbreviation of the physics name (specifics to this table)
+8. `chained_request' <text> - chained request of the sample in McM
+9. `interested_pwgs' <text> - list of interested groups for the dataset
+
+## Table: `analysis_tables'
+
+#### Description
+Table containing the analysis tags introduced by the analyzers for specific analysis teams and/or CADI line
+
+#### Columns
+0. `uid' <integer> - unique identifier
+1. `dataset' <text> (NOT NULL) - name of the dataset
+2. `total_events' <integer> - produced events for the dataset
+3. `tags' <text> - analysis tags / CADI line 
+
+## Table: `missing_ul'
+
+#### Description
+Table containing the samples present in UL17 (reference campaign) and not in another UL campaign (target campaign)
+
+#### Columns
+0. `prepid' <text> NOT NULL - prepid of the sample in McM
+1. `dataset' <text> NOT NULL - name of the dataset
+2. `total_events' <integer> NOT NULL - events to be produced (and previously produced in the reference campaign)
+3. `root_request' <text> NOT NULL - root request in McM in the reference campaign
+4. `chain' <text> NOT NULL - string identifying the type of chain produced in the reference campaign
+5. `missing_campaign' <text> NOT NULL - target campaign
+6. `resp_group' <text> NOT NULL - responsible PWG (taken from the prepid)
+
+## Table: `twiki_samples'
+
+#### Description
+Table containing the large-event (>20M events) samples present in Autumn18MiniAOD (reference campaign) and not in an UL campaign (target campaign)
+
+#### Columns
+0. `prepid' <text> NOT NULL - prepid of the sample in McM
+1. `dataset' <text> NOT NULL - name of the dataset
+2. `extension' <text> - extension number taken from McM
+3. `total_events' <integer> NOT NULL - events previously produced in the reference campaign
+4. `campaign' <text> NOT NULL - target campaign
+5. `resp_group' <text> NOT NULL - responsible PWG (taken from the prepid)
+6. `cross_section' <float> NOT NULL - cross section taken from either XSDB or McM
+7. `fraction_negative_weight' <float> NOT NULL - fraction of negative weights taken from       either XSDB or McM
+8. `target_num_events' <real> NOT NULL - events to be produced, calculated with a target integrated luminosity of 1500 fb-1
+9. `updated' <integer> - flag to identify if a sample has been updated or not (so that it will get updated in the database)
+10. `notes' <text> - free text for comments on the sample
+
 ## Usage of the tagging script
 Instructions for using the available script for tagging a list of samples used by a certain analysis
 
@@ -59,7 +130,7 @@ Instructions for using the available script for tagging a list of samples used b
 1. Create a text file with the list of samples that you want to tag; the samples should be listed as they appear in DAS; they can be miniAOD or nanoAOD (e.g. example.txt).
 2. Decide a tag:
 - if a CADI number is available, please use that (format: PPD-XX-001)
-- if a CADI number is not yet available, please use a format like this: analysis-summary_PWG (example: boosted-hadronic-ttbar_TOP)
+- if a CADI number is not yet available, please use a format like this: PWG_analysis-summary (example: TOP_boosted-hadronic-ttbar)
 
 #### Running the script:
 1. git clone https://github.com/cms-PdmV/samples.git
