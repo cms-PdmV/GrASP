@@ -7,11 +7,9 @@ import logging
 #pylint: disable=wrong-import-position,import-error
 sys.path.append('/afs/cern.ch/cms/PPD/PdmV/tools/McM/')
 from rest import McM
+#XSDB from update twiki
+from update_twiki import get_xs
 #pylint: enable=wrong-import-position,import-error
-#XSDB wrapper
-from request_wrapper import RequestWrapper
-#XSDB pycurl requester instance
-xsdb_request = RequestWrapper()
 # McM instance
 mcm = McM(dev=('--dev' in sys.argv), cookie='cookie.txt')
 
@@ -333,53 +331,6 @@ def process_request(request, campaign_name, cursor):
 
         insert_or_update(sql_args, cursor)
 
-def get_gen_request(dataset_name):
-    """
-    Get a GEN request for a given dataset name
-    """
-    gen_request = mcm.get('requests',
-                          query='dataset_name=%s&member_of_campaign=*LHE*' % (dataset_name))
-    if not gen_request:
-        gen_request = mcm.get('requests',
-                              query='dataset_name=%s&member_of_campaign=*GEN*' % (dataset_name))
-    if not gen_request:
-        gen_request = mcm.get('requests',
-                              query='dataset_name=%s&member_of_campaign=*GS*' % (dataset_name))
-    if not gen_request:
-        gen_request = mcm.get('requests',
-                              query='dataset_name=%s&member_of_campaign=*FS*' % (dataset_name))
-
-    return gen_request[-1]
-
-
-def get_xs(req):
-    """
-    Get cross section, frac neg weights and target num of events
-    """
-    query = {'DAS': req['dataset_name']}
-    search_rslt = xsdb_request.simple_search_to_dict(query)
-    cross_section = -1.
-    frac_neg_wgts = 0.
-    target_num_events = -1
-    if search_rslt:
-        try:
-            search_rslt = search_rslt[-1]
-            cross_section = float(search_rslt[u'cross_section'])
-            frac_neg_wgts = float(search_rslt[u'fraction_negative_weight'])
-        except Exception as ex:
-            logger.error(ex)
-    else:
-        try:
-            gen_request = get_gen_request(req['dataset_name'])
-            gen_parameters = gen_request[u'generator_parameters'][0]
-            cross_section = float(gen_parameters[u'cross_section'])
-            frac_neg_wgts = float(gen_parameters[u'negative_weights_fraction'])
-            logger.info(gen_request[u'member_of_campaign'])
-        except Exception as ex:
-            logger.error(ex)
-            logger.error(req['generator_parameters'])
-
-    return cross_section, frac_neg_wgts, target_num_events
 
 def main():
     """
