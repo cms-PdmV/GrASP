@@ -8,7 +8,10 @@ import logging
 sys.path.append('/afs/cern.ch/cms/PPD/PdmV/tools/McM/')
 from rest import McM
 #pylint: enable=wrong-import-position,import-error
-
+#XSDB wrapper
+from request_wrapper import RequestWrapper
+#XSDB pycurl requester instance
+xsdb_request = RequestWrapper()
 # McM instance
 mcm = McM(dev=('--dev' in sys.argv), cookie='cookie.txt')
 
@@ -127,7 +130,8 @@ def insert_or_update(sql_args, cursor):
     15. miniaod_output
     16. interested_pwgs
     17. original_interested_pwgs
-    18. notes
+    18. cross section
+    19. notes
     """
     existing_sample = get_existing_sample(sql_args[0], sql_args[4], sql_args[2], cursor)
     nice_description = '%s %s %s %s' % (sql_args[0], sql_args[2], sql_args[3], sql_args[4])
@@ -192,14 +196,14 @@ def insert_or_update(sql_args, cursor):
                             samples_notes)
                 logger.info('Will use Samples notes')
                 mcm_request['notes'] = samples_notes.strip()
-                sql_args[18] = mcm_request['notes']
+                sql_args[19] = mcm_request['notes']
                 request_changed = True
 
             if request_changed:
                 logger.info('Updating %s', existing_request_prepid)
                 response = mcm.update('requests', mcm_request)
                 logger.info('Updated %s: %s', existing_request_prepid, response)
-
+        
         logger.info('Updating %s in local database', nice_description)
         sql_args.append(existing_sample[0])
         # Set updated to 1 for updated entry
@@ -223,6 +227,7 @@ def insert_or_update(sql_args, cursor):
                               miniaod_output = ?,
                               interested_pwgs = ?,
                               original_interested_pwgs = ?,
+                              cross_section = ?,
                               notes = ? WHERE uid = ?''', sql_args)
     else:
         logger.info('Inserting %s to local database', nice_description)
@@ -304,7 +309,7 @@ def process_request(request, campaign_name, cursor):
             # If MiniAOD does not exist, use root request PWGs
             interested_pwgs = ','.join(root_request.get('interested_pwg', []))
             notes = root_request.get('notes')
-
+        cross_section, _, _ = get_xs(root_request)
         sql_args = [campaign_name,
                     campaign_group,
                     chained_request_prepid,
@@ -323,10 +328,58 @@ def process_request(request, campaign_name, cursor):
                     miniaod_output,
                     interested_pwgs,
                     interested_pwgs,
+                    cross_section,
                     notes]
 
         insert_or_update(sql_args, cursor)
 
+def get_gen_request(dataset_name):
+    """
+    Get a GEN request for a given dataset name
+    """
+    gen_request = mcm.get('requests',
+                          query='dataset_name=%s&member_of_campaign=*LHE*' % (dataset_name))
+    if not gen_request:
+        gen_request = mcm.get('requests',
+                              query='dataset_name=%s&member_of_campaign=*GEN*' % (dataset_name))
+    if not gen_request:
+        gen_request = mcm.get('requests',
+                              query='dataset_name=%s&member_of_campaign=*GS*' % (dataset_name))
+    if not gen_request:
+        gen_request = mcm.get('requests',
+                              query='dataset_name=%s&member_of_campaign=*FS*' % (dataset_name))
+
+    return gen_request[-1]
+
+
+def get_xs(req):
+    """
+    Get cross section, frac neg weights and target num of events
+    """
+    query = {'DAS': req['dataset_name']}
+    search_rslt = xsdb_request.simple_search_to_dict(query)
+    cross_section = -1.
+    frac_neg_wgts = 0.
+    target_num_events = -1
+    if search_rslt:
+        try:
+            search_rslt = search_rslt[-1]
+            cross_section = float(search_rslt[u'cross_section'])
+            frac_neg_wgts = float(search_rslt[u'fraction_negative_weight'])
+        except Exception as ex:
+            logger.error(ex)
+    else:
+        try:
+            gen_request = get_gen_request(req['dataset_name'])
+            gen_parameters = gen_request[u'generator_parameters'][0]
+            cross_section = float(gen_parameters[u'cross_section'])
+            frac_neg_wgts = float(gen_parameters[u'negative_weights_fraction'])
+            logger.info(gen_request[u'member_of_campaign'])
+        except Exception as ex:
+            logger.error(ex)
+            logger.error(req['generator_parameters'])
+
+    return cross_section, frac_neg_wgts, target_num_events
 
 def main():
     """
@@ -374,6 +427,7 @@ def main():
                        miniaod_output text,
                        interested_pwgs text,
                        original_interested_pwgs text,
+                       cross_section float,
                        notes text)''')
 
     # Mark all entries in samples table as updated = 0
