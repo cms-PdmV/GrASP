@@ -203,7 +203,7 @@ def insert_or_update(sql_args, cursor):
                 logger.info('Updating %s', existing_request_prepid)
                 response = mcm.update('requests', mcm_request)
                 logger.info('Updated %s: %s', existing_request_prepid, response)
-        
+                
         logger.info('Updating %s in local database', nice_description)
         sql_args.append(existing_sample[0])
         # Set updated to 1 for updated entry
