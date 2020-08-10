@@ -107,6 +107,26 @@ def split_pwgs(pwgs_string):
     """
     return [x.strip().upper() for x in pwgs_string.split(',') if x.strip()]
 
+def update_notes(sql_args, mcm_request, existing_sample, existing_request_prepid, request_changed):
+    """
+    Check if notes changed and update them
+    """
+    mcm_notes = mcm_request.get('notes')
+    samples_notes = existing_sample[5]
+    if mcm_notes != samples_notes:
+        logger.info('Notes for %s changed:\nMcM: %s\nSamples: %s',
+                    existing_request_prepid,
+                    mcm_notes,
+                    samples_notes)
+        logger.info('Will use Samples notes')
+        mcm_request['notes'] = samples_notes.strip()
+        sql_args[19] = mcm_request['notes']
+        request_changed = True
+
+    if request_changed:
+        logger.info('Updating %s', existing_request_prepid)
+        response = mcm.update('requests', mcm_request)
+        logger.info('Updated %s: %s', existing_request_prepid, response)
 
 def insert_or_update(sql_args, cursor):
     """
@@ -184,23 +204,12 @@ def insert_or_update(sql_args, cursor):
                 request_changed = True
                 sql_args[16] = sql_args[17] = new_interested_pwgs_string
 
-            # Check if notes changed
-            mcm_notes = mcm_request.get('notes')
-            samples_notes = existing_sample[5]
-            if mcm_notes != samples_notes:
-                logger.info('Notes for %s changed:\nMcM: %s\nSamples: %s',
-                            existing_request_prepid,
-                            mcm_notes,
-                            samples_notes)
-                logger.info('Will use Samples notes')
-                mcm_request['notes'] = samples_notes.strip()
-                sql_args[19] = mcm_request['notes']
-                request_changed = True
-
-            if request_changed:
-                logger.info('Updating %s', existing_request_prepid)
-                response = mcm.update('requests', mcm_request)
-                logger.info('Updated %s: %s', existing_request_prepid, response)
+            # Check if notes changed and update them
+            update_notes(sql_args,
+                         mcm_request,
+                         existing_sample,
+                         existing_request_prepid,
+                         request_changed)
 
         logger.info('Updating %s in local database', nice_description)
         sql_args.append(existing_sample[0])
