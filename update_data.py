@@ -4,11 +4,11 @@ Update data in samples table
 import sys
 import sqlite3
 import logging
+#XSDB from update twiki
+from update_twiki import get_xs
 #pylint: disable=wrong-import-position,import-error
 sys.path.append('/afs/cern.ch/cms/PPD/PdmV/tools/McM/')
 from rest import McM
-#XSDB from update twiki
-from update_twiki import get_xs
 #pylint: enable=wrong-import-position,import-error
 # McM instance
 mcm = McM(dev=('--dev' in sys.argv), cookie='cookie.txt')
