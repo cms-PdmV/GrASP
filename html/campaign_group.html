@@ -4,7 +4,7 @@
     <meta name=viewport content="width=device-width,initial-scale=1">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" integrity="sha384-PsH8R72JQ3SOdhVi3uxftmaW6Vc51MKb0q5P2rRUpPvrszuE4W1povHYgTpBfshb" crossorigin="anonymous">
     <link rel="stylesheet" href="/samples/static/style.css">
-    <link rel="shortcut icon" type="image/x-icon" href="static/favicon.png">
+    <link rel="shortcut icon" type="image/x-icon" href="/samples/static/favicon.png">
     <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Roboto:300,400,700">
     <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
@@ -48,6 +48,7 @@
           <th>Root request</th>
           <th>MiniAOD request</th>
           <th>Chained request</th>
+          <th>Cross section</th>
           <th>Interested PWGs</th>
           <th>Notes and comments from groups </th>
         </tr>
@@ -111,6 +112,12 @@
                 <a target="_blank" href="https://cms-pdmv.cern.ch/mcm/chained_requests?prepid={{row[4][0]}}" title="Open {{row[4][0]}} in McM">{{row[16][0]}}</a>
             </td>
             {% endif %}
+            <!-- Cross section -->
+            {% if row[18][1] > 0 %}
+            <td rowspan={{row[18][1]}}>
+                {{row[18][0]}}
+            </td>
+            {% endif %}
             <!-- Interested pwgs -->
             <td>
               <ul class="interested-list">
@@ -135,7 +142,7 @@
             </td>
             <!-- Notes and comments from various groups -->
             <td>
-              <textarea style="width: 100%; margin-bottom: 8px;" title="Add whatever is relevant for the interested PWGs about the sample" name="notes">{{row[18][0]}}</textarea>
+              <textarea style="width: 100%; margin-bottom: 8px;" title="Add whatever is relevant for the interested PWGs about the sample" name="notes">{{row[19][0]}}</textarea>
               <button title="Freeze notes in text entry (they will be saved in the next cycle)" onclick="saveNotes(this, '{{row[5][0]}}')">Save</button>
               <button title="Clear notes in text entry" onclick="clearNotes(this, '{{row[5][0]}}')">Clear</button>
             </td>
@@ -155,6 +162,7 @@
           <th>Root request in UL17</th>
           <th>Number of events</th>
           <th>Chained request</th>
+          <th>Cross section</th>
           <th>Interested PWGs</th>
         </tr>
         {% for row in table_ul_rows %}

@@ -185,6 +185,7 @@ def campaign_group_page(campaign_group=None, pwg=None):
                           ifnull(miniaod_output, ""),
                           1,
                           interested_pwgs,
+                          cross_section,
                           ifnull(notes, "")
                    FROM samples
                    WHERE campaign_group = ?'''
@@ -226,7 +227,8 @@ def campaign_group_page(campaign_group=None, pwg=None):
              r[15],  # 15 MiniAOD output
              split_chained_request_name(r[4]),  # 16 Short chained request prepid
              [x for x in r[17].split(',') if x],  # 17 Interested pwgs
-             r[18]   # 18 notes
+             r[18],  # cross section
+             r[19]   # 19 notes
             ) for r in rows]
 
     rows_ul = cursor.execute(sql_query_ul, sql_args)
