@@ -107,26 +107,36 @@ def split_pwgs(pwgs_string):
     """
     return [x.strip().upper() for x in pwgs_string.split(',') if x.strip()]
 
-def update_notes(sql_args, mcm_request, existing_sample, existing_request_prepid, request_changed):
+def update_notes(mcm_request, samples_notes):
     """
     Check if notes changed and update them
     """
     mcm_notes = mcm_request.get('notes')
-    samples_notes = existing_sample[5]
     if mcm_notes != samples_notes:
-        logger.info('Notes for %s changed:\nMcM: %s\nSamples: %s',
-                    existing_request_prepid,
-                    mcm_notes,
-                    samples_notes)
-        logger.info('Will use Samples notes')
-        mcm_request['notes'] = samples_notes.strip()
-        sql_args[19] = mcm_request['notes']
-        request_changed = True
+        return True, samples_notes.strip()
 
-    if request_changed:
-        logger.info('Updating %s', existing_request_prepid)
-        response = mcm.update('requests', mcm_request)
-        logger.info('Updated %s: %s', existing_request_prepid, response)
+    return False, mcm_notes
+
+def update_interested_pwgs(mcm_request, current_interested_pwgs, original_interested_pwgs):
+    """
+    Figure out which PWGs were added and removed by McM and Samples and update them
+    """
+    mcm_interested_pwgs = {x for x in mcm_request.get('interested_pwg', [])}
+    mcm_interested_pwgs = {x.strip().upper() for x in mcm_interested_pwgs if x.strip()}
+    samples_added = current_interested_pwgs - original_interested_pwgs
+    samples_removed = original_interested_pwgs - current_interested_pwgs
+    mcm_added = mcm_interested_pwgs - original_interested_pwgs
+    mcm_removed = original_interested_pwgs - mcm_interested_pwgs
+    all_added = samples_added.union(mcm_added)
+    all_removed = samples_removed.union(mcm_removed)
+    new_pwgs = (original_interested_pwgs - all_removed).union(all_added)
+    original_interested_pwgs_string = ','.join(sorted(original_interested_pwgs))
+    new_interested_pwgs_string = ','.join(sorted(new_pwgs))
+    if original_interested_pwgs_string != new_interested_pwgs_string:
+        mcm_request['interested_pwg'] = list(new_pwgs)
+        return True, new_interested_pwgs_string
+
+    return False, original_interested_pwgs_string
 
 def insert_or_update(sql_args, cursor):
     """
@@ -179,37 +189,17 @@ def insert_or_update(sql_args, cursor):
             logger.error('Error fetching %s', existing_request_prepid)
         else:
             logger.info('Will see if %s needs update', existing_request_prepid)
-            request_changed = False
-            # Figure out which PWGs were added and removed by McM and Samples
-            mcm_interested_pwgs = {x for x in mcm_request.get('interested_pwg', [])}
-            mcm_interested_pwgs = {x.strip().upper() for x in mcm_interested_pwgs if x.strip()}
-            samples_added = current_interested_pwgs - original_interested_pwgs
-            samples_removed = original_interested_pwgs - current_interested_pwgs
-            mcm_added = mcm_interested_pwgs - original_interested_pwgs
-            mcm_removed = original_interested_pwgs - mcm_interested_pwgs
-            all_added = samples_added.union(mcm_added)
-            all_removed = samples_removed.union(mcm_removed)
-            new_pwgs = (original_interested_pwgs - all_removed).union(all_added)
-            original_interested_pwgs_string = ','.join(sorted(original_interested_pwgs))
-            new_interested_pwgs_string = ','.join(sorted(new_pwgs))
-            if original_interested_pwgs_string != new_interested_pwgs_string:
-                logger.info('Interested PWGs for %s mismatch:\nMcM: %s\nSamples: %s',
-                            existing_request_prepid,
-                            ','.join(mcm_interested_pwgs),
-                            ','.join(current_interested_pwgs))
-                logger.info('Will set %s PWGs to: %s',
-                            existing_request_prepid,
-                            ','.join(new_pwgs))
-                mcm_request['interested_pwg'] = list(new_pwgs)
-                request_changed = True
-                sql_args[16] = sql_args[17] = new_interested_pwgs_string
-
             # Check if notes changed and update them
-            update_notes(sql_args,
-                         mcm_request,
-                         existing_sample,
-                         existing_request_prepid,
-                         request_changed)
+            notes_changed, sql_args[19] = update_notes(mcm_request, existing_sample[5])
+            interested_pwgs_changed, sql_args[16] = update_interested_pwgs(mcm_request,
+                                                                           current_interested_pwgs,
+                                                                           original_interested_pwgs)
+            sql_args[17] = sql_args[16]  # Update reference for the next sync with McM
+
+        if notes_changed or interested_pwgs_changed:
+            logger.info('Updating %s', existing_request_prepid)
+            response = mcm.update('requests', mcm_request)
+            logger.info('Updated %s: %s', existing_request_prepid, response)
 
         logger.info('Updating %s in local database', nice_description)
         sql_args.append(existing_sample[0])
