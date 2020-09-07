@@ -167,12 +167,12 @@ def campaign_group_page(campaign_group=None, pwg=None):
     conn = sqlite3.connect('data.db')
     cursor = conn.cursor()
     sql_args = [campaign_group]
-    counts = cursor.execute("SELECT COUNT(*) FROM samples;")
+    counts = cursor.execute("SELECT COUNT(*) FROM samples WHERE campaign_group = ?", sql_args)
     counts = counts.fetchall()
     counts = int(counts[0][0])
     page = int(request.args.get('page', 1))
     page_size = 10
-    num_pages = counts/page_size
+    num_pages = counts/page_size + 1
     sql_query = '''SELECT 1,
                           dataset,
                           root_request,
