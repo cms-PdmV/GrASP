@@ -152,8 +152,9 @@
       <div class="footer">
         <ul class="pagination justify-content-center">
         <li class="page-item {% if not page %}disabled{% endif %}"><button id=btn_prv class="page-link" onclick="changePage(this, {{page - 1}})">Previous</button></li>
-          <li class="page-item"><a class="page-link" href="#">{{ page }} out of {{ num_pages }}</a></li>
-          <li class="page-item {% if not page %}disabled{% endif %}"><button id=btn_nxt class="page-link" onclick="changePage(this, {{page + 1}})">Next</button></li>
+        <li class="page-item"><a class="page-link" href="#">{{ page }} out of {{ num_pages }}</a></li>
+        <li class="page-item"><input class="page-link" type="number" placeholder="Enter Number..." onchange="changePage(this, this.value)"></input></li>
+        <li class="page-item {% if not page %}disabled{% endif %}"><button id=btn_nxt class="page-link" onclick="changePage(this, {{page + 1}})">Next</button></li>
         </ul>
       </div>
     </div>
