@@ -167,6 +167,8 @@ def campaign_group_page(campaign_group=None, pwg=None):
     conn = sqlite3.connect('data.db')
     cursor = conn.cursor()
     sql_args = [campaign_group]
+    page = int(request.args.get('page', 1))
+    page_size = 10
     sql_query = '''SELECT 1,
                           dataset,
                           root_request,
@@ -188,7 +190,7 @@ def campaign_group_page(campaign_group=None, pwg=None):
                           cross_section,
                           ifnull(notes, "")
                    FROM samples
-                   WHERE campaign_group = ?'''
+                   WHERE campaign_group = ? LIMIT %s OFFSET %s''' % (page_size, (page-1)*page_size)
 
     sql_query_ul = '''SELECT dataset,
                    total_events,
@@ -260,6 +262,7 @@ def campaign_group_page(campaign_group=None, pwg=None):
                            table_ul_rows=rows_ul,
                            pwgs=all_pwgs,
                            pwg=pwg,
+                           page=page,
                            user_info=user_info)
 
 @app.route('/phys/<string:phys_process>')

@@ -161,3 +161,14 @@ function updateSample(element, uid) {
       alert('Error in updating the dictionary: ' + data.responseText);
     })
 }
+
+function changePage(element, page) {
+  var loc = location.href;
+  if (page === 0) page =1; 
+  if (loc.indexOf("?") === -1)
+    loc += "?page=" + page;
+  else
+    loc += "&"
+    loc = loc.substr(0, loc.indexOf("?"))
+    location.href = loc + "?page=" + page;
+}

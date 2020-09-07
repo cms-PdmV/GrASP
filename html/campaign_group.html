@@ -149,6 +149,13 @@
           </tr>
         {% endfor %}
       </table>
+      <div class="footer">
+        <ul class="pagination justify-content-center">
+        <li class="page-item {% if not page %}disabled{% endif %}"><button id=btn_prv class="page-link" onclick="changePage(this, {{page - 1}})">Previous</button></li>
+          <li class="page-item"><a class="page-link" href="#">{{ page }}</a></li>
+          <li class="page-item {% if not page %}disabled{% endif %}"><button id=btn_nxt class="page-link" onclick="changePage(this, {{page + 1}})">Next</button></li>
+        </ul>
+      </div>
     </div>
     <div style="text-align: center; margin: 20px;">
        <b>Missing samples: present in RunIISummer19UL17 but not in {{campaign_group}}</b>
