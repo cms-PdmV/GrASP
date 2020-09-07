@@ -167,8 +167,12 @@ def campaign_group_page(campaign_group=None, pwg=None):
     conn = sqlite3.connect('data.db')
     cursor = conn.cursor()
     sql_args = [campaign_group]
+    counts = cursor.execute("SELECT COUNT(*) FROM samples;")
+    counts = counts.fetchall()
+    counts = int(counts[0][0])
     page = int(request.args.get('page', 1))
     page_size = 10
+    num_pages = counts/page_size
     sql_query = '''SELECT 1,
                           dataset,
                           root_request,
@@ -263,6 +267,7 @@ def campaign_group_page(campaign_group=None, pwg=None):
                            pwgs=all_pwgs,
                            pwg=pwg,
                            page=page,
+                           num_pages=num_pages,
                            user_info=user_info)
 
 @app.route('/phys/<string:phys_process>')
