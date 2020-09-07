@@ -408,6 +408,9 @@ def update():
     if not rows:
         return '%s could not be found' % (uid), 404
 
+    root_request = rows[0][0]
+    chained_request = rows[0][1]
+
     update_time = int(time.time())
     if 'pwg' in data:
         pwg = data['pwg'].upper()
@@ -416,8 +419,6 @@ def update():
 
         checked = data['checked']
         pwgs = {x for x in rows[0][2].split(',') if x}
-        chained_request = rows[0][1]
-        root_request = rows[0][0]
         if checked and pwg not in pwgs:
             pwgs.add(pwg)
         elif not checked and pwg in pwgs:
