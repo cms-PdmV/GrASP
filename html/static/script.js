@@ -163,12 +163,8 @@ function updateSample(element, uid) {
 }
 
 function changePage(element, page) {
-  var loc = location.href;
-  if (page === 0) page =1; 
-  if (loc.indexOf("?") === -1)
-    loc += "?page=" + page;
-  else
-    loc += "&"
-    loc = loc.substr(0, loc.indexOf("?"))
-    location.href = loc + "?page=" + page;
+  let urlParams = Object.fromEntries(new URLSearchParams(window.location.search));
+  if (page === 0) page =1;
+  urlParams["page"] = page;
+  location.search = "?" + new URLSearchParams(urlParams).toString();
 }

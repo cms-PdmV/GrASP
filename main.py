@@ -6,6 +6,7 @@ import argparse
 import logging
 import json
 import time
+from math import ceil
 from flask import Flask, render_template, request
 from flask_restful import Api
 from utils import get_short_name, tags, get_physics_process_name, get_physics_short_name
@@ -170,9 +171,9 @@ def campaign_group_page(campaign_group=None, pwg=None):
     counts = cursor.execute("SELECT COUNT(*) FROM samples WHERE campaign_group = ?", sql_args)
     counts = counts.fetchall()
     counts = int(counts[0][0])
-    page = int(request.args.get('page', 1))
+    page = max(int(request.args.get('page', 1)), 1)
     page_size = 10
-    num_pages = counts/page_size + 1
+    num_pages = int(ceil(counts/page_size)) + 1
     sql_query = '''SELECT 1,
                           dataset,
                           root_request,
@@ -194,7 +195,7 @@ def campaign_group_page(campaign_group=None, pwg=None):
                           cross_section,
                           ifnull(notes, "")
                    FROM samples
-                   WHERE campaign_group = ? LIMIT %s OFFSET %s''' % (page_size, (page-1)*page_size)
+                   WHERE campaign_group = ? '''
 
     sql_query_ul = '''SELECT dataset,
                    total_events,
@@ -214,6 +215,7 @@ def campaign_group_page(campaign_group=None, pwg=None):
     if only_with_miniaod:
         sql_query += ' AND miniaod != ""'
 
+    sql_query += ' LIMIT %s OFFSET %s' % (page_size, (page-1)*page_size)
     rows = cursor.execute(sql_query, sql_args)
     rows = [(get_short_name(r[1]),  # 0 Short name
              r[1],  # 1 Dataset
