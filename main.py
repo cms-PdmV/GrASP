@@ -168,13 +168,8 @@ def campaign_group_page(campaign_group=None, pwg=None):
     conn = sqlite3.connect('data.db')
     cursor = conn.cursor()
     sql_args = [campaign_group]
-    counts = cursor.execute("SELECT COUNT(*) FROM samples WHERE campaign_group = ?", sql_args)
-    counts = counts.fetchall()
-    counts = int(counts[0][0])
     page = max(int(request.args.get('page', 1)), 1)
     search_qry = str(request.args.get('search', ''))
-    page_size = 10
-    num_pages = int(ceil(counts/page_size)) + 1
     sql_query = '''SELECT 1,
                           dataset,
                           root_request,
@@ -207,9 +202,14 @@ def campaign_group_page(campaign_group=None, pwg=None):
                    FROM missing_ul
                    WHERE missing_campaign = ?'''
 
+    counts_query = '''SELECT COUNT(*)
+                      FROM samples
+                      WHERE campaign_group = ?'''
+
     if pwg and pwg in all_pwgs:
         sql_query += ' AND interested_pwgs LIKE ?'
         sql_query_ul += ' AND resp_group LIKE ?'
+        counts_query += ' AND interested_pwgs LIKE ?'
         sql_args.append('%%%s%%' % (pwg))
 
     only_with_miniaod = request.args.get('only_with_miniaod', '').lower().strip() == 'true'
@@ -219,10 +219,17 @@ def campaign_group_page(campaign_group=None, pwg=None):
     if search_qry:
         sql_query += 'AND dataset LIKE ?'
         sql_query_ul += 'AND dataset LIKE ?'
+        counts_query += 'AND dataset LIKE ?'
         sql_args.append('%%%s%%' % search_qry)
 
     sql_query += ' ORDER BY dataset'
     sql_query_ul += ' ORDER BY dataset'
+
+    page_size = 10
+    counts = cursor.execute(counts_query, sql_args)
+    counts = counts.fetchall()
+    counts = int(counts[0][0])
+    num_pages = int(ceil(counts/page_size)) + 1
     sql_query += ' LIMIT %s OFFSET %s' % (page_size, (page-1)*page_size)
 
     rows = cursor.execute(sql_query, sql_args)
