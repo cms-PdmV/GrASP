@@ -26,7 +26,9 @@
         </select>
         <b>physics working group as interested PWG in samples</b>
       </div>
-
+      <div style="text-align: center; margin: 20px;">
+        Search: <input class="fas fa-search    " type="text" placeholder="search, for example: QCD" onchange="search(this, this.value)"></input> 
+      </div>
       <p style="margin: 8px;">
       {% for row in table_rows %}
         {% if row[0][1] > 0%}

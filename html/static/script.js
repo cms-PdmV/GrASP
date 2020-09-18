@@ -168,3 +168,9 @@ function changePage(element, page) {
   urlParams["page"] = page;
   location.search = "?" + new URLSearchParams(urlParams).toString();
 }
+
+function search(element, search) {
+  let urlParams = Object.fromEntries(new URLSearchParams(window.location.search));
+  urlParams["search"] = search;
+  location.search = "?" + new URLSearchParams(urlParams).toString();
+}
