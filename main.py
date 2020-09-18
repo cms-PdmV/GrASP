@@ -172,6 +172,7 @@ def campaign_group_page(campaign_group=None, pwg=None):
     counts = counts.fetchall()
     counts = int(counts[0][0])
     page = max(int(request.args.get('page', 1)), 1)
+    search_qry = str(request.args.get('search', ''))
     page_size = 10
     num_pages = int(ceil(counts/page_size)) + 1
     sql_query = '''SELECT 1,
@@ -215,7 +216,15 @@ def campaign_group_page(campaign_group=None, pwg=None):
     if only_with_miniaod:
         sql_query += ' AND miniaod != ""'
 
+    if search_qry:
+        sql_query += 'AND dataset LIKE ?'
+        sql_query_ul += 'AND dataset LIKE ?'
+        sql_args.append('%%%s%%' % search_qry)
+
+    sql_query += ' ORDER BY dataset'
+    sql_query_ul += ' ORDER BY dataset'
     sql_query += ' LIMIT %s OFFSET %s' % (page_size, (page-1)*page_size)
+
     rows = cursor.execute(sql_query, sql_args)
     rows = [(get_short_name(r[1]),  # 0 Short name
              r[1],  # 1 Dataset
