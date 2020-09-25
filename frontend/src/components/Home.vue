@@ -5,15 +5,11 @@
     <table>
       <tr>
         <th>Campaign Name</th>
-        <th>Actions</th>
         <th :colspan="pwgs.length">Interested PWGs</th>
       </tr>
       <tr v-for="campaign in futureCmpaigns" :key="campaign.name">
         <td>
-          <a :href="'planning?name=' + campaign.name">{{campaign.name}}</a>
-        </td>
-        <td>
-          <a :href="'planning_edit?name=' + campaign.name">Edit</a>
+          <a :href="'planning?name=' + campaign.name">{{campaign.name}}</a> <a :title="'Edit ' + campaign.name" style="text-decoration: none;" :href="'planning_edit?name=' + campaign.name">&#128295;</a>
         </td>
         <td v-for="pwg in pwgs" :key="pwg">
           <a :href="'planning?name=' + campaign.name + '&pwg=' + pwg">{{pwg}}</a>

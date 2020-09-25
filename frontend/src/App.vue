@@ -70,47 +70,80 @@ a.no-decoration {
 
 <style>
 
-h1.page-title {
+.page-title {
   text-align: center;
   margin: 8px 16px;
 }
 
+/* Table */
 td, th {
-  padding: 6px;
   border: 1px #aaa solid;
-}
-
-td {
-  position: relative;
+  padding: 2px 8px;
+  font-size: 0.9em;
 }
 
 th {
   text-align: center;
+  background: #eee;
+}
+
+tr {
+  height: 30px;
+  background: white;
+}
+
+table.highlight-on-hover > tr:hover {
+  background: #eee !important;
 }
 
 table {
   margin-left: auto;
   margin-right: auto;
   margin-bottom: 40px;
-  background: white;
   border-collapse: collapse;
 }
 
 input {
-  border: 1px solid rgba(0, 0, 0, 0.87) !important;
+  /* border: 1px solid rgba(0, 0, 0, 0.87) !important; */
   border-radius: 4px;
   background: #fbfbfb;
   color: rgba(0, 0, 0, 0.87);
   width: 100%;
-  padding: 0 4px !important;
+  padding: 0 4px;
 }
 
-.page-card input:disabled,
-.page-card select:disabled,
-.page-card textarea:disabled {
-  background: #dadada !important;
-  color: rgba(0, 0, 0, 0.65);
-  cursor: not-allowed;
+td > input {
+  margin-left: -9px;
+  margin-right: -9px;
+  padding: 0 9px;
+  outline: none;
+  width: calc(100% + 18px);
+}
+
+td.hidden-cell {
+  visibility: hidden;
+  border: 0;
+}
+
+/* Convenience */
+.align-center {
+  text-align: center;
+}
+
+.align-left {
+  text-align: left;
+}
+
+.align-right {
+  text-align: right;
+}
+
+.red {
+  color: red;
+}
+
+.pointer {
+  cursor: pointer;
 }
 
 </style>

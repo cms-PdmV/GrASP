@@ -5,7 +5,7 @@ export const utilsMixin = {
       if (!list) {
         return 0;
       }
-      if (typeof(list) === "string") {
+      if (typeof(list) === 'string') {
         return list.split('\n').filter(Boolean).length;
       }
       return list.length;
@@ -31,5 +31,25 @@ export const utilsMixin = {
               'This will open GrASP homepage in a new tab and hopefully refresh your SSO cookie. ' +
               'You can then close the newly opened tab, dismiss this alert and try performing same action again.');
     },
+    suffixNumber(number) {
+      let stripNumber = '';
+      let suffix = '';
+      let multiplier = 1.0;
+      if (number >= 1e9) {
+        suffix = 'G';
+        multiplier = 1e7;
+      } else if (number >= 1e6) {
+        suffix = 'M';
+        multiplier = 1e4;
+      } else if (number >= 1e3) {
+        suffix = 'k';
+        multiplier = 10;
+      } else {
+        return number.toString();
+      }
+      stripNumber = (Math.round(1.0 * number / multiplier) / 100.0).toFixed(2).toString();
+      stripNumber = stripNumber.replace(/0+$/, '').replace(/\.$/, '');
+      return stripNumber + suffix;
+    }
   }
 }

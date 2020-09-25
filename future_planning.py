@@ -5,6 +5,7 @@ import json
 import flask
 import sqlite3
 from api_base import APIBase
+from update_scripts.utils import get_short_name
 
 class CreateFutureCampaignAPI(APIBase):
     """
@@ -32,12 +33,13 @@ class CreateFutureCampaignAPI(APIBase):
                            campaign_uid integer,
                            short_name text,
                            dataset text,
-                           pileup text,
                            chain_tag text,
                            events integer,
                            interested_pwgs text,
                            comment text,
                            fragment text,
+                           in_reference short,
+                           in_target short,
                            FOREIGN KEY(campaign_uid) REFERENCES future_campaigns(uid))''')
         conn.commit()
         cursor.execute('INSERT INTO future_campaigns VALUES (NULL, ?, ?)',
@@ -61,7 +63,9 @@ class GetFutureCampaignAPI(APIBase):
         conn = sqlite3.connect('data.db')
         cursor = conn.cursor()
         # Get the campaign itself
-        campaigns = cursor.execute('SELECT uid, campaign_name, reference FROM future_campaigns WHERE campaign_name = ?',
+        campaigns = cursor.execute('''SELECT uid, campaign_name, reference
+                                      FROM future_campaigns
+                                      WHERE campaign_name = ?''',
                                    [campaign_name])
         campaigns = [r for r in campaigns]
         if not campaigns:
@@ -75,12 +79,13 @@ class GetFutureCampaignAPI(APIBase):
                           campaign_uid,
                           short_name,
                           dataset,
-                          pileup,
                           chain_tag,
                           events,
                           interested_pwgs,
                           comment,
-                          fragment
+                          fragment,
+                          in_reference,
+                          in_target
                    FROM future_campaign_entries
                    WHERE campaign_uid IN (SELECT uid
                                           FROM future_campaigns
@@ -91,6 +96,9 @@ class GetFutureCampaignAPI(APIBase):
             query_args.append(interested_pwg)
             query += ' AND interested_pwgs LIKE ?'
 
+        query += '''ORDER BY dataset
+                    COLLATE NOCASE'''
+
         entries = cursor.execute(query, query_args)
         entries = [r for r in entries]
         conn.close()
@@ -98,12 +106,13 @@ class GetFutureCampaignAPI(APIBase):
                     'campaign_uid': int(c[1]),
                     'short_name': c[2],
                     'dataset': c[3],
-                    'pileup': c[4],
-                    'chain_tag': c[5],
-                    'events': int(c[6]),
-                    'interested_pwgs': c[7],
-                    'comment': c[8],
-                    'fragment': c[9]} for c in entries]
+                    'chain_tag': c[4],
+                    'events': int(c[5]),
+                    'interested_pwgs': c[6],
+                    'comment': c[7],
+                    'fragment': c[8],
+                    'in_reference': bool(int(c[9])),
+                    'in_target': bool(int(c[10])),} for c in entries]
         campaign['entries'] = entries
 
         return self.output_text({'response': campaign, 'success': True, 'message': ''})
@@ -128,9 +137,9 @@ class UpdateFutureCampaignAPI(APIBase):
                           SET campaign_name = ?,
                               reference = ?
                           WHERE uid = ?''',
-                         [data['name'],
-                          data['reference'],
-                          int(data['uid'])])
+                       [data['name'],
+                        data['reference'],
+                        int(data['uid'])])
 
         conn.commit()
         conn.close()
@@ -213,31 +222,35 @@ class AddEntryToFutureCampaignAPI(APIBase):
             if events[-1].lower() == 'k':
                 multiplier *= 1000
             elif events[-1].lower() == 'm':
-                multiplier *= 10000000
+                multiplier *= 1000000
+            elif events[-1].lower() == 'g':
+                multiplier *= 1000000000
 
             events = events[:-1]
 
         events = int(float(events) * multiplier)
         # Create an entry
         entry = {'campaign_uid': int(data['campaign_uid']),
-                 'short_name': data['dataset'].split('_')[0],
+                 'short_name': get_short_name(data['dataset']),
                  'dataset': data['dataset'],
-                 'pileup': data['pileup'],
                  'chain_tag': data['chain_tag'],
                  'events': events,
                  'interested_pwgs': ','.join(interested_pwgs),
                  'comment': data['comment'],
-                 'fragment': data['fragment']}
-        cursor.execute('INSERT INTO future_campaign_entries VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                 'fragment': data['fragment'],
+                 'in_reference': 1 if data.get('in_reference') else 0,
+                 'in_target': 1 if data.get('in_target') else 0,}
+        cursor.execute('INSERT INTO future_campaign_entries VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                        [entry['campaign_uid'],
                         entry['short_name'],
                         entry['dataset'],
-                        entry['pileup'],
                         entry['chain_tag'],
                         entry['events'],
                         entry['interested_pwgs'],
                         entry['comment'],
-                        entry['fragment']])
+                        entry['fragment'],
+                        entry['in_reference'],
+                        entry['in_target'],])
         entry['uid'] = cursor.lastrowid
         conn.commit()
         conn.close()
@@ -265,31 +278,32 @@ class UpdateEntryInFutureCampaignAPI(APIBase):
         # Events
         multiplier = 1
         events = str(data['events'])
+        self.logger.info('Events %s', events)
         while events and events[-1] not in '0123456789':
             if events[-1].lower() == 'k':
                 multiplier *= 1000
             elif events[-1].lower() == 'm':
-                multiplier *= 10000000
+                multiplier *= 1000000
+            elif events[-1].lower() == 'g':
+                multiplier *= 1000000000
 
             events = events[:-1]
 
+        self.logger.info('%s * %s', events, multiplier)
         events = int(float(events) * multiplier)
         # Create an entry
         entry = {'uid': int(data['uid']),
-                 'short_name': data['dataset'].split('_')[0],
+                 'short_name': get_short_name(data['dataset']),
                  'dataset': data['dataset'],
-                 'pileup': data['pileup'],
                  'chain_tag': data['chain_tag'],
                  'events': events,
                  'interested_pwgs': ','.join(interested_pwgs),
                  'comment': data['comment'],
                  'fragment': data['fragment']}
-        conn = sqlite3.connect('data.db')
-        cursor = conn.cursor()
+        # Update entry in DB
         cursor.execute('''UPDATE future_campaign_entries
                           SET short_name = ?,
                               dataset = ?,
-                              pileup = ?,
                               chain_tag = ?,
                               events = ?,
                               interested_pwgs = ?,
@@ -298,7 +312,6 @@ class UpdateEntryInFutureCampaignAPI(APIBase):
                           WHERE uid = ?''',
                          [entry['short_name'],
                           entry['dataset'],
-                          entry['pileup'],
                           entry['chain_tag'],
                           entry['events'],
                           entry['interested_pwgs'],

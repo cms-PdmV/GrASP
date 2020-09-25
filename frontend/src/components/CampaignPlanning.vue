@@ -1,11 +1,13 @@
 <template>
   <div>
     <h1 class="page-title"><span class="font-weight-light">Planning</span> {{campaignName}}</h1>
-    <table v-if="campaign.entries">
+    <h3 class="page-title" v-if="campaign && campaign.reference && campaign.reference.length"><span class="font-weight-light">Reference:</span> {{campaign.reference}}</h3>
+    <table v-if="campaign.entries" class="highlight-on-hover">
       <tr>
         <th>Short Name</th>
+        <th>In Reference Campaign</th>
+        <th>In Planned Campaign</th>
         <th>Dataset</th>
-        <th>Pileup</th>
         <th>Chain Tag</th>
         <th>Events</th>
         <th>Interested PWGs</th>
@@ -13,20 +15,20 @@
         <th>Fragment</th>
       </tr>
       <tr v-for="entry in campaign.entries" :key="entry.dataset + entry.uid">
-        <td :title="entry.uid">{{entry.short_name}} <span style="color:red" v-if="entry.broken">Not saved!</span></td>
+        <td :title="entry.uid">{{entry.short_name}} <span class="red" v-if="entry.broken">Not saved!</span></td>
+        <td class="align-center">{{entry.inReference}}</td>
+        <td class="align-center">{{entry.inTarget}}</td>
         <td v-on:dblclick="startEditing($event, entry, 'dataset')">
-          <template v-if="!entry.editing.dataset">{{entry.dataset}} <small style="color:red" @click="deleteEntry(entry);">delete</small></template>
+          <template v-if="!entry.editing.dataset">
+            {{entry.dataset}}
+            <span class="pointer show-on-hover"
+                  @click="deleteEntry(entry);"
+                  title="Delete this entry from planning table">&#10060;</span>
+          </template>
           <input @blur="stopEditing(entry, 'dataset')"
                  v-if="entry.editing.dataset"
                  type="text"
                  v-model="entry.temporary.dataset">
-        </td>
-        <td v-on:dblclick="startEditing($event, entry, 'pileup')">
-          <template v-if="!entry.editing.pileup">{{entry.pileup}}</template>
-          <input @blur="stopEditing(entry, 'pileup')"
-                 v-if="entry.editing.pileup"
-                 type="text"
-                 v-model="entry.temporary.pileup">
         </td>
         <td v-on:dblclick="startEditing($event, entry, 'chain_tag')">
           <template v-if="!entry.editing.chain_tag">{{entry.chain_tag}}</template>
@@ -35,21 +37,21 @@
                  type="text"
                  v-model="entry.temporary.chain_tag">
         </td>
-        <td v-on:dblclick="startEditing($event, entry, 'events')">
-          <template v-if="!entry.editing.events">{{entry.events}}</template>
+        <td v-on:dblclick="startEditing($event, entry, 'events')" class="align-right">
+          <template v-if="!entry.editing.events">{{entry.niceEvents}}</template>
           <input @blur="stopEditing(entry, 'events')"
                  v-if="entry.editing.events"
                  type="text"
                  v-model="entry.temporary.events">
         </td>
-        <td v-on:dblclick="startEditing($event, entry, 'interested_pwgs')">
+        <td v-on:dblclick="startEditing($event, entry, 'interested_pwgs')" class="align-center">
           <template v-if="!entry.editing.interested_pwgs">{{entry.interested_pwgs}}</template>
           <input @blur="stopEditing(entry, 'interested_pwgs')"
                  v-if="entry.editing.interested_pwgs"
                  type="text"
                  v-model="entry.temporary.interested_pwgs">
         </td>
-        <td v-on:dblclick="startEditing($event, entry, 'comment')">
+        <td v-on:dblclick="startEditing($event, entry, 'comment')" class="wrap">
           <template v-if="!entry.editing.comment">{{entry.comment}}</template>
           <input @blur="stopEditing(entry, 'comment')"
                  v-if="entry.editing.comment"
@@ -64,19 +66,28 @@
                  v-model="entry.temporary.fragment">
         </td>
       </tr>
+      <tr v-for="tagSum in chainTagSums" :key="tagSum[0]">
+        <td class="hidden-cell"></td>
+        <td class="hidden-cell"></td>
+        <td class="hidden-cell"></td>
+        <td class="hidden-cell"></td>
+        <td class="opaque"><i>Total {{tagSum[0]}}</i></td>
+        <td class="opaque align-right"><b :title="tagSum[1]">{{tagSum[2]}}</b></td>
+      </tr>
+    </table>
+    <h3 class="page-title">Add new entry</h3>
+    <table class="mb-1" v-if="campaign.entries">
       <tr>
-        <td colspan="8" style="border: none; background: #fafafa;">
-        </td>
+        <th>Dataset</th>
+        <th>Chain Tag</th>
+        <th>Events</th>
+        <th>Interested PWGs</th>
+        <th>Comment</th>
+        <th>Fragment</th>
       </tr>
       <tr>
         <td>
-          Add new
-        </td>
-        <td>
           <input type="text" v-model="newEntry.dataset">
-        </td>
-        <td>
-          <input type="text" v-model="newEntry.pileup">
         </td>
         <td>
           <input type="text" v-model="newEntry.chain_tag">
@@ -94,12 +105,10 @@
           <input type="text" v-model="newEntry.fragment">
         </td>
       </tr>
-      <tr>
-        <td colspan="8">
-          <v-btn small class="mr-1 mt-1" color="primary" @click="addEntry()">Add</v-btn>
-        </td>
-      </tr>
     </table>
+    <div class="align-center mb-4">
+      <v-btn small class="mr-1 mt-1" color="primary" @click="addEntry()">Add entry</v-btn>
+    </div>
   </div>
 </template>
 
@@ -119,6 +128,7 @@ export default {
       interestedPWG: undefined,
       campaign: {},
       newEntry: {},
+      chainTagSums: [],
     }
   },
   created () {
@@ -129,7 +139,6 @@ export default {
     }
     this.fetchCampaign();
     this.newEntry = {'dataset': '',
-                     'pileup': '',
                      'chain_tag': '',
                      'events': '',
                      'interested_pwgs': this.interestedPWG ? this.interestedPWG : '',
@@ -144,19 +153,16 @@ export default {
       let component = this;
       httpRequest.then(response => {
         let entry = response.data.response;
-        entry.editing = {};
-        entry.temporary = {};
-        entry.dirty = false;
-        entry.broken = false;
+        component.processEntry(entry);
         component.campaign.entries.push(entry);
         component.newEntry = {'dataset': '',
-                              'pileup': '',
                               'chain_tag': '',
                               'events': '',
                               'interested_pwgs': component.interestedPWG ? component.interestedPWG : '',
                               'comment': '',
                               'fragment': ''};
       }).catch(error => {
+        console.error(error);
         alert(error.response);
       });
     },
@@ -167,22 +173,38 @@ export default {
       let component = this;
       httpRequest.then(response => {
         Object.assign(entry, response.data.response);
-        entry.broken = false;
+        component.processEntry(entry);
+        component.recalculateChainTagSums();
       }).catch(error => {
+        console.error(error);
         alert(error.response);
         entry.broken = true;
       });
     },
     deleteEntry: function(entry) {
-      let entryCopy = this.makeCopy(entry);
-      entryCopy['campaign_uid'] = this.campaign.uid;
-      let httpRequest = axios.delete('api/planning/delete_entry', {data: entryCopy});
-      let component = this;
-      httpRequest.then(response => {
-        component.campaign.entries = component.campaign.entries.filter(item => item.uid !== entry.uid);
-      }).catch(error => {
-        alert(error.response);
-      });
+      if (confirm("Are you sure you want to delete " + entry.dataset + " " + entry.chain_tag + " with " + entry.events + " events ?")) {
+        let entryCopy = this.makeCopy(entry);
+        entryCopy['campaign_uid'] = this.campaign.uid;
+        let httpRequest = axios.delete('api/planning/delete_entry', {data: entryCopy});
+        let component = this;
+        httpRequest.then(response => {
+          component.campaign.entries = component.campaign.entries.filter(item => item.uid !== entry.uid);
+        }).catch(error => {
+        console.error(error);
+          alert(error.response);
+        });
+      }
+    },
+    processEntry: function(entry) {
+      // Add or set to default some attributes
+      // and calculate number with SI suffix
+      entry.editing = {};
+      entry.temporary = {};
+      entry.dirty = false;
+      entry.broken = false;
+      entry.inReference = entry.in_reference ? '✓' : '⨯';
+      entry.inTarget = entry.in_target ? '✓' : '⨯';
+      entry.niceEvents = this.suffixNumber(entry.events);
     },
     fetchCampaign: function() {
       let component = this;
@@ -193,13 +215,12 @@ export default {
       axios.get(url).then(response => {
         let campaign = response.data.response;
         campaign.entries.forEach(element => {
-          element.editing = {};
-          element.temporary = {};
-          element.dirty = false;
-          element.broken = false;
+          component.processEntry(element);
         });
         component.$set(component, 'campaign', campaign);
+        component.recalculateChainTagSums();
       }).catch(error => {
+        console.error(error);
         alert(error.response);
       });
     },
@@ -207,9 +228,11 @@ export default {
       entry.temporary[attribute] = entry[attribute];
       this.$set(entry.editing, attribute, true);
       const target = event.target;
+      const width = (target.getBoundingClientRect().width);
       this.$nextTick(() => {
         let input = target.querySelector('input');
         if (input) {
+          input.style.width = width + 'px';
           input.focus();
         }
       })
@@ -222,7 +245,47 @@ export default {
         this.updateEntry(entry);
       }
     },
+    recalculateChainTagSums: function() {
+      let sums = {};
+      this.campaign.entries.forEach(el => {
+        let tag = el.chain_tag;
+        if (!(tag in sums)) {
+          sums[tag] = 0;
+        }
+        sums[tag] += el.events;
+      });
+      sums = Object.entries(sums).sort((a, b) => b[1] - a[1]);
+      sums.forEach(el => {
+        el.push(this.suffixNumber(el[1]));
+      });
+      this.chainTagSums = sums;
+    },
   }
 }
 </script>
+
+<style scoped>
+
+td {
+  white-space: nowrap;
+  min-width: 100px;
+}
+
+td.wrap {
+  white-space: normal;
+}
+
+.opaque {
+  opacity: 0.6;
+}
+
+.show-on-hover {
+  opacity: 0;
+}
+
+tr:hover .show-on-hover {
+  opacity: 1;
+}
+
+</style>
 
