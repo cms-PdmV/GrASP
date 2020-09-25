@@ -26,11 +26,11 @@
         {% for campaign_group in campaign_groups %}
         <tr>
           <td>
-            <a href="campaign_group/{{campaign_group}}">{{campaign_group}}</a>
+            <a href="campaign_group/?campaign={{campaign_group}}">{{campaign_group}}</a>
           </td>
           {% for pwg in pwgs %}
           <td>
-            <a href="campaign_group/{{campaign_group}}/{{pwg}}">{{pwg}}</a>
+            <a href="campaign_group/?campaign={{campaign_group}}&pwg={{pwg}}">{{pwg}}</a>
           </td>
           {% endfor %}
         </tr>
@@ -40,7 +40,6 @@
         <tr>
           <th>Campaign group</th>
           <th colspan={{phys_processes | length}}>Physics processes</th>
-          <th colspan={{tags | length}}>Analysis tags</th>
         </tr>
         <tr>
           <td>
@@ -49,11 +48,6 @@
           {% for index in range(0, phys_processes | length) %}
           <td>
             <a href="phys/{{phys_processes_short[index]}}">{{phys_processes[index]}}</a>
-          </td>
-          {% endfor %}
-          {% for tag in tags %}
-          <td>
-            <a href="analysis/{{tag}}">{{tag}}</a>
           </td>
           {% endfor %}
         </tr>

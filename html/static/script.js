@@ -171,6 +171,6 @@ function changePage(element, page) {
 
 function search(element, search) {
   let urlParams = Object.fromEntries(new URLSearchParams(window.location.search));
-  urlParams["search"] = search;
+  urlParams["dataset"] = search;
   location.search = "?" + new URLSearchParams(urlParams).toString();
 }
