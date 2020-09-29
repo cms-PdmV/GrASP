@@ -4,7 +4,7 @@ Module that contains all future campaign planning APIs
 import json
 import flask
 import sqlite3
-from api_base import APIBase
+from api.api_base import APIBase
 from update_scripts.utils import get_short_name
 
 class CreateFutureCampaignAPI(APIBase):
@@ -20,7 +20,7 @@ class CreateFutureCampaignAPI(APIBase):
         data = flask.request.data
         data = json.loads(data.decode('utf-8'))
         self.logger.info('Creating new future campaign %s', data)
-        conn = sqlite3.connect('data.db')
+        conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         # Create table if it does not exist
         cursor.execute('''CREATE TABLE IF NOT EXISTS future_campaigns
@@ -60,7 +60,7 @@ class GetFutureCampaignAPI(APIBase):
         Get a single future campaign
         """
         self.logger.info('Getting future campaign %s', campaign_name)
-        conn = sqlite3.connect('data.db')
+        conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         # Get the campaign itself
         campaigns = cursor.execute('''SELECT uid, campaign_name, reference
@@ -131,7 +131,7 @@ class UpdateFutureCampaignAPI(APIBase):
         data = flask.request.data
         data = json.loads(data.decode('utf-8'))
         self.logger.info('Updating future campaign %s', data)
-        conn = sqlite3.connect('data.db')
+        conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         cursor.execute('''UPDATE future_campaigns
                           SET campaign_name = ?,
@@ -161,7 +161,7 @@ class DeleteFutureCampaignAPI(APIBase):
         self.logger.info('Deleting future campaign %s', data)
         campaign_name = data['name']
         campaign_uid = data['uid']
-        conn = sqlite3.connect('data.db')
+        conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         cursor.execute('''DELETE FROM future_campaign_entries
                           WHERE campaign_uid IN (SELECT uid
@@ -188,7 +188,7 @@ class GetAllFutureCampaignsAPI(APIBase):
         Get all future campaigns
         """
         self.logger.info('Getting all future campaigns')
-        conn = sqlite3.connect('data.db')
+        conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         campaigns = cursor.execute('SELECT uid, campaign_name, reference FROM future_campaigns')
         campaigns = [r for r in campaigns]
@@ -210,7 +210,7 @@ class AddEntryToFutureCampaignAPI(APIBase):
         data = flask.request.data
         data = json.loads(data.decode('utf-8'))
         self.logger.info('Adding entry to future campaign %s', data)
-        conn = sqlite3.connect('data.db')
+        conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         # Interested pwgs
         interested_pwgs = data['interested_pwgs'].upper().split(',')
@@ -270,7 +270,7 @@ class UpdateEntryInFutureCampaignAPI(APIBase):
         data = flask.request.data
         data = json.loads(data.decode('utf-8'))
         self.logger.info('Editing entry in future campaign %s', data)
-        conn = sqlite3.connect('data.db')
+        conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         # Interested pwgs
         interested_pwgs = data['interested_pwgs'].upper().split(',')
@@ -338,7 +338,7 @@ class DeleteEntryInFutureCampaignAPI(APIBase):
         self.logger.info('Deleting entry in future campaign %s', data)
         entry_uid = data['uid']
         campaign_uid = data['campaign_uid']
-        conn = sqlite3.connect('data.db')
+        conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         cursor.execute('''DELETE FROM future_campaign_entries
                           WHERE uid = ?

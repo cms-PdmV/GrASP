@@ -66,16 +66,24 @@
                  v-model="entry.temporary.fragment">
         </td>
       </tr>
-      <tr v-for="tagSum in chainTagSums" :key="tagSum[0]">
+      <tr v-for="sum in sumPerChainTag" :key="sum[0]">
         <td class="hidden-cell"></td>
         <td class="hidden-cell"></td>
         <td class="hidden-cell"></td>
         <td class="hidden-cell"></td>
-        <td class="opaque"><i>Total {{tagSum[0]}}</i></td>
-        <td class="opaque align-right"><b :title="tagSum[1]">{{tagSum[2]}}</b></td>
+        <td class="opaque"><i>Total {{sum[0]}}</i></td>
+        <td class="opaque align-right"><b :title="sum[1]">{{sum[2]}}</b></td>
+      </tr>
+      <tr>
+        <td class="hidden-cell"></td>
+        <td class="hidden-cell"></td>
+        <td class="hidden-cell"></td>
+        <td class="hidden-cell"></td>
+        <td><b>Total</b></td>
+        <td class="align-right"><b :title="sumTotal">{{sumTotalNice}}</b></td>
       </tr>
     </table>
-    <h3 class="page-title">Add new entry</h3>
+    <h3 class="page-title">Add New Entry</h3>
     <table class="mb-1" v-if="campaign.entries">
       <tr>
         <th>Dataset</th>
@@ -86,23 +94,23 @@
         <th>Fragment</th>
       </tr>
       <tr>
-        <td>
-          <input type="text" v-model="newEntry.dataset">
+        <td class="wide">
+          <input type="text" v-model="newEntry.dataset" placeholder="E.g. ZZ_TuneCP5_13TeV-pythia8">
         </td>
         <td>
-          <input type="text" v-model="newEntry.chain_tag">
+          <input type="text" v-model="newEntry.chain_tag" placeholder="E.g. Premix">
         </td>
         <td>
-          <input type="text" v-model="newEntry.events">
+          <input type="text" v-model="newEntry.events" placeholder="Number of events">
         </td>
-        <td>
-          <input type="text" v-model="newEntry.interested_pwgs">
+        <td class="wide">
+          <input type="text" v-model="newEntry.interested_pwgs" placeholder="Comma separated, e.g. PPD,EXO,...">
         </td>
-        <td>
-          <input type="text" v-model="newEntry.comment">
+        <td class="wide">
+          <input type="text" v-model="newEntry.comment" placeholder="Freeform comment">
         </td>
-        <td>
-          <input type="text" v-model="newEntry.fragment">
+        <td class="wide">
+          <input type="text" v-model="newEntry.fragment" placeholder="Link to a fragment">
         </td>
       </tr>
     </table>
@@ -128,7 +136,11 @@ export default {
       interestedPWG: undefined,
       campaign: {},
       newEntry: {},
-      chainTagSums: [],
+      sumPerChainTag: [],
+      // Sum of all events
+      sumTotal: 0,
+      // Sum of all events with k, M, G suffix
+      sumTotalNice: '',
     }
   },
   created () {
@@ -161,6 +173,7 @@ export default {
                               'interested_pwgs': component.interestedPWG ? component.interestedPWG : '',
                               'comment': '',
                               'fragment': ''};
+        component.recalculateChainTagSums();
       }).catch(error => {
         console.error(error);
         alert(error.response);
@@ -189,6 +202,7 @@ export default {
         let component = this;
         httpRequest.then(response => {
           component.campaign.entries = component.campaign.entries.filter(item => item.uid !== entry.uid);
+          component.recalculateChainTagSums();
         }).catch(error => {
         console.error(error);
           alert(error.response);
@@ -228,7 +242,7 @@ export default {
       entry.temporary[attribute] = entry[attribute];
       this.$set(entry.editing, attribute, true);
       const target = event.target;
-      const width = (target.getBoundingClientRect().width);
+      const width = target.getBoundingClientRect().width + 1;
       this.$nextTick(() => {
         let input = target.querySelector('input');
         if (input) {
@@ -247,18 +261,24 @@ export default {
     },
     recalculateChainTagSums: function() {
       let sums = {};
+      let total = 0;
       this.campaign.entries.forEach(el => {
-        let tag = el.chain_tag;
+        let tag = el.chain_tag === '' ? '<unchained>' : el.chain_tag;
         if (!(tag in sums)) {
           sums[tag] = 0;
         }
         sums[tag] += el.events;
+        total += el.events;
       });
+      // Convert to a list of two-element lists and sort desc
       sums = Object.entries(sums).sort((a, b) => b[1] - a[1]);
+      // Add nice number to each item in the list
       sums.forEach(el => {
         el.push(this.suffixNumber(el[1]));
       });
-      this.chainTagSums = sums;
+      this.sumPerChainTag = sums;
+      this.sumTotal = total;
+      this.sumTotalNice = this.suffixNumber(total);
     },
   }
 }
@@ -269,6 +289,10 @@ export default {
 td {
   white-space: nowrap;
   min-width: 100px;
+}
+
+td.wide {
+  min-width: 300px;
 }
 
 td.wrap {

@@ -7,7 +7,7 @@ import traceback
 import time
 from flask import request, make_response
 from flask_restful import Resource
-from user_info import UserInfo
+from utils.user_info import UserInfo
 
 
 class APIBase(Resource):
@@ -27,6 +27,7 @@ class APIBase(Resource):
         """
         Resource.__init__(self)
         self.logger = logging.getLogger()
+        self.db_path = 'data.db'
 
     def __getattribute__(self, name):
         attr = object.__getattribute__(self, name)

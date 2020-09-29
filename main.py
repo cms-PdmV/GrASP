@@ -7,14 +7,14 @@ from flask_restful import Api
 from flask_cors import CORS
 from flask import Flask, render_template
 from jinja2.exceptions import TemplateNotFound
-from future_planning import (CreateFutureCampaignAPI,
-                             GetFutureCampaignAPI,
-                             UpdateFutureCampaignAPI,
-                             DeleteFutureCampaignAPI,
-                             GetAllFutureCampaignsAPI,
-                             AddEntryToFutureCampaignAPI,
-                             UpdateEntryInFutureCampaignAPI,
-                             DeleteEntryInFutureCampaignAPI)
+from api.future_plan_api import (CreateFutureCampaignAPI,
+                                 GetFutureCampaignAPI,
+                                 UpdateFutureCampaignAPI,
+                                 DeleteFutureCampaignAPI,
+                                 GetAllFutureCampaignsAPI,
+                                 AddEntryToFutureCampaignAPI,
+                                 UpdateEntryInFutureCampaignAPI,
+                                 DeleteEntryInFutureCampaignAPI)
 
 log_format = '[%(asctime)s][%(levelname)s] %(message)s'
 logging.basicConfig(format=log_format, level=logging.DEBUG)

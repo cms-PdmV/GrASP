@@ -77,7 +77,7 @@ def do(cursor):
                     for chained_request in chained_requests:
                         chain_tags.append(get_chain_tag(chained_request['prepid']))
                 else:
-                    chain_tags.append('<unchained>')
+                    chain_tags.append('')
 
                 for chain_tag in chain_tags:
                     entry = {'campaign_uid': int(future_campaign['uid']),
