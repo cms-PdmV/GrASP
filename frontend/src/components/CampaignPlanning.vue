@@ -16,8 +16,22 @@
       </tr>
       <tr v-for="entry in campaign.entries" :key="entry.dataset + entry.uid">
         <td :title="entry.uid">{{entry.short_name}} <span class="red" v-if="entry.broken">Not saved!</span></td>
-        <td class="align-center">{{entry.inReference}}</td>
-        <td class="align-center">{{entry.inTarget}}</td>
+        <td class="align-center">
+          <template v-if="entry.in_reference.length">
+            <a :href="'https://cms-pdmv.cern.ch/mcm/requests?prepid=' + entry.in_reference" target="_blank">{{entry.in_reference}}</a>
+          </template>
+          <template v-else>
+            &#10799;
+          </template>
+        </td>
+        <td class="align-center">
+          <template v-if="entry.in_target.length">
+            <a :href="'https://cms-pdmv.cern.ch/mcm/requests?prepid=' + entry.in_target" target="_blank">{{entry.in_target}}</a>
+          </template>
+          <template v-else>
+            &#10799;
+          </template>
+        </td>
         <td v-on:dblclick="startEditing($event, entry, 'dataset')">
           <template v-if="!entry.editing.dataset">
             {{entry.dataset}}
@@ -216,8 +230,6 @@ export default {
       entry.temporary = {};
       entry.dirty = false;
       entry.broken = false;
-      entry.inReference = entry.in_reference ? '✓' : '⨯';
-      entry.inTarget = entry.in_target ? '✓' : '⨯';
       entry.niceEvents = this.suffixNumber(entry.events);
     },
     fetchCampaign: function() {

@@ -26,7 +26,8 @@ class CreateFutureCampaignAPI(APIBase):
         cursor.execute('''CREATE TABLE IF NOT EXISTS future_campaigns
                           (uid integer PRIMARY KEY AUTOINCREMENT,
                            campaign_name text NOT NULL,
-                           reference text)''')
+                           reference text,
+                           prefilled short)''')
         # Move this somewhere else?
         cursor.execute('''CREATE TABLE IF NOT EXISTS future_campaign_entries
                           (uid integer PRIMARY KEY AUTOINCREMENT,
@@ -38,13 +39,21 @@ class CreateFutureCampaignAPI(APIBase):
                            interested_pwgs text,
                            comment text,
                            fragment text,
-                           in_reference short,
-                           in_target short,
+                           in_reference text,
+                           in_target text,
                            FOREIGN KEY(campaign_uid) REFERENCES future_campaigns(uid))''')
         conn.commit()
-        cursor.execute('INSERT INTO future_campaigns VALUES (NULL, ?, ?)',
+        existing_campaigns = cursor.execute('SELECT uid FROM future_campaigns WHERE campaign_name = ?',
+                                            [data['name']])
+        existing_campaigns = [x for x in existing_campaigns]
+        if existing_campaigns:
+            conn.close()
+            raise Exception('Planned campaign %s already exists' % (data['name']))
+
+        cursor.execute('INSERT INTO future_campaigns VALUES (NULL, ?, ?, ?)',
                        [data['name'],
-                        data['reference'] or ''])
+                        data['reference'] or '',
+                        0])
         conn.commit()
         conn.close()
         return self.output_text({'response': {}, 'success': True, 'message': ''})
@@ -63,7 +72,7 @@ class GetFutureCampaignAPI(APIBase):
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         # Get the campaign itself
-        campaigns = cursor.execute('''SELECT uid, campaign_name, reference
+        campaigns = cursor.execute('''SELECT uid, campaign_name, reference, prefilled
                                       FROM future_campaigns
                                       WHERE campaign_name = ?''',
                                    [campaign_name])
@@ -73,7 +82,8 @@ class GetFutureCampaignAPI(APIBase):
 
         campaign = {'uid': int(campaigns[0][0]),
                     'name': campaigns[0][1],
-                    'reference': campaigns[0][2]}
+                    'reference': campaigns[0][2],
+                    'prefilled': int(campaigns[0][3]) != 0}
         # Fetch all entries of this campaign
         query = '''SELECT uid,
                           campaign_uid,
@@ -111,8 +121,8 @@ class GetFutureCampaignAPI(APIBase):
                     'interested_pwgs': c[6],
                     'comment': c[7],
                     'fragment': c[8],
-                    'in_reference': bool(int(c[9])),
-                    'in_target': bool(int(c[10])),} for c in entries]
+                    'in_reference': c[9],
+                    'in_target': c[10],} for c in entries]
         campaign['entries'] = entries
 
         return self.output_text({'response': campaign, 'success': True, 'message': ''})
@@ -190,10 +200,14 @@ class GetAllFutureCampaignsAPI(APIBase):
         self.logger.info('Getting all future campaigns')
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        campaigns = cursor.execute('SELECT uid, campaign_name, reference FROM future_campaigns')
+        campaigns = cursor.execute('''SELECT uid, campaign_name, reference, prefilled
+                                      FROM future_campaigns''')
         campaigns = [r for r in campaigns]
         conn.close()
-        campaigns = [{'uid': int(c[0]), 'name': c[1], 'reference': c[2]} for c in campaigns]
+        campaigns = [{'uid': int(c[0]),
+                      'name': c[1],
+                      'reference': c[2],
+                      'prefilled': int(c[3]) != 0} for c in campaigns]
         return self.output_text({'response': campaigns, 'success': True, 'message': ''})
 
 
@@ -236,10 +250,10 @@ class AddEntryToFutureCampaignAPI(APIBase):
                  'chain_tag': data['chain_tag'],
                  'events': events,
                  'interested_pwgs': ','.join(interested_pwgs),
-                 'comment': data['comment'],
-                 'fragment': data['fragment'],
-                 'in_reference': 1 if data.get('in_reference') else 0,
-                 'in_target': 1 if data.get('in_target') else 0,}
+                 'comment': data.get('comment', ''),
+                 'fragment': data.get('fragment', ''),
+                 'in_reference': data.get('in_reference', ''),
+                 'in_target': data.get('in_target', ''),}
         cursor.execute('INSERT INTO future_campaign_entries VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                        [entry['campaign_uid'],
                         entry['short_name'],
