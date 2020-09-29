@@ -26,8 +26,14 @@
         </select>
         <b>physics working group as interested PWG in samples</b>
       </div>
-      <div style="text-align: center; margin: 20px;">
-        Search: <input class="fas fa-search    " type="text" placeholder="search, for example: QCD" onchange="search(this, this.value)"></input> 
+      <div>
+        <form class="form-group" onsubmit="search(this, this.dataset.value, this.campaign.value, this.pwg.value, this.notes.value)">
+          Campaign Name: <input class="w-25 form-control" type="text" placeholder="example: RunIISummer19UL17" value="{{campaign_group}}" id="campaign"></input> 
+          DataSet Name: <input class="w-25 form-control" type="text" placeholder="example: QCD" id="dataset"></input> 
+          PWG Name: <input class="w-25 form-control" type="text" placeholder="example: HIG" id="pwg"></input> 
+          Notes: <input class="w-25 form-control" type="text" placeholder="search inside notes" id="notes"></input> 
+          <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
       </div>
       <p style="margin: 8px;">
       {% for row in table_rows %}

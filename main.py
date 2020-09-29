@@ -211,23 +211,23 @@ def campaign_group_page():
         counts_query += ' WHERE campaign_group LIKE ?'
         sql_args.append('%%%s%%' % search_campaign_qry)
 
-    if search_pwg_qry and search_pwg_qry in all_pwgs:
+    if search_pwg_qry and search_campaign_qry and search_pwg_qry in all_pwgs:
         sql_query += ' AND interested_pwgs LIKE ?'
         sql_query_ul += ' AND resp_group LIKE ?'
         counts_query += ' AND interested_pwgs LIKE ?'
         sql_args.append('%%%s%%' % (search_pwg_qry))
 
     only_with_miniaod = request.args.get('only_with_miniaod', '').lower().strip() == 'true'
-    if only_with_miniaod:
+    if only_with_miniaod and search_campaign_qry:
         sql_query += ' AND miniaod != ""'
 
-    if search_dataset_qry:
+    if search_dataset_qry and search_campaign_qry:
         sql_query += ' AND dataset LIKE ?'
         sql_query_ul += ' AND dataset LIKE ?'
         counts_query += ' AND dataset LIKE ?'
         sql_args.append('%%%s%%' % search_dataset_qry)
 
-    if search_notes_qry:
+    if search_notes_qry and search_campaign_qry:
         sql_query += ' AND notes LIKE ?'
         sql_query_ul += ' AND root_request LIKE ?'
         counts_query += ' AND notes LIKE ?'
