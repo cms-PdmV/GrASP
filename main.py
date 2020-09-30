@@ -15,6 +15,8 @@ from api.future_plan_api import (CreateFutureCampaignAPI,
                                  AddEntryToFutureCampaignAPI,
                                  UpdateEntryInFutureCampaignAPI,
                                  DeleteEntryInFutureCampaignAPI)
+from api.system_info_api import UserInfoAPI
+
 
 log_format = '[%(asctime)s][%(levelname)s] %(message)s'
 logging.basicConfig(format=log_format, level=logging.DEBUG)
@@ -80,6 +82,10 @@ def api_documentation(_path):
     return render_template('api_documentation.html', docs=docs)
 
 
+# System APIs
+api.add_resource(UserInfoAPI, '/api/system/user_info')
+
+# Future campaign planning
 api.add_resource(CreateFutureCampaignAPI, '/api/planning/create')
 api.add_resource(GetFutureCampaignAPI,
                  '/api/planning/get/<string:campaign_name>',

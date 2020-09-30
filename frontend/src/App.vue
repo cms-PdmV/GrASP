@@ -9,7 +9,7 @@
       </a>
       <v-spacer></v-spacer>
       <div v-if="userInfo">
-        <span :title="'Username: ' + userInfo.username + '\nRole: ' + userInfo.role"><small>Logged in as</small> {{userInfo.fullname}} </span>
+        <span :title="'Username: ' + userInfo.username + '\nRole: ' + userInfo.role"><small>Logged in as</small> {{userInfo.name}} </span>
         <img class="admin-star" :title="'User role: ' + userInfo.role" :src="userRolePicture"/>
       </div>
     </v-app-bar>
@@ -31,11 +31,11 @@ export default {
   ],
   computed: {
     userRolePicture: function() {
-      if (this.userInfo.role_index == 1) {
-        return 'static/star.png';
-      }
-      if (this.userInfo.role_index == 2) {
+      if (this.userInfo.role_index == 4) {
         return 'static/admin_star.png';
+      }
+      if (this.userInfo.role_index >= 1) {
+        return 'static/star.png';
       }
       return 'static/invisible.png';
     }

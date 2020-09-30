@@ -1,6 +1,9 @@
 """
 Module that contains UserInfo class
 """
+import time
+import logging
+import sqlite3
 from flask import request
 
 
@@ -8,42 +11,62 @@ class UserInfo():
     """
     Class that holds information about user
     Information is obtained from headers supplied by SSO proxy
+    and from user database synced from McM
     """
 
+    ROLES = ['user',
+             'generator_contact',
+             'generator_convener',
+             'production_manager',
+             'administrator']
+    # Use static dictionary as a cache in order not to query DB each time
+    USERS = {}
+    USERS_UPDATE = 0
+    CACHE_TIMEOUT = 60
+
     def __init__(self):
-        self.__user = None
-        self.__role_groups = []
-        self.__roles = [x['role'] for x in self.__role_groups]
+        self.user = None
+
+    def fetch_from_db(self):
+        """
+        Fetch all users from database and save them in a cache-dictionary
+        """
+        logging.getLogger().info('Fetching users from DB into cache')
+        # uri=True means read-only
+        conn = sqlite3.connect('data.db', uri=True)
+        cursor = conn.cursor()
+        users = cursor.execute('''SELECT username, name, role
+                                  FROM mcm_users''')
+        users = {u[0]: {'username': u[0],
+                        'name': u[1],
+                        'role': u[2],
+                        'role_index': UserInfo.ROLES.index(u[2])} for u in users}
+        conn.close()
+        logging.getLogger().info('Fetched %s users from DB into cache', len(users))
+        return users
 
     def get_user_info(self):
         """
         Check request headers and parse user information
         """
-        if not self.__user:
-            groups = request.headers.get('Adfs-Group', '').split(';')
-            groups = [x.strip().lower() for x in groups if x.strip()]
+        if not self.user:
             username = request.headers.get('Adfs-Login')
             fullname = request.headers.get('Adfs-Fullname')
-            name = request.headers.get('Adfs-Firstname')
-            lastname = request.headers.get('Adfs-Lastname')
-            user_role = 'user'
-            groups_set = set(groups)
-            for role_group in reversed(self.__role_groups):
-                if not role_group.get('groups') or (set(role_group['groups']) & groups_set):
-                    user_role = role_group['role']
-                    break
+            now = time.time()
+            if now > UserInfo.USERS_UPDATE + UserInfo.CACHE_TIMEOUT:
+                UserInfo.USERS = self.fetch_from_db()
+                UserInfo.USERS_UPDATE = now
 
-            # TODO
-            role_index = 0 # self.__roles.index(user_role)
-            self.__user = {'name': name,
-                           'lastname': lastname,
-                           'fullname': fullname,
-                           'username': username,
-                           # 'groups': groups,
-                           'role': user_role,
-                           'role_index': role_index}
+            user = UserInfo.USERS.get(username)
+            if user:
+                self.user = user
+            else:
+                self.user = {'name': fullname,
+                             'username': username,
+                             'role': 'user',
+                             'role_index': 0}
 
-        return self.__user
+        return self.user
 
     def get_username(self):
         """
@@ -57,12 +80,6 @@ class UserInfo():
         """
         return self.get_user_info()['name']
 
-    def get_groups(self):
-        """
-        Get list of groups that user is member of
-        """
-        return self.get_user_info()['groups']
-
     def get_role(self):
         """
         Get list of groups that user is member of
@@ -73,6 +90,4 @@ class UserInfo():
         """
         Return whether this user has equal or higher role
         """
-        # TODO
-        return True
-        # return self.__roles.index(role_name) <= self.__roles.index(self.get_role())
+        return self.ROLES.index(role_name) <= self.ROLES.index(self.get_role())
