@@ -2,6 +2,10 @@
   <div>
     <h1 class="page-title"><span class="font-weight-light">Planning</span> {{campaignName}}</h1>
     <h3 class="page-title" v-if="campaign && campaign.reference && campaign.reference.length"><span class="font-weight-light">Reference:</span> {{campaign.reference}}</h3>
+    <div class="align-center" v-if="!campaign.entries">
+      <img src="static/loading.gif" style="width: 150px; height: 150px;"/>
+      <h3>Loading table...</h3>
+    </div>
     <table v-if="campaign.entries" class="highlight-on-hover">
       <tr>
         <th>Short Name</th>
@@ -97,40 +101,42 @@
         <td class="align-right"><b :title="sumTotal">{{sumTotalNice}}</b></td>
       </tr>
     </table>
-    <h3 class="page-title">Add New Entry</h3>
-    <table class="mb-1" v-if="campaign.entries">
-      <tr>
-        <th>Dataset</th>
-        <th>Chain Tag</th>
-        <th>Events</th>
-        <th>Interested PWGs</th>
-        <th>Comment</th>
-        <th>Fragment</th>
-      </tr>
-      <tr>
-        <td class="wide">
-          <input type="text" v-model="newEntry.dataset" placeholder="E.g. ZZ_TuneCP5_13TeV-pythia8">
-        </td>
-        <td>
-          <input type="text" v-model="newEntry.chain_tag" placeholder="E.g. Premix">
-        </td>
-        <td>
-          <input type="text" v-model="newEntry.events" placeholder="Number of events">
-        </td>
-        <td class="wide">
-          <input type="text" v-model="newEntry.interested_pwgs" placeholder="Comma separated, e.g. PPD,EXO,...">
-        </td>
-        <td class="wide">
-          <input type="text" v-model="newEntry.comment" placeholder="Freeform comment">
-        </td>
-        <td class="wide">
-          <input type="text" v-model="newEntry.fragment" placeholder="Link to a fragment">
-        </td>
-      </tr>
-    </table>
-    <div class="align-center mb-4">
-      <v-btn small class="mr-1 mt-1" color="primary" @click="addEntry()">Add entry</v-btn>
-    </div>
+    <template v-if="campaign.entries">
+      <h3 class="page-title">Add New Entry</h3>
+      <table class="mb-1">
+        <tr>
+          <th>Dataset</th>
+          <th>Chain Tag</th>
+          <th>Events</th>
+          <th>Interested PWGs</th>
+          <th>Comment</th>
+          <th>Fragment</th>
+        </tr>
+        <tr>
+          <td class="wide">
+            <input type="text" v-model="newEntry.dataset" placeholder="E.g. ZZ_TuneCP5_13TeV-pythia8">
+          </td>
+          <td>
+            <input type="text" v-model="newEntry.chain_tag" placeholder="E.g. Premix">
+          </td>
+          <td>
+            <input type="text" v-model="newEntry.events" placeholder="Number of events">
+          </td>
+          <td class="wide">
+            <input type="text" v-model="newEntry.interested_pwgs" placeholder="Comma separated, e.g. PPD,EXO,...">
+          </td>
+          <td class="wide">
+            <input type="text" v-model="newEntry.comment" placeholder="Freeform comment">
+          </td>
+          <td class="wide">
+            <input type="text" v-model="newEntry.fragment" placeholder="Link to a fragment">
+          </td>
+        </tr>
+      </table>
+      <div class="align-center mb-4">
+        <v-btn small class="mr-1 mt-1" color="primary" @click="addEntry()">Add entry</v-btn>
+      </div>
+    </template>
   </div>
 </template>
 
