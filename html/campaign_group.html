@@ -26,7 +26,15 @@
         </select>
         <b>physics working group as interested PWG in samples</b>
       </div>
-
+      <div>
+        <form class="form-group" onsubmit="search(this, this.dataset.value, this.campaign.value, this.pwg.value, this.notes.value)">
+          Campaign Name: <input class="w-25 form-control" type="text" placeholder="example: RunIISummer19UL17" value="{{campaign_group}}" id="campaign"></input> 
+          DataSet Name: <input class="w-25 form-control" type="text" placeholder="example: QCD" id="dataset"></input> 
+          PWG Name: <input class="w-25 form-control" type="text" placeholder="example: HIG" id="pwg"></input> 
+          Notes: <input class="w-25 form-control" type="text" placeholder="search inside notes" id="notes"></input> 
+          <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+      </div>
       <p style="margin: 8px;">
       {% for row in table_rows %}
         {% if row[0][1] > 0%}
@@ -149,6 +157,14 @@
           </tr>
         {% endfor %}
       </table>
+      <div class="footer">
+        <ul class="pagination justify-content-center">
+        <li class="page-item {% if not page %}disabled{% endif %}"><button id=btn_prv class="page-link" onclick="changePage(this, {{page - 1}})">Previous</button></li>
+        <li class="page-item"><a class="page-link" href="#">{{ page }} out of {{ num_pages }}</a></li>
+        <li class="page-item"><input class="page-link" type="number" placeholder="Enter Number..." onchange="changePage(this, this.value)"></input></li>
+        <li class="page-item {% if not page %}disabled{% endif %}"><button id=btn_nxt class="page-link" onclick="changePage(this, {{page + 1}})">Next</button></li>
+        </ul>
+      </div>
     </div>
     <div style="text-align: center; margin: 20px;">
        <b>Missing samples: present in RunIISummer19UL17 but not in {{campaign_group}}</b>

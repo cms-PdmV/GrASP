@@ -6,6 +6,7 @@ import argparse
 import logging
 import json
 import time
+from math import ceil
 from flask import Flask, render_template, request
 from flask_restful import Api
 from utils import get_short_name, tags, get_physics_process_name, get_physics_short_name
@@ -158,15 +159,19 @@ def index():
                            user_info=user_info)
 
 
-@app.route('/campaign_group/<string:campaign_group>')
-@app.route('/campaign_group/<string:campaign_group>/<string:pwg>')
-def campaign_group_page(campaign_group=None, pwg=None):
+@app.route('/campaign_group/')
+def campaign_group_page():
     """
     Campaign group or PWG in campaign group page endpoint
     """
     conn = sqlite3.connect('data.db')
     cursor = conn.cursor()
-    sql_args = [campaign_group]
+    sql_args = []
+    page = max(int(request.args.get('page', 1)), 1)
+    search_dataset_qry = str(request.args.get('dataset', ''))
+    search_notes_qry = str(request.args.get('notes', ''))
+    search_pwg_qry = str(request.args.get('pwg', ''))
+    search_campaign_qry = str(request.args.get('campaign', ''))
     sql_query = '''SELECT 1,
                           dataset,
                           root_request,
@@ -187,8 +192,7 @@ def campaign_group_page(campaign_group=None, pwg=None):
                           interested_pwgs,
                           cross_section,
                           ifnull(notes, "")
-                   FROM samples
-                   WHERE campaign_group = ?'''
+                   FROM samples'''
 
     sql_query_ul = '''SELECT dataset,
                    total_events,
@@ -196,17 +200,48 @@ def campaign_group_page(campaign_group=None, pwg=None):
                    missing_campaign,
                    resp_group,
                    root_request
-                   FROM missing_ul
-                   WHERE missing_campaign = ?'''
+                   FROM missing_ul'''
 
-    if pwg and pwg in all_pwgs:
+    counts_query = '''SELECT COUNT(*)
+                      FROM samples'''
+
+    if search_campaign_qry:
+        sql_query += ' WHERE campaign_group LIKE ?'
+        sql_query_ul += ' WHERE missing_campaign LIKE ?'
+        counts_query += ' WHERE campaign_group LIKE ?'
+        sql_args.append('%%%s%%' % search_campaign_qry)
+
+    if search_pwg_qry and search_campaign_qry and search_pwg_qry in all_pwgs:
         sql_query += ' AND interested_pwgs LIKE ?'
         sql_query_ul += ' AND resp_group LIKE ?'
-        sql_args.append('%%%s%%' % (pwg))
+        counts_query += ' AND interested_pwgs LIKE ?'
+        sql_args.append('%%%s%%' % (search_pwg_qry))
 
     only_with_miniaod = request.args.get('only_with_miniaod', '').lower().strip() == 'true'
-    if only_with_miniaod:
+    if only_with_miniaod and search_campaign_qry:
         sql_query += ' AND miniaod != ""'
+
+    if search_dataset_qry and search_campaign_qry:
+        sql_query += ' AND dataset LIKE ?'
+        sql_query_ul += ' AND dataset LIKE ?'
+        counts_query += ' AND dataset LIKE ?'
+        sql_args.append('%%%s%%' % search_dataset_qry)
+
+    if search_notes_qry and search_campaign_qry:
+        sql_query += ' AND notes LIKE ?'
+        sql_query_ul += ' AND root_request LIKE ?'
+        counts_query += ' AND notes LIKE ?'
+        sql_args.append('%%%s%%' % search_notes_qry)
+
+    sql_query += ' ORDER BY dataset'
+    sql_query_ul += ' ORDER BY dataset'
+
+    page_size = 200
+    counts = cursor.execute(counts_query, sql_args)
+    counts = counts.fetchall()
+    counts = int(counts[0][0])
+    num_pages = int(ceil(counts/page_size)) + 1
+    sql_query += ' LIMIT %s OFFSET %s' % (page_size, (page-1)*page_size)
 
     rows = cursor.execute(sql_query, sql_args)
     rows = [(get_short_name(r[1]),  # 0 Short name
@@ -255,11 +290,13 @@ def campaign_group_page(campaign_group=None, pwg=None):
     user_info = get_user_info(cursor)
     conn.close()
     return render_template('campaign_group.html',
-                           campaign_group=campaign_group,
+                           campaign_group=search_campaign_qry,
                            table_rows=rows,
                            table_ul_rows=rows_ul,
                            pwgs=all_pwgs,
-                           pwg=pwg,
+                           pwg=search_pwg_qry,
+                           page=page,
+                           num_pages=num_pages,
                            user_info=user_info)
 
 @app.route('/phys/<string:phys_process>')
@@ -405,6 +442,9 @@ def update():
     if not rows:
         return '%s could not be found' % (uid), 404
 
+    root_request = rows[0][0]
+    chained_request = rows[0][1]
+
     update_time = int(time.time())
     if 'pwg' in data:
         pwg = data['pwg'].upper()
@@ -413,8 +453,6 @@ def update():
 
         checked = data['checked']
         pwgs = {x for x in rows[0][2].split(',') if x}
-        chained_request = rows[0][1]
-        root_request = rows[0][0]
         if checked and pwg not in pwgs:
             pwgs.add(pwg)
         elif not checked and pwg in pwgs:

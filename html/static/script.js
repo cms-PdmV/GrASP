@@ -161,3 +161,19 @@ function updateSample(element, uid) {
       alert('Error in updating the dictionary: ' + data.responseText);
     })
 }
+
+function changePage(element, page) {
+  let urlParams = Object.fromEntries(new URLSearchParams(window.location.search));
+  if (page === 0) page =1;
+  urlParams["page"] = page;
+  location.search = "?" + new URLSearchParams(urlParams).toString();
+}
+
+function search(element, dataset_search, campaign_search, pwg_search, notes_search) {
+  let urlParams = Object.fromEntries(new URLSearchParams(window.location.search));
+  urlParams["dataset"] = dataset_search;
+  urlParams["campaign"] = campaign_search;
+  urlParams["pwg"] = pwg_search;
+  urlParams["notes"] = notes_search;
+  location.search = "?" + new URLSearchParams(urlParams).toString();
+}
