@@ -5,7 +5,7 @@ import json
 import flask
 import sqlite3
 from api.api_base import APIBase
-from update_scripts.utils import get_short_name
+from update_scripts.utils import get_short_name, clean_split, sorted_join
 
 class CreateFutureCampaignAPI(APIBase):
     """
@@ -22,27 +22,6 @@ class CreateFutureCampaignAPI(APIBase):
         self.logger.info('Creating new future campaign %s', data)
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        # Create table if it does not exist
-        cursor.execute('''CREATE TABLE IF NOT EXISTS future_campaigns
-                          (uid integer PRIMARY KEY AUTOINCREMENT,
-                           campaign_name text NOT NULL,
-                           reference text,
-                           prefilled short)''')
-        # Move this somewhere else?
-        cursor.execute('''CREATE TABLE IF NOT EXISTS future_campaign_entries
-                          (uid integer PRIMARY KEY AUTOINCREMENT,
-                           campaign_uid integer,
-                           short_name text,
-                           dataset text,
-                           chain_tag text,
-                           events integer,
-                           interested_pwgs text,
-                           comment text,
-                           fragment text,
-                           in_reference text,
-                           in_target text,
-                           FOREIGN KEY(campaign_uid) REFERENCES future_campaigns(uid))''')
-        conn.commit()
         existing_campaigns = cursor.execute('SELECT uid FROM future_campaigns WHERE campaign_name = ?',
                                             [data['name']])
         existing_campaigns = [x for x in existing_campaigns]
@@ -92,6 +71,7 @@ class GetFutureCampaignAPI(APIBase):
                           chain_tag,
                           events,
                           interested_pwgs,
+                          ref_interested_pwgs,
                           comment,
                           fragment,
                           in_reference,
@@ -119,10 +99,11 @@ class GetFutureCampaignAPI(APIBase):
                     'chain_tag': c[4],
                     'events': int(c[5]),
                     'interested_pwgs': c[6],
-                    'comment': c[7],
-                    'fragment': c[8],
-                    'in_reference': c[9],
-                    'in_target': c[10],} for c in entries]
+                    'ref_interested_pwgs': c[7],
+                    'comment': c[8],
+                    'fragment': c[9],
+                    'in_reference': c[10],
+                    'in_target': c[11],} for c in entries]
         campaign['entries'] = entries
 
         return self.output_text({'response': campaign, 'success': True, 'message': ''})
@@ -227,8 +208,7 @@ class AddEntryToFutureCampaignAPI(APIBase):
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         # Interested pwgs
-        interested_pwgs = data['interested_pwgs'].upper().split(',')
-        interested_pwgs = sorted(list(set([x.strip() for x in interested_pwgs if x.strip()])))
+        interested_pwgs = sorted_join(clean_split(data['interested_pwgs'].upper()))
         # Events
         multiplier = 1
         events = str(data['events'])
@@ -249,18 +229,20 @@ class AddEntryToFutureCampaignAPI(APIBase):
                  'dataset': data['dataset'],
                  'chain_tag': data['chain_tag'],
                  'events': events,
-                 'interested_pwgs': ','.join(interested_pwgs),
+                 'interested_pwgs': sorted_join(interested_pwgs),
+                 'ref_interested_pwgs': '',
                  'comment': data.get('comment', ''),
                  'fragment': data.get('fragment', ''),
                  'in_reference': data.get('in_reference', ''),
                  'in_target': data.get('in_target', ''),}
-        cursor.execute('INSERT INTO future_campaign_entries VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        cursor.execute('INSERT INTO future_campaign_entries VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                        [entry['campaign_uid'],
                         entry['short_name'],
                         entry['dataset'],
                         entry['chain_tag'],
                         entry['events'],
                         entry['interested_pwgs'],
+                        entry['ref_interested_pwgs'],
                         entry['comment'],
                         entry['fragment'],
                         entry['in_reference'],
@@ -287,8 +269,7 @@ class UpdateEntryInFutureCampaignAPI(APIBase):
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         # Interested pwgs
-        interested_pwgs = data['interested_pwgs'].upper().split(',')
-        interested_pwgs = sorted(list(set([x.strip() for x in interested_pwgs if x.strip()])))
+        interested_pwgs = sorted_join(clean_split(data['interested_pwgs'].upper()))
         # Events
         multiplier = 1
         events = str(data['events'])
@@ -311,7 +292,7 @@ class UpdateEntryInFutureCampaignAPI(APIBase):
                  'dataset': data['dataset'],
                  'chain_tag': data['chain_tag'],
                  'events': events,
-                 'interested_pwgs': ','.join(interested_pwgs),
+                 'interested_pwgs': sorted_join(interested_pwgs),
                  'comment': data['comment'],
                  'fragment': data['fragment']}
         # Update entry in DB
@@ -361,4 +342,3 @@ class DeleteEntryInFutureCampaignAPI(APIBase):
         conn.commit()
         conn.close()
         return self.output_text({'response': {}, 'success': True, 'message': ''})
-

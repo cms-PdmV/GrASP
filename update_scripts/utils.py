@@ -139,5 +139,8 @@ def get_physics_short_name(physname):
 
     return phys_shortname
 
-tags = ['test_PPD',
-        'PPD-XX-001']
+def clean_split(string, separator=','):
+    return [x.strip() for x in string.split(separator) if x.strip()]
+
+def sorted_join(items, separator=','):
+    return separator.join(sorted(list(set(items))))

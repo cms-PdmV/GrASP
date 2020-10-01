@@ -62,8 +62,8 @@
                  type="text"
                  v-model="entry.temporary.events">
         </td>
-        <td v-on:dblclick="startEditing($event, entry, 'interested_pwgs')" class="align-center">
-          <template v-if="!entry.editing.interested_pwgs">{{entry.interested_pwgs}}</template>
+        <td v-on:dblclick="startEditing($event, entry, 'interested_pwgs')" class="align-center" style="line-height: 95%;">
+          <template v-if="!entry.editing.interested_pwgs">{{entry.interested_pwgs}}<br><small>In McM: {{entry.ref_interested_pwgs}}</small></template>
           <input @blur="stopEditing(entry, 'interested_pwgs')"
                  v-if="entry.editing.interested_pwgs"
                  type="text"
