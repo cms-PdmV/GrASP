@@ -139,8 +139,135 @@ def get_physics_short_name(physname):
 
     return phys_shortname
 
+
 def clean_split(string, separator=','):
     return [x.strip() for x in string.split(separator) if x.strip()]
 
+
 def sorted_join(items, separator=','):
     return separator.join(sorted(list(set(items))))
+
+
+def chained_request_to_steps(chained_request):
+    """
+    Split chained request into dictionary of step prepids
+    """
+    steps = {}
+    for req_prepid in chained_request['chain']:
+        if 'pLHE' in req_prepid:
+            steps['plhe'] = req_prepid
+        elif 'GS' in req_prepid:
+            steps['gs'] = req_prepid
+        elif 'DR' in req_prepid:
+            steps['dr'] = req_prepid
+        elif 'MiniAOD' in req_prepid:
+            steps['miniaod'] = req_prepid
+        elif 'NanoAOD' in req_prepid:
+            steps['nanoaod'] = req_prepid
+
+    return steps
+
+
+def pick_chained_requests(chained_requests):
+    """
+    Select chained requests with newest NanoAOD version
+    """
+    tree = {}
+    selected_chained_requests = []
+    for chained_request in chained_requests:
+        steps = chained_request_to_steps(chained_request)
+        mini_step = steps.get('miniaod')
+        nano_step = steps.get('nanoaod')
+        if mini_step is None or nano_step is None:
+            selected_chained_requests.append(chained_request)
+            continue
+
+        mini_step = mini_step.split('-')[1]
+        nano_step = nano_step.split('-')[1]
+        if mini_step not in tree:
+            tree[mini_step] = {}
+
+        if nano_step not in tree[mini_step]:
+            tree[mini_step][nano_step] = []
+
+        tree[mini_step][nano_step].append(chained_request)
+
+    for mini_campaign in tree:
+        nano_campaigns = sorted(tree[mini_campaign].keys())
+        selected_chained_requests.extend(tree[mini_campaign][nano_campaigns[-1]])
+
+    return selected_chained_requests
+
+
+def merge_sets(reference, set_one, set_two):
+    reference = set(reference)
+    set_one = set(set_one)
+    set_two = set(set_two)
+    one_added = set_one - reference
+    two_added = set_two - reference
+    one_removed = reference - set_one
+    two_removed = reference - set_two
+    added = one_added.union(two_added)
+    removed = one_removed.union(two_removed)
+    result = reference.union(added) - removed
+    return result
+
+
+def query(cursor, table_name, attributes, where=None, where_args=None):
+    query_str = 'SELECT %s FROM %s' % (','.join(attributes), table_name)
+    query_args = []
+    if where:
+        query_str += ' %s' % (where)
+        if where_args:
+            query_args += where_args
+
+    results = cursor.execute(query_str, query_args)
+    results = [r for r in results]
+    objects = []
+    for result in results:
+        obj = {}
+        for index, attribute in enumerate(attributes):
+            obj[attribute] = result[index]
+
+        objects.append(obj)
+
+    return objects
+
+
+def add_entry(cursor, table_name, entry):
+    keys = list(entry.keys())
+    values = [entry[key] for key in keys]
+    question_marks = ','.join(['?'] * len(values))
+    keys = ','.join(keys)
+    cursor.execute('INSERT INTO %s (%s) VALUES (%s)' % (table_name, keys, question_marks), values)
+
+
+def update_entry(cursor, table_name, entry):
+    keys = list(entry.keys())
+    values = [entry[key] for key in keys]
+    values.append(entry['uid'])
+    keys = ','.join(['%s = ?' % (key) for key in keys])
+    cursor.execute('UPDATE %s SET %s WHERE uid = ?' % (table_name, keys), values)
+
+
+def get_chain_tag(name):
+    """
+    Get chain tag out of chained request name
+    If there is something after DIGI, use that something
+    Else it is Classical
+    """
+    if name == '':
+        return ''
+
+    tag = ''
+    try:
+        if 'DIGI' in name:
+            tag = name.split('-')[1].split('DIGI')[1].split('_')[0]
+
+        if tag:
+            return tag
+
+    except IndexError:
+        pass
+
+    return 'Classical'

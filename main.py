@@ -15,6 +15,12 @@ from api.future_plan_api import (CreateFutureCampaignAPI,
                                  AddEntryToFutureCampaignAPI,
                                  UpdateEntryInFutureCampaignAPI,
                                  DeleteEntryInFutureCampaignAPI)
+from api.existing_samples_api import (CreateExistingCampaignAPI,
+                                      GetExistingCampaignAPI,
+                                      UpdateExistingCampaignAPI,
+                                      DeleteExistingCampaignAPI,
+                                      GetAllExistingCampaignsAPI,
+                                      UpdateEntryInExistingCampaignAPI)
 from api.system_info_api import UserInfoAPI
 
 
@@ -96,6 +102,16 @@ api.add_resource(GetAllFutureCampaignsAPI, '/api/planning/get_all')
 api.add_resource(AddEntryToFutureCampaignAPI, '/api/planning/add_entry')
 api.add_resource(UpdateEntryInFutureCampaignAPI, '/api/planning/update_entry')
 api.add_resource(DeleteEntryInFutureCampaignAPI, '/api/planning/delete_entry')
+
+# Existing samples
+api.add_resource(CreateExistingCampaignAPI, '/api/existing/create')
+api.add_resource(GetExistingCampaignAPI,
+                 '/api/existing/get/<string:campaign_name>',
+                 '/api/existing/get/<string:campaign_name>/<string:interested_pwg>')
+api.add_resource(UpdateExistingCampaignAPI, '/api/existing/update')
+api.add_resource(DeleteExistingCampaignAPI, '/api/existing/delete')
+api.add_resource(GetAllExistingCampaignsAPI, '/api/existing/get_all')
+api.add_resource(UpdateEntryInExistingCampaignAPI, '/api/existing/update_entry')
 
 
 def main():

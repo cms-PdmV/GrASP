@@ -4,8 +4,7 @@ Update data in samples table
 import sys
 import sqlite3
 import logging
-from utils import get_short_name, clean_split, sorted_join
-from update_data import pick_chained_requests
+from utils import get_short_name, clean_split, sorted_join, pick_chained_requests, merge_sets, get_chain_tag, add_entry, update_entry, query
 #pylint: disable=wrong-import-position,import-error
 sys.path.append('/afs/cern.ch/cms/PPD/PdmV/tools/McM/')
 from rest import McM
@@ -16,29 +15,6 @@ mcm = McM(dev=('--dev' in sys.argv), cookie='cookie.txt')
 # Logger
 logging.basicConfig(format='[%(asctime)s][%(levelname)s] %(message)s', level=logging.INFO)
 logger = logging.getLogger()
-
-
-def get_chain_tag(name):
-    """
-    Get chain tag out of chained request name
-    If there is something after DIGI, use that something
-    Else it is Classical
-    """
-    if name == '':
-        return ''
-
-    tag = ''
-    try:
-        if 'DIGI' in name:
-            tag = name.split('-')[1].split('DIGI')[1].split('_')[0]
-
-        if tag:
-            return tag
-
-    except IndexError:
-        pass
-
-    return 'Classical'
 
 
 def get_campaigns_to_prefill(cursor):
@@ -59,23 +35,6 @@ def get_campaigns_to_update(cursor):
                   'name': c[1],
                   'reference': c[2]} for c in campaigns]
     return campaigns
-
-
-def add_entry(cursor, entry):
-    keys = list(entry.keys())
-    values = [entry[key] for key in keys]
-    question_marks = ','.join(['?'] * len(values))
-    cursor.execute('INSERT INTO future_campaign_entries (%s) VALUES (%s)' % (','.join(keys),
-                                                                             question_marks),
-                   values)
-
-
-def update_entry(cursor, entry):
-    keys = list(entry.keys())
-    values = [entry[key] for key in keys]
-    values.append(entry['uid'])
-    keys = ','.join(['%s = ?' % (key) for key in keys])
-    cursor.execute('UPDATE future_campaign_entries SET %s WHERE uid = ?' % (keys), values)
 
 
 def request_in_campaign(campaign_name, dataset_name, chain_tag):
@@ -120,14 +79,7 @@ def merge_pwgs(reference, local_pwgs, remote_pwgs):
     reference = set(clean_split(reference.upper()))
     local_pwgs = set(clean_split(local_pwgs.upper()))
     remote_pwgs = set(clean_split(remote_pwgs.upper()))
-    local_added = local_pwgs - reference
-    remote_added = remote_pwgs - reference
-    local_removed = reference - local_pwgs
-    remote_removed = reference - remote_pwgs
-    added = local_added.union(remote_added)
-    removed = local_removed.union(remote_removed)
-    result = reference.union(added) - removed
-    return sorted_join(result)
+    return sorted_join(merge_sets(reference, local_pwgs, remote_pwgs))
 
 
 def update_campaigns(conn, cursor):
@@ -193,17 +145,12 @@ def update_campaigns(conn, cursor):
 
             # Check if update is needed
             # Update in McM as well
-            cursor.execute('''UPDATE future_campaign_entries
-                              SET in_reference = ?,
-                                  in_target = ?,
-                                  interested_pwgs = ?,
-                                  ref_interested_pwgs = ?
-                              WHERE uid = ?''',
-                           [in_reference,
-                            in_target,
-                            interested_pwgs,
-                            ref_interested_pwgs,
-                            uid])
+            entry = {'uid': uid,
+                     'in_reference': in_reference,
+                     'in_target': in_target,
+                     'interested_pwgs': interested_pwgs,
+                     'ref_interested_pwgs': ref_interested_pwgs}
+            update_entry(cursor, 'future_campaign_entries', entry)
  
         conn.commit()
 
@@ -254,7 +201,7 @@ def prefill_campaigns(conn, cursor):
                             entry['in_target'] = existing_request['prepid']
                             entry['ref_interested_pwgs'] = sorted_join(existing_request['interested_pwg'])
 
-                    add_entry(cursor, entry)
+                    add_entry(cursor, 'future_campaign_entries', entry)
                     logger.info('    Inserting %s - %s - %s',
                                 entry['short_name'],
                                 entry['dataset'],

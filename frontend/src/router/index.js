@@ -3,6 +3,8 @@ import VueRouter from 'vue-router'
 import Home from '@/components/Home'
 import CampaignPlanning from '@/components/CampaignPlanning'
 import CampaignPlanningEdit from '@/components/CampaignPlanningEdit'
+import ExistingSamples from '@/components/ExistingSamples'
+import ExistingSamplesEdit from '@/components/ExistingSamplesEdit'
 import qs from 'qs';
 
 
@@ -23,6 +25,16 @@ const routes = [
     path: '/planning_edit',
     name: 'planning_edit',
     component: CampaignPlanningEdit
+  },
+  {
+    path: '/existing',
+    name: 'existing',
+    component: ExistingSamples
+  },
+  {
+    path: '/existing_edit',
+    name: 'existing_edit',
+    component: ExistingSamplesEdit
   },
 ]
 
