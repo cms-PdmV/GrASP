@@ -22,7 +22,7 @@ class CreateFutureCampaignAPI(APIBase):
         self.logger.info('Creating new future campaign %s', data)
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        existing_campaigns = cursor.execute('SELECT uid FROM future_campaigns WHERE campaign_name = ?',
+        existing_campaigns = cursor.execute('SELECT uid FROM future_campaigns WHERE name = ?',
                                             [data['name']])
         existing_campaigns = [x for x in existing_campaigns]
         if existing_campaigns:
@@ -51,9 +51,9 @@ class GetFutureCampaignAPI(APIBase):
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         # Get the campaign itself
-        campaigns = cursor.execute('''SELECT uid, campaign_name, reference, prefilled
+        campaigns = cursor.execute('''SELECT uid, name, reference, prefilled
                                       FROM future_campaigns
-                                      WHERE campaign_name = ?''',
+                                      WHERE name = ?''',
                                    [campaign_name])
         campaigns = [r for r in campaigns]
         if not campaigns:
@@ -79,7 +79,7 @@ class GetFutureCampaignAPI(APIBase):
                    FROM future_campaign_entries
                    WHERE campaign_uid IN (SELECT uid
                                           FROM future_campaigns
-                                          WHERE campaign_name = ?)'''
+                                          WHERE name = ?)'''
         query_args = [campaign_name]
         if interested_pwg:
             interested_pwg = '%%%s%%' % (interested_pwg.strip().upper())
@@ -125,7 +125,7 @@ class UpdateFutureCampaignAPI(APIBase):
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         cursor.execute('''UPDATE future_campaigns
-                          SET campaign_name = ?,
+                          SET name = ?,
                               reference = ?
                           WHERE uid = ?''',
                        [data['name'],
@@ -157,11 +157,11 @@ class DeleteFutureCampaignAPI(APIBase):
         cursor.execute('''DELETE FROM future_campaign_entries
                           WHERE campaign_uid IN (SELECT uid
                                                  FROM future_campaigns
-                                                 WHERE campaign_name = ?)
+                                                 WHERE name = ?)
                           AND campaign_uid = ?''',
                        [campaign_name, campaign_uid])
         cursor.execute('''DELETE FROM future_campaigns
-                          WHERE campaign_name = ?
+                          WHERE name = ?
                           AND campaign_uid = ?''',
                        [campaign_name, campaign_uid])
         conn.commit()
@@ -181,7 +181,7 @@ class GetAllFutureCampaignsAPI(APIBase):
         self.logger.info('Getting all future campaigns')
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        campaigns = cursor.execute('''SELECT uid, campaign_name, reference, prefilled
+        campaigns = cursor.execute('''SELECT uid, name, reference, prefilled
                                       FROM future_campaigns''')
         campaigns = [r for r in campaigns]
         conn.close()
@@ -208,7 +208,7 @@ class AddEntryToFutureCampaignAPI(APIBase):
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         # Interested pwgs
-        interested_pwgs = sorted_join(clean_split(data['interested_pwgs'].upper()))
+        interested_pwgs = clean_split(data['interested_pwgs'].upper())
         # Events
         multiplier = 1
         events = str(data['events'])
@@ -269,7 +269,7 @@ class UpdateEntryInFutureCampaignAPI(APIBase):
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         # Interested pwgs
-        interested_pwgs = sorted_join(clean_split(data['interested_pwgs'].upper()))
+        interested_pwgs = clean_split(data['interested_pwgs'].upper())
         # Events
         multiplier = 1
         events = str(data['events'])

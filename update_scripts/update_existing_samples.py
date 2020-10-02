@@ -44,7 +44,7 @@ def insert_or_update(cursor, entry):
         return
 
     if len(existing_samples) == 1:
-        existing_sample = existing_sample[0]
+        existing_sample = existing_samples[0]
         local_pwgs = clean_split(existing_sample['interested_pwgs'])
         reference_pwgs = clean_split(existing_sample['ref_interested_pwgs'])
         new_pwgs = clean_split(entry['interested_pwgs'])

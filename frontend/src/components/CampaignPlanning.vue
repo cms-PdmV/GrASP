@@ -1,6 +1,11 @@
 <template>
   <div>
-    <h1 class="page-title"><span class="font-weight-light">Planning</span> {{campaignName}}</h1>
+    <h1 class="page-title">
+      <span class="font-weight-light">Planning</span> {{campaignName}}
+      <template v-if="interestedPWG">
+        <span class="font-weight-light">where</span> {{interestedPWG}} <span class="font-weight-light">is interested</span>
+      </template>
+    </h1>
     <h3 class="page-title" v-if="campaign && campaign.reference && campaign.reference.length"><span class="font-weight-light">Reference:</span> {{campaign.reference}}</h3>
     <div class="align-center" v-if="!campaign.entries">
       <img src="static/loading.gif" style="width: 150px; height: 150px;"/>

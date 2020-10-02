@@ -1,6 +1,11 @@
 <template>
   <div>
-    <h1 class="page-title"><span class="font-weight-light">Samples in</span> {{campaignName}}</h1>
+    <h1 class="page-title">
+      <span class="font-weight-light">Samples in</span> {{campaignName}}
+      <template v-if="interestedPWG">
+        <span class="font-weight-light">where</span> {{interestedPWG}} <span class="font-weight-light">is interested</span>
+      </template>
+    </h1>
     <div class="align-center" v-if="!campaign.entries">
       <img src="static/loading.gif" style="width: 150px; height: 150px;"/>
       <h3>Loading table...</h3>
@@ -26,9 +31,11 @@
               <a :href="makeDASLink(entry.root_request_output)" target="_blank" class="ml-1">DAS</a>
             </template>
             <br>
-            <small>Events:</small> {{entry.rootEventsNice}}
+            <small>Events: {{entry.rootEventsNice}}</small>
             <br>
-            <small>Status:</small> {{entry.root_request_status}}
+            <small>Priority: {{entry.root_request_priority}}</small>
+            <br>
+            <small>Status: {{entry.root_request_status}}</small>
           </div>
           <div v-if="entry.root_request_total_events != 0"
                :class="'progress-background ' + entry.root_request_status + '-background'"
@@ -44,9 +51,11 @@
                 <a :href="makeDASLink(entry.miniaod_output)" target="_blank" class="ml-1">DAS</a>
               </template>
               <br>
-              <small>Events:</small> {{entry.miniaodEventsNice}}
+              <small>Events: {{entry.miniaodEventsNice}}</small>
               <br>
-              <small>Status:</small> {{entry.miniaod_status}}
+              <small>Priority: {{entry.miniaod_priority}}</small>
+              <br>
+              <small>Status: {{entry.miniaod_status}}</small>
               </div>
             <div v-if="entry.miniaod_total_events != 0"
                 :class="'progress-background ' + entry.miniaod_status + '-background'"
@@ -192,6 +201,7 @@ td {
   white-space: nowrap;
   min-width: 100px;
   position: relative;
+  line-height: 101%;
 }
 
 td.wide {
@@ -255,10 +265,6 @@ tr:hover .show-on-hover {
 td>div:first-child {
   position: relative;
   z-index: 2;
-}
-
-small {
-  color: #5a5a5a;
 }
 
 </style>

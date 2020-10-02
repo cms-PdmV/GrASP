@@ -18,27 +18,24 @@ logger = logging.getLogger()
 
 
 def get_campaigns_to_prefill(cursor):
-    campaigns = cursor.execute('''SELECT uid, campaign_name, reference
-                                  FROM future_campaigns
-                                  WHERE prefilled = 0''')
-    campaigns = [{'uid': int(c[0]),
-                  'name': c[1],
-                  'reference': c[2]} for c in campaigns]
+    campaigns = query(cursor,
+                      'future_campaigns',
+                      ['uid', 'name', 'reference'],
+                      'WHERE prefilled = 0')
     return campaigns
 
 
 def get_campaigns_to_update(cursor):
-    campaigns = cursor.execute('''SELECT uid, campaign_name, reference
-                                  FROM future_campaigns
-                                  WHERE prefilled = 1''')
-    campaigns = [{'uid': int(c[0]),
-                  'name': c[1],
-                  'reference': c[2]} for c in campaigns]
+    campaigns = query(cursor,
+                      'future_campaigns',
+                      ['uid', 'name', 'reference'],
+                      'WHERE prefilled = 1')
     return campaigns
 
 
 def request_in_campaign(campaign_name, dataset_name, chain_tag):
-    requests = mcm.get('requests', query='member_of_campaign=%s&dataset_name=%s' % (campaign_name, dataset_name))
+    query = 'member_of_campaign=%s&dataset_name=%s' % (campaign_name, dataset_name)
+    requests = mcm.get('requests', query=query)
     if not requests:
         return None
 
@@ -75,13 +72,6 @@ def get_existing_entry(cursor, entry):
     return entries[0]
 
 
-def merge_pwgs(reference, local_pwgs, remote_pwgs):
-    reference = set(clean_split(reference.upper()))
-    local_pwgs = set(clean_split(local_pwgs.upper()))
-    remote_pwgs = set(clean_split(remote_pwgs.upper()))
-    return sorted_join(merge_sets(reference, local_pwgs, remote_pwgs))
-
-
 def update_campaigns(conn, cursor):
     campaigns = get_campaigns_to_update(cursor)
     for campaign in campaigns:
@@ -89,28 +79,20 @@ def update_campaigns(conn, cursor):
         campaign_name = campaign['name']
         campaign_uid = int(campaign['uid'])
         logger.info('%s reference campaings: %s', campaign_name, ', '.join(references))
-        entries = cursor.execute('''SELECT uid, in_reference, in_target, dataset, interested_pwgs, ref_interested_pwgs, chain_tag
-                                    FROM future_campaign_entries
-                                    WHERE campaign_uid = ?''',
-                                 [campaign_uid])
-        entries = [e for e in entries]
+        entries = query(cursor,
+                        'future_campaign_entries',
+                        ['uid', 'in_reference', 'in_target', 'dataset', 'interested_pwgs', 'ref_interested_pwgs', 'chain_tag'],
+                        'WHERE campaign_uid = ?',
+                        [campaign_uid])
         logger.info('Found %s entries', len(entries))
         for entry in entries:
-            uid = entry[0]
-            in_reference = entry[1]
-            in_target = entry[2]
-            dataset = entry[3]
-            interested_pwgs = entry[4]
-            ref_interested_pwgs = entry[5]
-            chain_tag = entry[6]
-            logger.info('Entry %s reference: %s target: %s chain_tag: %s, ref_pwgs: %s, pwgs: %s',
-                        uid,
-                        in_reference,
-                        in_target,
-                        chain_tag,
-                        ref_interested_pwgs,
-                        interested_pwgs)
-
+            uid = int(entry['uid'])
+            in_reference = entry['in_reference']
+            in_target = entry['in_target']
+            dataset = entry['dataset']
+            interested_pwgs = entry['interested_pwgs']
+            ref_interested_pwgs = entry['ref_interested_pwgs']
+            chain_tag = entry['chain_tag']
             if not in_reference:
                 for reference in references:
                     possible_reference = request_in_campaign(reference, dataset, chain_tag)
@@ -127,32 +109,29 @@ def update_campaigns(conn, cursor):
             if in_target:
                 target_request = mcm.get('requests', in_target)
                 if target_request:
-                    mcm_interested_pwgs = sorted_join(target_request.get('interested_pwg', []))
-                    new_pwgs = merge_pwgs(ref_interested_pwgs,
-                                          interested_pwgs,
-                                          mcm_interested_pwgs)
-                    interested_pwgs = new_pwgs
+                    mcm_interested_pwgs = set(target_request.get('interested_pwg', []))
+                    interested_pwgs = set(clean_split(interested_pwgs))
+                    ref_interested_pwgs = set(clean_split(ref_interested_pwgs))
+                    interested_pwgs = sorted_join(merge_sets(ref_interested_pwgs,
+                                                             interested_pwgs,
+                                                             mcm_interested_pwgs)).upper()
                 else:
                     logger.warning('%s could not be found', in_target)
 
-            logger.info('UPDATED: reference: %s target: %s chain_tag: %s, ref_pwgs: %s, pwgs: %s, mcm_pwgs: %s',
-                        in_reference,
-                        in_target,
-                        chain_tag,
-                        ref_interested_pwgs,
-                        interested_pwgs,
-                        mcm_interested_pwgs)
-
             # Check if update is needed
+            logger.info('Updating %s (%s) %s %s %s', campaign_name, uid, in_reference, in_target, interested_pwgs)
             # Update in McM as well
-            entry = {'uid': uid,
-                     'in_reference': in_reference,
-                     'in_target': in_target,
-                     'interested_pwgs': interested_pwgs,
-                     'ref_interested_pwgs': ref_interested_pwgs}
-            update_entry(cursor, 'future_campaign_entries', entry)
+            entry_update = {'uid': uid,
+                            'in_reference': in_reference,
+                            'in_target': in_target,
+                            'interested_pwgs': interested_pwgs,
+                            'ref_interested_pwgs': interested_pwgs}
+            update_entry(cursor, 'future_campaign_entries', entry_update)
  
         conn.commit()
+
+    logger.info('Done updating campaigns')
+
 
 def prefill_campaigns(conn, cursor):
     campaigns = get_campaigns_to_prefill(cursor)
@@ -189,7 +168,7 @@ def prefill_campaigns(conn, cursor):
                              'dataset': dataset,
                              'chain_tag': chain_tag,
                              'events': request['total_events'],
-                             'interested_pwgs': sorted_join(request['interested_pwg']),
+                             'interested_pwgs': sorted_join(request['interested_pwg']).upper(),
                              'ref_interested_pwgs': '',
                              'comment': '',
                              'fragment': '',
@@ -210,33 +189,35 @@ def prefill_campaigns(conn, cursor):
         cursor.execute('UPDATE future_campaigns SET prefilled = 1 WHERE uid = ?', [campaign_uid])
         conn.commit()
 
+    logger.info('Done prefilling campaigns')
+
 
 def prepare_tables(conn, cursor):
     # Create table if it does not exist
     cursor.execute('''CREATE TABLE IF NOT EXISTS future_campaigns
-                        (uid integer PRIMARY KEY AUTOINCREMENT,
-                        campaign_name text NOT NULL,
-                        reference text,
-                        prefilled short)''')
+                      (uid integer PRIMARY KEY AUTOINCREMENT,
+                       name text NOT NULL,
+                       reference text,
+                       prefilled short)''')
     # Move this somewhere else?
     cursor.execute('''CREATE TABLE IF NOT EXISTS future_campaign_entries
-                        (uid integer PRIMARY KEY AUTOINCREMENT,
-                        campaign_uid integer,
-                        short_name text,
-                        dataset text,
-                        chain_tag text,
-                        events integer,
-                        interested_pwgs text,
-                        ref_interested_pwgs text,
-                        comment text,
-                        fragment text,
-                        in_reference text,
-                        in_target text,
-                        FOREIGN KEY(campaign_uid) REFERENCES future_campaigns(uid))''')
+                      (uid integer PRIMARY KEY AUTOINCREMENT,
+                       campaign_uid integer,
+                       short_name text,
+                       dataset text,
+                       chain_tag text,
+                       events integer,
+                       interested_pwgs text,
+                       ref_interested_pwgs text,
+                       comment text,
+                       fragment text,
+                       in_reference text,
+                       in_target text,
+                       FOREIGN KEY(campaign_uid) REFERENCES future_campaigns(uid))''')
     conn.commit()
 
 
-if __name__ == '__main__':
+def main():
     try:
         conn = sqlite3.connect('../data.db')
         cursor = conn.cursor()
@@ -245,5 +226,10 @@ if __name__ == '__main__':
         update_campaigns(conn, cursor)
     except Exception as ex:
         logger.error(ex)
+        raise
     finally:
         conn.close()
+
+
+if __name__ == '__main__':
+    main()
