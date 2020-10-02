@@ -10,7 +10,7 @@
       <img src="static/loading.gif" style="width: 150px; height: 150px;"/>
       <h3>Loading table...</h3>
     </div>
-    <table v-if="campaign.entries" class="highlight-on-hover">
+    <table v-if="campaign.entries">
       <tr>
         <th>Short Name</th>
         <th>Dataset Name</th>
@@ -21,9 +21,11 @@
         <!-- <th>Notes</th> -->
       </tr>
       <tr v-for="entry in campaign.entries" :key="entry.dataset + entry.uid">
-        <td>{{entry.short_name}}</td>
-        <td><a :href="'https://cms-pdmv.cern.ch/mcm/requests?dataset_name=' + entry.dataset" target="_blank">{{entry.dataset}}</a></td>
-        <td class="progress-cell">
+        <td v-if="entry.rowspan.short_name > 0" :rowspan="entry.rowspan.short_name">{{entry.short_name}}</td>
+        <td v-if="entry.rowspan.dataset > 0" :rowspan="entry.rowspan.dataset">
+          <a :href="'https://cms-pdmv.cern.ch/mcm/requests?dataset_name=' + entry.dataset" target="_blank">{{entry.dataset}}</a>
+        </td>
+        <td v-if="entry.rowspan.root_request > 0" :rowspan="entry.rowspan.root_request" class="progress-cell">
           <div>
             <a :href="'https://cms-pdmv.cern.ch/mcm/requests?prepid=' + entry.root_request" target="_blank">McM</a>
             <a :href="'https://cms-pdmv.cern.ch/pmp/historical?r=' + entry.root_request" target="_blank" class="ml-1">pMp</a>
@@ -42,7 +44,7 @@
                :style="'width: ' + (entry.root_request_done_events / entry.root_request_total_events * 100) + '%;'">
           </div>
         </td>
-        <td class="progress-cell">
+        <td v-if="entry.rowspan.miniaod > 0" :rowspan="entry.rowspan.miniaod" class="progress-cell">
           <template v-if="entry.miniaod.length">
             <div>
               <a :href="'https://cms-pdmv.cern.ch/mcm/requests?prepid=' + entry.miniaod" target="_blank">McM</a>
@@ -164,6 +166,7 @@ export default {
         campaign.entries.forEach(element => {
           component.processEntry(element);
         });
+        component.mergeCells(campaign.entries, ['short_name', 'dataset', 'root_request', 'miniaod'])
         component.$set(component, 'campaign', campaign);
       }).catch(error => {
         console.error(error);
@@ -191,6 +194,25 @@ export default {
         this.updateEntry(entry);
       }
     },
+    mergeCells: function(list, attributes) {
+      list.forEach(element => {
+        element.rowspan = {};
+        for (let attribute of attributes) {
+          element.rowspan[attribute] = 1;
+        }
+      });
+      for (let i = list.length - 1; i > 0; i--) {
+        let thisEntry = list[i];
+        let otherEntry = list[i - 1];
+        for (let attribute of attributes) {
+          if (thisEntry[attribute] !== otherEntry[attribute]) {
+            break
+          }
+          otherEntry.rowspan[attribute] += thisEntry.rowspan[attribute];
+          thisEntry.rowspan[attribute] = 0;
+        }
+      }
+    },
   }
 }
 </script>
@@ -201,28 +223,12 @@ td {
   white-space: nowrap;
   min-width: 100px;
   position: relative;
-  line-height: 101%;
-}
-
-td.wide {
-  min-width: 300px;
+  line-height: 105%;
 }
 
 td.wrap {
   white-space: normal;
   line-break: anywhere;
-}
-
-.opaque {
-  opacity: 0.6;
-}
-
-.show-on-hover {
-  opacity: 0;
-}
-
-tr:hover .show-on-hover {
-  opacity: 1;
 }
 
 .done-background {
@@ -234,27 +240,24 @@ tr:hover .show-on-hover {
 }
 
 .approved-background {
-  width: 100% !important;
   background-color: rgba(240, 120, 0, 0.33);
 }
 
 .defined-background {
-  width: 100% !important;
   background-color: rgba(220, 220, 0, 0.43);
 }
 
 .validation-background {
-  width: 100% !important;
   background-color: rgba(255, 0, 255, 0.23);
 }
 
 .new-background {
-  width: 100% !important;
   background-color: rgba(0, 0, 0, 0.1);
 }
 
 .progress-background {
   max-width: 100%;
+  width: 100%;
   height: 100%;
   z-index: 1;
   position:absolute;
