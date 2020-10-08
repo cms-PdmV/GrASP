@@ -1,8 +1,8 @@
 <template>
   <div>
     <h1 class="page-title">
-      <span class="font-weight-light">Planning</span> {{campaignName}}
-      <template v-if="interestedPWG">
+      <span class="font-weight-light">Planning</span> {{campaign.name}}
+      <template v-if="interestedPWG.length.length">
         <span class="font-weight-light">where</span> {{interestedPWG}} <span class="font-weight-light">is interested</span>
       </template>
     </h1>
@@ -103,7 +103,7 @@
         <td class="hidden-cell"></td>
         <td class="hidden-cell"></td>
         <td><b>Total</b></td>
-        <td class="align-right"><b :title="sumTotal">{{sumTotalNice}}</b></td>
+        <td class="align-right"><b :title="sumTotal[1]">{{sumTotal[2]}}</b></td>
       </tr>
     </table>
     <template v-if="campaign.entries">
@@ -157,47 +157,32 @@ export default {
   ],
   data () {
     return {
-      campaignName: undefined,
-      interestedPWG: undefined,
       campaign: {},
+      interestedPWG: '',
       newEntry: {},
       sumPerChainTag: [],
-      // Sum of all events
-      sumTotal: 0,
-      // Sum of all events with k, M, G suffix
-      sumTotalNice: '',
+      sumTotal: [],
     }
   },
   created () {
     let query = Object.assign({}, this.$route.query);
-    this.campaignName = query.name;
+    let campaignName = query.name;
     if (query.pwg && query.pwg.length) {
       this.interestedPWG = query.pwg.toUpperCase();
     }
-    this.fetchCampaign();
-    this.newEntry = {'dataset': '',
-                     'chain_tag': '',
-                     'events': '',
-                     'interested_pwgs': this.interestedPWG ? this.interestedPWG : '',
-                     'comment': '',
-                     'fragment': ''};
+    this.newEntry = this.getNewEntry();
+    this.fetchCampaign(campaignName);
   },
   methods: {
     addEntry: function() {
       let newEntry = this.makeCopy(this.newEntry);
       newEntry['campaign_uid'] = this.campaign.uid;
-      let httpRequest = axios.post('api/planning/add_entry', newEntry);
       let component = this;
-      httpRequest.then(response => {
+      axios.post('api/planning/add_entry', newEntry).then(response => {
         let entry = response.data.response;
         component.processEntry(entry);
         component.campaign.entries.push(entry);
-        component.newEntry = {'dataset': '',
-                              'chain_tag': '',
-                              'events': '',
-                              'interested_pwgs': component.interestedPWG ? component.interestedPWG : '',
-                              'comment': '',
-                              'fragment': ''};
+        component.newEntry = component.getNewEntry();
         component.recalculateChainTagSums();
       }).catch(error => {
         console.error(error);
@@ -207,9 +192,8 @@ export default {
     updateEntry: function(entry) {
       let entryCopy = this.makeCopy(entry);
       entryCopy['campaign_uid'] = this.campaign.uid;
-      let httpRequest = axios.post('api/planning/update_entry', entryCopy);
       let component = this;
-      httpRequest.then(response => {
+      axios.post('api/planning/update_entry', entryCopy).then(response => {
         Object.assign(entry, response.data.response);
         component.processEntry(entry);
         component.recalculateChainTagSums();
@@ -223,30 +207,37 @@ export default {
       if (confirm("Are you sure you want to delete " + entry.dataset + " " + entry.chain_tag + " with " + entry.events + " events ?")) {
         let entryCopy = this.makeCopy(entry);
         entryCopy['campaign_uid'] = this.campaign.uid;
-        let httpRequest = axios.delete('api/planning/delete_entry', {data: entryCopy});
         let component = this;
-        httpRequest.then(response => {
+        axios.delete('api/planning/delete_entry', {data: entryCopy}).then(response => {
           component.campaign.entries = component.campaign.entries.filter(item => item.uid !== entry.uid);
           component.recalculateChainTagSums();
         }).catch(error => {
-        console.error(error);
+          console.error(error);
           alert(error.response);
+          entry.broken = true;
         });
       }
+    },
+    getNewEntry: function() {
+      return {'dataset': '',
+              'chain_tag': '',
+              'events': '',
+              'interested_pwgs': this.interestedPWG,
+              'comment': '',
+              'fragment': ''}
     },
     processEntry: function(entry) {
       // Add or set to default some attributes
       // and calculate number with SI suffix
       entry.editing = {};
       entry.temporary = {};
-      entry.dirty = false;
       entry.broken = false;
       entry.niceEvents = this.suffixNumber(entry.events);
     },
-    fetchCampaign: function() {
+    fetchCampaign: function(campaignName) {
       let component = this;
-      let url = 'api/planning/get/' + this.campaignName; 
-      if (this.interestedPWG) {
+      let url = 'api/planning/get/' + campaignName;
+      if (this.interestedPWG.length) {
         url += '/' + this.interestedPWG;
       }
       axios.get(url).then(response => {
@@ -275,12 +266,13 @@ export default {
       })
     },
     stopEditing: function(entry, attribute) {
-      entry.dirty = entry.dirty || (entry[attribute] != entry.temporary[attribute]);
-      entry[attribute] = entry.temporary[attribute];
       this.$set(entry.editing, attribute, false);
-      if (entry.dirty) {
-        this.updateEntry(entry);
+      if (entry[attribute] == entry.temporary[attribute]) {
+        // Value not updated
+        return
       }
+      entry[attribute] = entry.temporary[attribute];
+      this.updateEntry(entry);
     },
     recalculateChainTagSums: function() {
       let sums = {};
@@ -300,8 +292,7 @@ export default {
         el.push(this.suffixNumber(el[1]));
       });
       this.sumPerChainTag = sums;
-      this.sumTotal = total;
-      this.sumTotalNice = this.suffixNumber(total);
+      this.sumTotal = ['Total', total, this.suffixNumber(total)];
     },
   }
 }
