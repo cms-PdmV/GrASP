@@ -158,12 +158,12 @@ def chained_request_to_steps(chained_request):
             steps['plhe'] = req_prepid
         elif 'GS' in req_prepid:
             steps['gs'] = req_prepid
-        elif 'DR' in req_prepid:
-            steps['dr'] = req_prepid
         elif 'MiniAOD' in req_prepid:
             steps['miniaod'] = req_prepid
         elif 'NanoAOD' in req_prepid:
             steps['nanoaod'] = req_prepid
+        elif 'DR' in req_prepid:
+            steps['dr'] = req_prepid
 
     return steps
 

@@ -1,7 +1,7 @@
 <template>
   <v-app>
     <v-app-bar app>
-      <a href="" class="no-decoration">
+      <a href="">
         <v-toolbar-title class="headline">
           <span>Gr</span>
           <span class="font-weight-light">ASP</span>
@@ -57,10 +57,6 @@ header {
   color: rgba(0, 0, 0, 0.87) !important;
 }
 
-a.no-decoration {
-  text-decoration: none;
-}
-
 .admin-star {
   width: 16px;
   height: 16px;
@@ -73,6 +69,11 @@ a.no-decoration {
 .page-title {
   text-align: center;
   margin: 8px 16px;
+}
+
+
+a {
+  text-decoration: none;
 }
 
 /* Table */

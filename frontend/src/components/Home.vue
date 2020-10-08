@@ -10,7 +10,7 @@
       <tr v-for="campaign in existingCampaigns" :key="campaign.name">
         <td>
           <a :href="'existing?name=' + campaign.name">{{campaign.name}}</a>
-          <a :title="'Edit ' + campaign.name" style="text-decoration: none;" :href="'existing_edit?name=' + campaign.name">&#128295;</a>
+          <a v-if="role('administrator')" :title="'Edit ' + campaign.name" style="text-decoration: none;" :href="'existing_edit?name=' + campaign.name">&#128295;</a>
         </td>
         <td v-for="pwg in pwgs" :key="pwg">
           <a :href="'existing?name=' + campaign.name + '&pwg=' + pwg">{{pwg}}</a>
@@ -31,7 +31,7 @@
       <tr v-for="campaign in futureCampaigns" :key="campaign.name">
         <td>
           <a :href="'planning?name=' + campaign.name">{{campaign.name}}</a>
-          <a :title="'Edit ' + campaign.name" style="text-decoration: none;" :href="'planning_edit?name=' + campaign.name">&#128295;</a>
+          <a v-if="role('administrator')" :title="'Edit ' + campaign.name" style="text-decoration: none;" :href="'planning_edit?name=' + campaign.name">&#128295;</a>
           <small v-if="!campaign.prefilled">Not yet updated</small>
         </td>
         <td v-for="pwg in pwgs" :key="pwg">
@@ -50,9 +50,13 @@
 <script>
 
 import axios from 'axios'
+import { roleMixin } from '../mixins/UserRoleMixin.js'
 
 export default {
   name: 'home',
+  mixins: [
+    roleMixin
+  ],
   data () {
     return {
       futureCampaigns: [],
