@@ -1,7 +1,7 @@
 <template>
   <div>
-    <h1 class="page-title">
-      <span class="font-weight-light">Samples in</span> {{campaignName}}
+    <h1 v-if="campaign.entries" class="page-title">
+      <span class="font-weight-light">Samples in</span> {{campaign.name}}
       <template v-if="interestedPWG">
         <span class="font-weight-light">where</span> {{interestedPWG}} <span class="font-weight-light">is interested</span>
       </template>
@@ -30,7 +30,7 @@
       <tr v-for="entry in entries" :key="entry.dataset + entry.uid">
         <td v-if="entry.rowspan.short_name > 0" :rowspan="entry.rowspan.short_name">{{entry.short_name}}</td>
         <td v-if="entry.rowspan.dataset > 0" :rowspan="entry.rowspan.dataset">
-          <a :href="'https://cms-pdmv.cern.ch/mcm/requests?dataset_name=' + entry.dataset" target="_blank">{{entry.dataset}}</a>
+          <a :href="'https://cms-pdmv.cern.ch/mcm/requests?dataset_name=' + entry.dataset + '&member_of_campaign=' + campaign.name" target="_blank">{{entry.dataset}}</a>
         </td>
         <td v-if="entry.rowspan.root_request > 0" :rowspan="entry.rowspan.root_request" class="progress-cell">
           <div>
@@ -75,7 +75,7 @@
         <td>
           <a :href="'https://cms-pdmv.cern.ch/mcm/chained_requests?prepid=' + entry.chained_request" target="_blank">{{entry.chain_tag}}</a>
         </td>
-        <td v-on:dblclick="startEditing($event, entry, 'interested_pwgs')" class="align-center">
+        <td v-on:dblclick="role('generator_contact') && startEditing($event, entry, 'interested_pwgs')" class="align-center">
           <template v-if="!entry.editing.interested_pwgs">{{entry.interested_pwgs}}</template>
           <input @blur="stopEditing(entry, 'interested_pwgs')"
                  v-if="entry.editing.interested_pwgs"
@@ -104,7 +104,6 @@ export default {
   },
   data () {
     return {
-      campaignName: undefined,
       interestedPWG: undefined,
       campaign: {},
       newEntry: {},
@@ -115,17 +114,11 @@ export default {
   },
   created () {
     let query = Object.assign({}, this.$route.query);
-    this.campaignName = query.name;
+    let campaignName = query.name;
     if (query.pwg && query.pwg.length) {
       this.interestedPWG = query.pwg.toUpperCase();
     }
-    this.fetchCampaign();
-    this.newEntry = {'dataset': '',
-                     'chain_tag': '',
-                     'events': '',
-                     'interested_pwgs': this.interestedPWG ? this.interestedPWG : '',
-                     'comment': '',
-                     'fragment': ''};
+    this.fetchCampaign(campaignName);
   },
   methods: {
     updateEntry: function(entry) {
@@ -153,20 +146,20 @@ export default {
       entry.rootTotalEventsNice = this.suffixNumber(entry.root_request_total_events);
       entry.miniaodDoneEventsNice = this.suffixNumber(entry.miniaod_done_events);
       entry.miniaodTotalEventsNice = this.suffixNumber(entry.miniaod_total_events);
-      if (entry.root_request_status == 'submitted' || entry.root_request_status == 'done') {
+      if ((entry.root_request_status == 'submitted' || entry.root_request_status == 'done') && entry.root_request_output.length) {
         entry.rootEventsNice = entry.rootDoneEventsNice + '/' + entry.rootTotalEventsNice;
       } else {
         entry.rootEventsNice = entry.rootTotalEventsNice;
       }
-      if (entry.miniaod_status == 'submitted' || entry.miniaod_status == 'done') {
+      if ((entry.miniaod_status == 'submitted' || entry.miniaod_status == 'done') && entry.miniaod_output.length) {
         entry.miniaodEventsNice = entry.miniaodDoneEventsNice + '/' + entry.miniaodTotalEventsNice;
       } else {
         entry.miniaodEventsNice = entry.miniaodTotalEventsNice;
       }
     },
-    fetchCampaign: function() {
+    fetchCampaign: function(campaignName) {
       let component = this;
-      let url = 'api/existing/get/' + this.campaignName; 
+      let url = 'api/existing/get/' + campaignName; 
       if (this.interestedPWG) {
         url += '/' + this.interestedPWG;
       }
@@ -231,7 +224,6 @@ export default {
       this.mergeCells(this.entries, ['short_name', 'dataset', 'root_request', 'miniaod']);
     },
     onEventFilterUpdate: function(events) {
-      console.log(events);
       this.eventsFilter = events;
       this.applyFilters();
     },

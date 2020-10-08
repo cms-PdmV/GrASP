@@ -16,7 +16,7 @@
           <a :href="'existing?name=' + campaign.name + '&pwg=' + pwg">{{pwg}}</a>
         </td>
       </tr>
-      <tr>
+      <tr v-if="role('production_manager')">
         <td :colspan="pwgs.length + 2">
           <a :href="'existing_edit'">Add new campaign</a>
         </td>
@@ -38,7 +38,7 @@
           <a :href="'planning?name=' + campaign.name + '&pwg=' + pwg">{{pwg}}</a>
         </td>
       </tr>
-      <tr>
+      <tr v-if="role('production_manager')">
         <td :colspan="pwgs.length + 2">
           <a :href="'planning_edit'">Add new campaign</a>
         </td>

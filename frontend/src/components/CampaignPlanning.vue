@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h1 class="page-title">
+    <h1 v-if="campaign.entries" class="page-title">
       <span class="font-weight-light">Planning</span> {{campaign.name}}
       <template v-if="interestedPWG.length.length">
         <span class="font-weight-light">where</span> {{interestedPWG}} <span class="font-weight-light">is interested</span>
@@ -48,10 +48,11 @@
             &#10799;
           </template>
         </td>
-        <td v-on:dblclick="startEditing($event, entry, 'dataset')">
+        <td v-on:dblclick="role('generator_contact') && startEditing($event, entry, 'dataset')">
           <template v-if="!entry.editing.dataset">
             {{entry.dataset}}
-            <span class="pointer show-on-hover"
+            <span v-if="userInfo.role_index >= 1"
+                  class="pointer show-on-hover"
                   @click="deleteEntry(entry);"
                   title="Delete this entry from planning table">&#10060;</span>
           </template>
@@ -60,35 +61,35 @@
                  type="text"
                  v-model="entry.temporary.dataset">
         </td>
-        <td v-on:dblclick="startEditing($event, entry, 'chain_tag')">
+        <td v-on:dblclick="role('generator_contact') && startEditing($event, entry, 'chain_tag')">
           <template v-if="!entry.editing.chain_tag">{{entry.chain_tag}}</template>
           <input @blur="stopEditing(entry, 'chain_tag')"
                  v-if="entry.editing.chain_tag"
                  type="text"
                  v-model="entry.temporary.chain_tag">
         </td>
-        <td v-on:dblclick="startEditing($event, entry, 'events')" class="align-right">
+        <td v-on:dblclick="role('generator_contact') && startEditing($event, entry, 'events')" class="align-right">
           <template v-if="!entry.editing.events">{{entry.niceEvents}}</template>
           <input @blur="stopEditing(entry, 'events')"
                  v-if="entry.editing.events"
                  type="text"
                  v-model="entry.temporary.events">
         </td>
-        <td v-on:dblclick="startEditing($event, entry, 'interested_pwgs')" class="align-center">
+        <td v-on:dblclick="role('generator_contact') && startEditing($event, entry, 'interested_pwgs')" class="align-center">
           <template v-if="!entry.editing.interested_pwgs">{{entry.interested_pwgs}}</template>
           <input @blur="stopEditing(entry, 'interested_pwgs')"
                  v-if="entry.editing.interested_pwgs"
                  type="text"
                  v-model="entry.temporary.interested_pwgs">
         </td>
-        <td v-on:dblclick="startEditing($event, entry, 'comment')" class="wrap">
+        <td v-on:dblclick="role('generator_contact') && startEditing($event, entry, 'comment')" class="wrap">
           <template v-if="!entry.editing.comment">{{entry.comment}}</template>
           <input @blur="stopEditing(entry, 'comment')"
                  v-if="entry.editing.comment"
                  type="text"
                  v-model="entry.temporary.comment">
         </td>
-        <td v-on:dblclick="startEditing($event, entry, 'fragment')">
+        <td v-on:dblclick="role('generator_contact') && startEditing($event, entry, 'fragment')">
           <template v-if="!entry.editing.fragment">{{entry.fragment}}</template>
           <input @blur="stopEditing(entry, 'fragment')"
                  v-if="entry.editing.fragment"
@@ -156,12 +157,14 @@
 
 import axios from 'axios'
 import { utilsMixin } from '../mixins/UtilsMixin.js'
+import { roleMixin } from '../mixins/UserRoleMixin.js'
 import RadioSelector from './RadioSelector'
 
 export default {
   name: 'planning',
   mixins: [
-    utilsMixin
+    utilsMixin,
+    roleMixin
   ],
   components: {
     RadioSelector
@@ -317,7 +320,6 @@ export default {
       this.sumTotal = ['Total', total, this.suffixNumber(total)];
     },
     onEventFilterUpdate: function(events) {
-      console.log(events);
       this.eventsFilter = events;
       this.applyFilters();
     },

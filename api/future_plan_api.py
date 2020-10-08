@@ -13,6 +13,7 @@ class CreateFutureCampaignAPI(APIBase):
     """
     @APIBase.ensure_request_data
     @APIBase.exceptions_to_errors
+    @APIBase.ensure_role('production_manager')
     def put(self):
         """
         Create an empty future campaign with the provided JSON content
@@ -115,6 +116,7 @@ class UpdateFutureCampaignAPI(APIBase):
     """
     @APIBase.ensure_request_data
     @APIBase.exceptions_to_errors
+    @APIBase.ensure_role('production_manager')
     def post(self):
         """
         Get a single future campaign
@@ -143,6 +145,7 @@ class DeleteFutureCampaignAPI(APIBase):
     """
     @APIBase.ensure_request_data
     @APIBase.exceptions_to_errors
+    @APIBase.ensure_role('production_manager')
     def delete(self):
         """
         Get a single future campaign
@@ -198,6 +201,7 @@ class AddEntryToFutureCampaignAPI(APIBase):
     """
     @APIBase.ensure_request_data
     @APIBase.exceptions_to_errors
+    @APIBase.ensure_role('generator_contact')
     def post(self):
         """
         TODO
@@ -259,6 +263,7 @@ class UpdateEntryInFutureCampaignAPI(APIBase):
     """
     @APIBase.ensure_request_data
     @APIBase.exceptions_to_errors
+    @APIBase.ensure_role('generator_contact')
     def post(self):
         """
         TODO
@@ -324,6 +329,7 @@ class DeleteEntryInFutureCampaignAPI(APIBase):
     """
     @APIBase.ensure_request_data
     @APIBase.exceptions_to_errors
+    @APIBase.ensure_role('generator_contact')
     def delete(self):
         """
         TODO

@@ -10,7 +10,6 @@
     </table>
     <div style="text-align: center;">
       <v-btn small class="mr-1 mt-1" color="primary" @click="save()">Save</v-btn>
-      <v-btn small class="mr-1 mt-1" color="error" @click="cancel()">Cancel</v-btn>
     </div>
   </div>
 </template>
@@ -29,7 +28,6 @@ export default {
     return {
       campaignName: undefined,
       campaign: undefined,
-      loading: true,
       creatingNew: true,
     }
   },
@@ -44,20 +42,17 @@ export default {
     if (this.creatingNew) {
       this.campaign = {'name': ''};
     } else {
-      this.loading = true;
       let component = this;
       axios.get('api/existing/get/' + this.campaignName).then(response => {
         component.campaign = response.data.response;
-        component.loading = false
       }).catch(error => {
-        component.loading = false;
         console.error(error);
+        alert(error.response.data.message);
       });
     }
   },
   methods: {
     save: function() {
-      this.loading = true;
       let campaign = this.makeCopy(this.campaign);
       let httpRequest;
       if (this.creatingNew) {
@@ -67,18 +62,20 @@ export default {
       }
       let component = this;
       httpRequest.then(response => {
-        component.loading = false;
-        console.log('OK');
-        console.log(response);
         window.location = 'existing?name=' + component.campaign.name;
       }).catch(error => {
-        component.loading = false;
         console.error(error);
+        alert(error.response.data.message);
       });
-    },
-    cancel: function() {
-      console.log('Cancel');
     },
   }
 }
 </script>
+
+<style scoped>
+
+input {
+  min-width: 300px;
+}
+
+</style>

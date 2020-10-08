@@ -14,6 +14,7 @@ class CreateExistingCampaignAPI(APIBase):
     """
     @APIBase.ensure_request_data
     @APIBase.exceptions_to_errors
+    @APIBase.ensure_role('production_manager')
     def put(self):
         """
         Create an empty existing campaign with the provided JSON content
@@ -107,6 +108,7 @@ class UpdateExistingCampaignAPI(APIBase):
     """
     @APIBase.ensure_request_data
     @APIBase.exceptions_to_errors
+    @APIBase.ensure_role('production_manager')
     def post(self):
         """
         Get a single existing campaign
@@ -133,6 +135,7 @@ class DeleteExistingCampaignAPI(APIBase):
     """
     @APIBase.ensure_request_data
     @APIBase.exceptions_to_errors
+    @APIBase.ensure_role('production_manager')
     def delete(self):
         """
         Delete a single existing campaign
@@ -182,6 +185,7 @@ class UpdateEntryInExistingCampaignAPI(APIBase):
     """
     @APIBase.ensure_request_data
     @APIBase.exceptions_to_errors
+    @APIBase.ensure_role('generator_contact')
     def post(self):
         """
         TODO
