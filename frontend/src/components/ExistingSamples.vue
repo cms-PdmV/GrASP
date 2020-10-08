@@ -10,6 +10,13 @@
       <img src="static/loading.gif" style="width: 150px; height: 150px;"/>
       <h3>Loading table...</h3>
     </div>
+    <div v-if="campaign.entries" class="align-center">
+      <RadioSelector :options="eventFilterOptions"
+                    v-on:changed="onEventFilterUpdate"
+                    class="mb-2">
+        Events filter:
+      </RadioSelector>
+    </div>
     <table v-if="campaign.entries">
       <tr>
         <th>Short Name</th>
@@ -20,7 +27,7 @@
         <th>Interested PWGs</th>
         <!-- <th>Notes</th> -->
       </tr>
-      <tr v-for="entry in campaign.entries" :key="entry.dataset + entry.uid">
+      <tr v-for="entry in entries" :key="entry.dataset + entry.uid">
         <td v-if="entry.rowspan.short_name > 0" :rowspan="entry.rowspan.short_name">{{entry.short_name}}</td>
         <td v-if="entry.rowspan.dataset > 0" :rowspan="entry.rowspan.dataset">
           <a :href="'https://cms-pdmv.cern.ch/mcm/requests?dataset_name=' + entry.dataset" target="_blank">{{entry.dataset}}</a>
@@ -85,23 +92,25 @@
 
 import axios from 'axios'
 import { utilsMixin } from '../mixins/UtilsMixin.js'
+import RadioSelector from './RadioSelector'
 
 export default {
   name: 'existing',
   mixins: [
     utilsMixin
   ],
+  components: {
+    RadioSelector
+  },
   data () {
     return {
       campaignName: undefined,
       interestedPWG: undefined,
       campaign: {},
       newEntry: {},
-      sumPerChainTag: [],
-      // Sum of all events
-      sumTotal: 0,
-      // Sum of all events with k, M, G suffix
-      sumTotalNice: '',
+      eventFilterOptions: [[0, 'All'], [5e6, '5M+'], [10e6, '10M+'], [20e6, '20M+'], [50e6, '50M+']],
+      eventsFilter: 0,
+      entries: [], // Filtered entries
     }
   },
   created () {
@@ -212,6 +221,19 @@ export default {
           thisEntry.rowspan[attribute] = 0;
         }
       }
+    },
+    applyFilters: function() {
+      let filteredEntries = this.campaign.entries;
+      if (this.eventsFilter != 0) {
+        filteredEntries = filteredEntries.filter(entry => entry.root_request_total_events >= this.eventsFilter);
+      }
+      this.entries = filteredEntries;
+      this.mergeCells(this.entries, ['short_name', 'dataset', 'root_request', 'miniaod']);
+    },
+    onEventFilterUpdate: function(events) {
+      console.log(events);
+      this.eventsFilter = events;
+      this.applyFilters();
     },
   }
 }

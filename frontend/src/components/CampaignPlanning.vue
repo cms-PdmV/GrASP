@@ -11,6 +11,13 @@
       <img src="static/loading.gif" style="width: 150px; height: 150px;"/>
       <h3>Loading table...</h3>
     </div>
+    <div v-if="campaign.entries" class="align-center">
+      <RadioSelector :options="eventFilterOptions"
+                    v-on:changed="onEventFilterUpdate"
+                    class="mb-2">
+        Events filter:
+      </RadioSelector>
+    </div>
     <table v-if="campaign.entries" class="highlight-on-hover">
       <tr>
         <th>Short Name</th>
@@ -23,7 +30,7 @@
         <th>Comment</th>
         <th>Fragment</th>
       </tr>
-      <tr v-for="entry in campaign.entries" :key="entry.dataset + entry.uid">
+      <tr v-for="entry in entries" :key="entry.dataset + entry.uid">
         <td :title="entry.uid">{{entry.short_name}} <span class="red" v-if="entry.broken">Not saved!</span></td>
         <td class="align-center">
           <template v-if="entry.in_reference.length">
@@ -149,12 +156,16 @@
 
 import axios from 'axios'
 import { utilsMixin } from '../mixins/UtilsMixin.js'
+import RadioSelector from './RadioSelector'
 
 export default {
   name: 'planning',
   mixins: [
     utilsMixin
   ],
+  components: {
+    RadioSelector
+  },
   data () {
     return {
       campaign: {},
@@ -162,6 +173,9 @@ export default {
       newEntry: {},
       sumPerChainTag: [],
       sumTotal: [],
+      eventFilterOptions: [[0, 'All'], [5e6, '5M+'], [10e6, '10M+'], [20e6, '20M+'], [50e6, '50M+']],
+      eventsFilter: 0,
+      entries: [], // Filtered entries
     }
   },
   created () {
@@ -183,7 +197,7 @@ export default {
         component.processEntry(entry);
         component.campaign.entries.push(entry);
         component.newEntry = component.getNewEntry();
-        component.recalculateChainTagSums();
+        component.applyFilters();
       }).catch(error => {
         console.error(error);
         alert(error.response);
@@ -196,7 +210,7 @@ export default {
       axios.post('api/planning/update_entry', entryCopy).then(response => {
         Object.assign(entry, response.data.response);
         component.processEntry(entry);
-        component.recalculateChainTagSums();
+        component.applyFilters();
       }).catch(error => {
         console.error(error);
         alert(error.response);
@@ -210,7 +224,7 @@ export default {
         let component = this;
         axios.delete('api/planning/delete_entry', {data: entryCopy}).then(response => {
           component.campaign.entries = component.campaign.entries.filter(item => item.uid !== entry.uid);
-          component.recalculateChainTagSums();
+          component.applyFilters();
         }).catch(error => {
           console.error(error);
           alert(error.response);
@@ -234,6 +248,14 @@ export default {
       entry.broken = false;
       entry.niceEvents = this.suffixNumber(entry.events);
     },
+    applyFilters: function() {
+      let filteredEntries = this.campaign.entries;
+      if (this.eventsFilter != 0) {
+        filteredEntries = filteredEntries.filter(entry => entry.events >= this.eventsFilter);
+      }
+      this.entries = filteredEntries;
+      this.recalculateChainTagSums();
+    },
     fetchCampaign: function(campaignName) {
       let component = this;
       let url = 'api/planning/get/' + campaignName;
@@ -246,7 +268,7 @@ export default {
           component.processEntry(element);
         });
         component.$set(component, 'campaign', campaign);
-        component.recalculateChainTagSums();
+        component.applyFilters();
       }).catch(error => {
         console.error(error);
         alert(error.response);
@@ -277,7 +299,7 @@ export default {
     recalculateChainTagSums: function() {
       let sums = {};
       let total = 0;
-      this.campaign.entries.forEach(el => {
+      this.entries.forEach(el => {
         let tag = el.chain_tag === '' ? '<unchained>' : el.chain_tag;
         if (!(tag in sums)) {
           sums[tag] = 0;
@@ -293,6 +315,11 @@ export default {
       });
       this.sumPerChainTag = sums;
       this.sumTotal = ['Total', total, this.suffixNumber(total)];
+    },
+    onEventFilterUpdate: function(events) {
+      console.log(events);
+      this.eventsFilter = events;
+      this.applyFilters();
     },
   }
 }
