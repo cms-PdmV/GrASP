@@ -1,7 +1,7 @@
 <template>
   <div>
     <h1 class="page-title">GrASP</h1>
-    <h3 style="text-align: center">Existing samples</h3>
+    <h3 style="text-align: center">Existing Samples</h3>
     <table>
       <tr>
         <th>Campaign Name</th>
@@ -22,7 +22,7 @@
         </td>
       </tr>
     </table>
-    <h3 style="text-align: center">Future campaign planning</h3>
+    <h3 style="text-align: center">Future Campaign Planning</h3>
     <table>
       <tr>
         <th>Campaign Name</th>
