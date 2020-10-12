@@ -21,7 +21,8 @@ from api.existing_samples_api import (CreateExistingCampaignAPI,
                                       DeleteExistingCampaignAPI,
                                       GetAllExistingCampaignsAPI,
                                       UpdateEntryInExistingCampaignAPI)
-from api.system_info_api import UserInfoAPI
+from api.system_info_api import (UserInfoAPI,
+                                 UserActionHistory)
 
 
 log_format = '[%(asctime)s][%(levelname)s] %(message)s'
@@ -90,6 +91,9 @@ def api_documentation(_path):
 
 # System APIs
 api.add_resource(UserInfoAPI, '/api/system/user_info')
+api.add_resource(UserActionHistory,
+                 '/api/system/history',
+                 '/api/system/history/<string:username>')
 
 # Future campaign planning
 api.add_resource(CreateFutureCampaignAPI, '/api/planning/create')

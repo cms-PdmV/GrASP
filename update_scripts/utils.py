@@ -271,3 +271,20 @@ def get_chain_tag(name):
         pass
 
     return 'Classical'
+
+
+def parse_number(n):
+    multiplier = 1
+    n = str(n)
+    while n and n[-1] not in '0123456789':
+        if n[-1].lower() == 'k':
+            multiplier *= 1000
+        elif n[-1].lower() == 'm':
+            multiplier *= 1000000
+        elif n[-1].lower() == 'g':
+            multiplier *= 1000000000
+
+        n = n[:-1]
+
+    n = int(float(n) * multiplier)
+    return n
