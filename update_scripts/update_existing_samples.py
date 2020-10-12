@@ -5,14 +5,17 @@ import sys
 import sqlite3
 import logging
 from utils import query, pick_chained_requests, chained_request_to_steps, sorted_join, add_entry, update_entry, clean_split, merge_sets
-#XSDB from update twiki
-from update_twiki import get_xs
+from request_wrapper import RequestWrapper
+
 #pylint: disable=wrong-import-position,import-error
 sys.path.append('/afs/cern.ch/cms/PPD/PdmV/tools/McM/')
 from rest import McM
 #pylint: enable=wrong-import-position,import-error
+
 # McM instance
 mcm = McM(dev=('--dev' in sys.argv), cookie='cookie.txt')
+#XSDB pycurl requester instance
+xsdb_request = RequestWrapper()
 
 # Logger
 logging.basicConfig(format='[%(asctime)s][%(levelname)s] %(message)s', level=logging.INFO)
@@ -57,6 +60,55 @@ def insert_or_update(cursor, entry):
         logger.info('Inserting %s to local database', nice_description)
         # Set updated to 1 for inserted entry
         add_entry(cursor, 'existing_campaign_entries', entry)
+
+
+def get_gen_request(dataset_name):
+    """
+    Get a GEN request for a given dataset name
+    """
+    gen_request = mcm.get('requests',
+                          query='dataset_name=%s&member_of_campaign=*LHE*' % (dataset_name))
+    if not gen_request:
+        gen_request = mcm.get('requests',
+                              query='dataset_name=%s&member_of_campaign=*GEN*' % (dataset_name))
+    if not gen_request:
+        gen_request = mcm.get('requests',
+                              query='dataset_name=%s&member_of_campaign=*GS*' % (dataset_name))
+    if not gen_request:
+        gen_request = mcm.get('requests',
+                              query='dataset_name=%s&member_of_campaign=*FS*' % (dataset_name))
+
+    return gen_request[-1]
+
+
+def get_xs(req):
+    """
+    Get cross section, frac neg weights and target num of events
+    """
+    xsdb_query = {'DAS': req['dataset_name']}
+    search_rslt = xsdb_request.simple_search_to_dict(xsdb_query)
+    cross_section = -1
+    frac_neg_wgts = 0
+    target_num_events = -1
+    if search_rslt:
+        try:
+            search_rslt = search_rslt[-1]
+            cross_section = float(search_rslt[u'cross_section'])
+            frac_neg_wgts = float(search_rslt[u'fraction_negative_weight'])
+        except Exception as ex:
+            logger.error(ex)
+    else:
+        try:
+            gen_request = get_gen_request(req['dataset_name'])
+            gen_parameters = gen_request[u'generator_parameters'][0]
+            cross_section = float(gen_parameters[u'cross_section'])
+            frac_neg_wgts = float(gen_parameters[u'negative_weights_fraction'])
+            logger.info(gen_request[u'member_of_campaign'])
+        except Exception as ex:
+            logger.error(ex)
+            logger.error(req['generator_parameters'])
+
+    return cross_section, frac_neg_wgts, target_num_events
 
 
 def process_request(cursor, campaign_uid, request):
