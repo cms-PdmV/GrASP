@@ -29,7 +29,7 @@ def get_existing_samples(cursor, campaign_uid, root_request, chained_request):
     """
     rows = query(cursor,
                  'existing_campaign_entries',
-                 ['uid', 'interested_pwgs', 'ref_interested_pwgs', 'notes'],
+                 ['uid', 'interested_pwgs', 'ref_interested_pwgs', 'notes', 'root_request', 'miniaod'],
                  'WHERE campaign_uid = ? AND root_request = ? AND chained_request = ?',
                  [campaign_uid, root_request, chained_request])
     return rows
@@ -137,12 +137,35 @@ def process_request(cursor, campaign_uid, request):
         chained_requests = pick_chained_requests(chained_requests)
 
     for chained_request in chained_requests:
+        chained_request_prepid = chained_request['prepid']
+        root_request_prepid = chained_request['chain'][0]
+        # Update McM early
+        existing_samples = get_existing_samples(cursor, campaign_uid, root_request_prepid, chained_request_prepid)
+        if existing_samples:
+            local_sample = existing_samples[0]
+            local_root = local_sample['root_request']
+            local_miniaod = local_sample['miniaod']
+            # Get request from McM that was used in previous update
+            existing_request = mcm.get('requests', local_miniaod if local_miniaod else local_root)
+            ref_interested_pwgs = local_sample['ref_interested_pwgs']
+            new_interested_pwgs = sorted_join(merge_sets(clean_split(ref_interested_pwgs),
+                                                         clean_split(local_sample['interested_pwgs']),
+                                                         clean_split(sorted_join(existing_request.get('interested_pwg', [])))))
+            if new_interested_pwgs != ref_interested_pwgs:
+                logging.info('Updating %s: %s -> (McM) %s + (Local) %s -> %s',
+                             existing_request.get('prepid', '<no-prepid>'),
+                             ref_interested_pwgs,
+                             sorted_join(existing_request.get('interested_pwg', [])),
+                             local_sample['interested_pwgs'],
+                             new_interested_pwgs)
+                existing_request['interested_pwg'] = clean_split(new_interested_pwgs)
+                response = mcm.update('requests', existing_request)
+                logging.info('Update: %s', response)
+
         # Split chained request to steps
         steps = chained_request_to_steps(chained_request)
-        chained_request_prepid = chained_request['prepid']
 
         # Get root request of the chain
-        root_request_prepid = chained_request['chain'][0]
         if root_request_prepid != request_prepid:
             root_request = mcm.get('requests', root_request_prepid)
         else:
@@ -199,7 +222,8 @@ def process_request(cursor, campaign_uid, request):
                  'interested_pwgs': interested_pwgs or '',
                  'ref_interested_pwgs': interested_pwgs or '',
                  'cross_section': cross_section or 0.0,
-                 'notes': notes or ''}
+                 'notes': notes or '',
+                 'updated': 1}
 
         insert_or_update(cursor, entry)
         conn.commit()
@@ -213,6 +237,7 @@ def main(conn, cursor):
     """
     # Iterate through campaigns and add or update requests
     campaigns = query(cursor, 'existing_campaigns', ['uid', 'name'])
+    cursor.execute('UPDATE existing_campaign_entries SET updated = 0')
     for campaign in campaigns:
         campaign_name = campaign['name']
         campaign_uid = campaign['uid']
@@ -228,6 +253,8 @@ def main(conn, cursor):
 
         conn.commit()
 
+    # Delete rows that were not updated
+    cursor.execute('DELETE FROM existing_campaign_entries WHERE updated = 0;')
     # Vacuum to reclaim some space
     cursor.execute('VACUUM;')
     conn.commit()

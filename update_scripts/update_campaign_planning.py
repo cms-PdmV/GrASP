@@ -107,26 +107,42 @@ def update_campaigns(conn, cursor):
                     in_target = possible_target['prepid']
 
             mcm_interested_pwgs = None
+            target_events = None
             if in_target:
                 target_request = mcm.get('requests', in_target)
                 if target_request:
                     mcm_interested_pwgs = set(target_request.get('interested_pwg', []))
                     interested_pwgs = set(clean_split(interested_pwgs))
                     ref_interested_pwgs = set(clean_split(ref_interested_pwgs))
-                    interested_pwgs = sorted_join(merge_sets(ref_interested_pwgs,
-                                                             interested_pwgs,
-                                                             mcm_interested_pwgs)).upper()
+                    new_interested_pwgs = sorted_join(merge_sets(ref_interested_pwgs,
+                                                                 interested_pwgs,
+                                                                 mcm_interested_pwgs)).upper()
+                    if sorted_join(ref_interested_pwgs) != new_interested_pwgs:
+                        logging.info('Updating %s: %s -> (McM) %s + (Local) %s -> %s',
+                             in_target,
+                             sorted_join(ref_interested_pwgs),
+                             sorted_join(mcm_interested_pwgs),
+                             sorted_join(interested_pwgs),
+                             new_interested_pwgs)
+                        target_request['interested_pwg'] = clean_split(new_interested_pwgs)
+                        response = mcm.update('requests', target_request)
+                        logging.info('Update: %s', response)
+
+                    target_events = target_request.get('total_events')
                 else:
                     logger.warning('%s could not be found', in_target)
 
             # Check if update is needed
-            logger.info('Updating %s (%s) %s %s %s', campaign_name, uid, in_reference, in_target, interested_pwgs)
+            logger.info('Updating %s (%s) %s %s %s', campaign_name, uid, in_reference, in_target, new_interested_pwgs)
             # Update in McM as well
             entry_update = {'uid': uid,
                             'in_reference': in_reference,
                             'in_target': in_target,
-                            'interested_pwgs': interested_pwgs,
-                            'ref_interested_pwgs': interested_pwgs}
+                            'interested_pwgs': new_interested_pwgs,
+                            'ref_interested_pwgs': new_interested_pwgs}
+            if target_events:
+                entry_update['events'] = target_events
+
             update_entry(cursor, 'future_campaign_entries', entry_update)
             conn.commit()
             time.sleep(0.01)
