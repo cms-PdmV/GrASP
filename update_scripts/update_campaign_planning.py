@@ -108,6 +108,7 @@ def update_campaigns(conn, cursor):
 
             mcm_interested_pwgs = None
             target_events = None
+            new_interested_pwgs = interested_pwgs
             if in_target:
                 target_request = mcm.get('requests', in_target)
                 if target_request:
