@@ -2,6 +2,7 @@
 Update data in samples table
 """
 import sys
+import time
 import sqlite3
 import logging
 from utils import get_short_name, clean_split, sorted_join, pick_chained_requests, merge_sets, get_chain_tag, add_entry, update_entry, query
@@ -127,6 +128,8 @@ def update_campaigns(conn, cursor):
                             'interested_pwgs': interested_pwgs,
                             'ref_interested_pwgs': interested_pwgs}
             update_entry(cursor, 'future_campaign_entries', entry_update)
+            conn.commit()
+            time.sleep(0.01)
  
         conn.commit()
 
@@ -185,6 +188,9 @@ def prefill_campaigns(conn, cursor):
                                 entry['short_name'],
                                 entry['dataset'],
                                 entry['chain_tag'])
+
+                    conn.commit()
+                    time.sleep(0.01)
 
         cursor.execute('UPDATE future_campaigns SET prefilled = 1 WHERE uid = ?', [campaign_uid])
         conn.commit()

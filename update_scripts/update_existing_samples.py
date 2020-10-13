@@ -2,6 +2,7 @@
 Update data in samples table
 """
 import sys
+import time
 import sqlite3
 import logging
 from utils import query, pick_chained_requests, chained_request_to_steps, sorted_join, add_entry, update_entry, clean_split, merge_sets
@@ -201,6 +202,8 @@ def process_request(cursor, campaign_uid, request):
                  'notes': notes or ''}
 
         insert_or_update(cursor, entry)
+        conn.commit()
+        time.sleep(0.01)
 
 
 def main(conn, cursor):
