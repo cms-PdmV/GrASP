@@ -27,12 +27,12 @@
         <b>physics working group as interested PWG in samples</b>
       </div>
       <div>
-        <form class="form-group" onsubmit="search(this, this.dataset.value, this.campaign.value, this.pwg.value, this.notes.value)">
-          Campaign Name: <input class="w-25 form-control" type="text" placeholder="example: RunIISummer19UL17" value="{{campaign_group}}" id="campaign"></input> 
-          DataSet Name: <input class="w-25 form-control" type="text" placeholder="example: QCD" id="dataset"></input> 
-          PWG Name: <input class="w-25 form-control" type="text" placeholder="example: HIG" id="pwg"></input> 
-          Notes: <input class="w-25 form-control" type="text" placeholder="search inside notes" id="notes"></input> 
-          <button type="submit" class="btn btn-primary">Submit</button>
+        <form class="form-group" method="GET">
+          Campaign Name: <input class="w-25 form-control" type="text" placeholder="example: RunIISummer19UL17" name="campaign" id="campaign"></input> 
+          DataSet Name: <input class="w-25 form-control" type="text" placeholder="example: QCD" name="dataset" id="dataset"></input> 
+          PWG Name: <input class="w-25 form-control" type="text" placeholder="example: HIG" name="pwg" id="pwg"></input> 
+          Notes: <input class="w-25 form-control" type="text" placeholder="search inside notes" name="notes" id="notes"></input> 
+          <input type="submit" class="btn btn-primary">Submit</input>
         </form>
       </div>
       <p style="margin: 8px;">
