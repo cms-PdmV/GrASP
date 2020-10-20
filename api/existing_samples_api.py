@@ -163,7 +163,7 @@ class DeleteExistingCampaignAPI(APIBase):
                            [campaign_name, campaign_uid])
             cursor.execute('''DELETE FROM existing_campaigns
                               WHERE name = ?
-                              AND campaign_uid = ?''',
+                              AND uid = ?''',
                            [campaign_name, campaign_uid])
             conn.commit()
         finally:

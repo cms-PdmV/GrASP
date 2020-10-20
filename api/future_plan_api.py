@@ -125,7 +125,8 @@ class UpdateFutureCampaignAPI(APIBase):
         try:
             cursor = conn.cursor()
             entry = {'name': data['name'].strip(),
-                     'reference': sorted_join(clean_split(data['reference']))}
+                     'reference': sorted_join(clean_split(data['reference'])),
+                     'uid': int(data['uid'])}
             update_entry(cursor, 'future_campaigns', entry)
             conn.commit()
         finally:
@@ -161,7 +162,7 @@ class DeleteFutureCampaignAPI(APIBase):
                            [campaign_name, campaign_uid])
             cursor.execute('''DELETE FROM future_campaigns
                               WHERE name = ?
-                              AND campaign_uid = ?''',
+                              AND uid = ?''',
                            [campaign_name, campaign_uid])
             conn.commit()
         finally:

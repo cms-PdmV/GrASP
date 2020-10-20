@@ -10,7 +10,28 @@
     </table>
     <div style="text-align: center;">
       <v-btn small class="mr-1 mt-1" color="primary" @click="save()">Save</v-btn>
+      <v-btn small class="mr-1 mt-1" color="error" v-if="!creatingNew" @click="deleteCampaign()">Delete</v-btn>
     </div>
+    <v-dialog v-model="dialog.visible"
+              max-width="50%">
+      <v-card>
+        <v-card-title class="headline">
+          {{dialog.title}}
+        </v-card-title>
+        <v-card-text>
+          <span v-html="dialog.description"></span>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn small class="mr-1 mb-1" color="primary" v-if="dialog.cancel" @click="dialog.cancel">
+            Cancel
+          </v-btn>
+          <v-btn small class="mr-1 mb-1" color="error" @click="dialog.ok">
+            OK
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -29,6 +50,13 @@ export default {
       campaignName: undefined,
       campaign: undefined,
       creatingNew: true,
+      dialog: {
+        visible: false,
+        title: '',
+        description: '',
+        cancel: undefined,
+        ok: undefined,
+      },
     }
   },
   created () {
@@ -67,6 +95,30 @@ export default {
         console.error(error);
         alert(error.response.data.message);
       });
+    },
+    clearDialog: function() {
+      this.dialog.visible = false;
+      this.dialog.title = '';
+      this.dialog.description = '';
+      this.dialog.ok = function() {};
+      this.dialog.cancel = function() {};
+    },
+    deleteCampaign: function() {
+      let component = this;
+      this.dialog.title = "Delete " + this.campaignName + " campaign?";
+      this.dialog.description = "Are you sure you want to delete " + this.campaignName + " and all it's entries from GrASP?";
+      this.dialog.ok = function() {
+        let campaign = component.makeCopy(component.campaign);
+        axios.delete('api/existing/delete', {data: campaign}).then(() => {
+          component.clearDialog();
+          window.location = '';
+        }).catch(error => {
+          console.error(error);
+          alert(error.response.data.message);
+        });
+      }
+      this.dialog.cancel = this.clearDialog;
+      this.dialog.visible = true;
     },
   }
 }
