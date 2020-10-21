@@ -23,7 +23,8 @@ class UserInfo():
     # Use static dictionary as a cache in order not to query DB each time
     USERS = {}
     USERS_UPDATE = 0
-    CACHE_TIMEOUT = 60
+    # 10 minutes
+    CACHE_TIMEOUT = 60 * 10
 
     def __init__(self):
         self.user = None
