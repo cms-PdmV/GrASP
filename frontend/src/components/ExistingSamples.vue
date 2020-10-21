@@ -75,7 +75,7 @@
         <td>
           <a :href="'https://cms-pdmv.cern.ch/mcm/chained_requests?prepid=' + entry.chained_request" target="_blank">{{entry.chain_tag}}</a>
         </td>
-        <td v-on:dblclick="role('generator_contact') && startEditing($event, entry, 'interested_pwgs')" class="align-center">
+        <td v-on:dblclick="role('user') && startEditing($event, entry, 'interested_pwgs')" class="align-center">
           <template v-if="!entry.editing.interested_pwgs">{{entry.interested_pwgs}}</template>
           <input @blur="stopEditing(entry, 'interested_pwgs')"
                  v-if="entry.editing.interested_pwgs"

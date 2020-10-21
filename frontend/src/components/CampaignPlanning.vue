@@ -48,7 +48,7 @@
             &#10799;
           </template>
         </td>
-        <td v-on:dblclick="role('generator_contact') && startEditing($event, entry, 'dataset')">
+        <td v-on:dblclick="role('user') && startEditing($event, entry, 'dataset')">
           <template v-if="!entry.editing.dataset">
             {{entry.dataset}}
             <span v-if="userInfo.role_index >= 1"
@@ -61,35 +61,35 @@
                  type="text"
                  v-model="entry.temporary.dataset">
         </td>
-        <td v-on:dblclick="role('generator_contact') && startEditing($event, entry, 'chain_tag')">
+        <td v-on:dblclick="role('user') && startEditing($event, entry, 'chain_tag')">
           <template v-if="!entry.editing.chain_tag">{{entry.chain_tag}}</template>
           <input @blur="stopEditing(entry, 'chain_tag')"
                  v-if="entry.editing.chain_tag"
                  type="text"
                  v-model="entry.temporary.chain_tag">
         </td>
-        <td v-on:dblclick="role('generator_contact') && startEditing($event, entry, 'events')" class="align-right">
+        <td v-on:dblclick="role('user') && startEditing($event, entry, 'events')" class="align-right">
           <template v-if="!entry.editing.events">{{entry.niceEvents}}</template>
           <input @blur="stopEditing(entry, 'events')"
                  v-if="entry.editing.events"
                  type="text"
                  v-model="entry.temporary.events">
         </td>
-        <td v-on:dblclick="role('generator_contact') && startEditing($event, entry, 'interested_pwgs')" class="align-center">
+        <td v-on:dblclick="role('user') && startEditing($event, entry, 'interested_pwgs')" class="align-center">
           <template v-if="!entry.editing.interested_pwgs">{{entry.interested_pwgs}}</template>
           <input @blur="stopEditing(entry, 'interested_pwgs')"
                  v-if="entry.editing.interested_pwgs"
                  type="text"
                  v-model="entry.temporary.interested_pwgs">
         </td>
-        <td v-on:dblclick="role('generator_contact') && startEditing($event, entry, 'comment')" class="wrap">
+        <td v-on:dblclick="role('user') && startEditing($event, entry, 'comment')" class="wrap">
           <template v-if="!entry.editing.comment">{{entry.comment}}</template>
           <input @blur="stopEditing(entry, 'comment')"
                  v-if="entry.editing.comment"
                  type="text"
                  v-model="entry.temporary.comment">
         </td>
-        <td v-on:dblclick="role('generator_contact') && startEditing($event, entry, 'fragment')">
+        <td v-on:dblclick="role('user') && startEditing($event, entry, 'fragment')">
           <template v-if="!entry.editing.fragment">{{entry.fragment}}</template>
           <input @blur="stopEditing(entry, 'fragment')"
                  v-if="entry.editing.fragment"

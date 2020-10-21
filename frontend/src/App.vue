@@ -31,7 +31,7 @@ export default {
   ],
   computed: {
     userRolePicture: function() {
-      if (this.userInfo.role_index == 4) {
+      if (this.userInfo.role_index == 5) {
         return 'static/admin_star.png';
       }
       if (this.userInfo.role_index >= 1) {

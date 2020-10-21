@@ -198,7 +198,7 @@ class UpdateEntryInExistingCampaignAPI(APIBase):
     """
     @APIBase.ensure_request_data
     @APIBase.exceptions_to_errors
-    @APIBase.ensure_role('generator_contact')
+    @APIBase.ensure_role('user')
     def post(self):
         """
         Update entry in existing samples table based on entry UID

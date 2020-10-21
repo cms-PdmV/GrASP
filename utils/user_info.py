@@ -14,7 +14,8 @@ class UserInfo():
     and from user database synced from McM
     """
 
-    ROLES = ['user',
+    ROLES = ['anonymous',
+             'user',
              'generator_contact',
              'generator_convener',
              'production_manager',
@@ -63,7 +64,7 @@ class UserInfo():
             else:
                 self.user = {'name': fullname,
                              'username': username,
-                             'role': 'user',
+                             'role': self.ROLES[0],
                              'role_index': 0}
 
         return self.user

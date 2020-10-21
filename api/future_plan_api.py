@@ -205,7 +205,7 @@ class AddEntryToFutureCampaignAPI(APIBase):
     """
     @APIBase.ensure_request_data
     @APIBase.exceptions_to_errors
-    @APIBase.ensure_role('generator_contact')
+    @APIBase.ensure_role('user')
     def post(self):
         """
         Add new entry in future campaign planning table
@@ -269,7 +269,7 @@ class UpdateEntryInFutureCampaignAPI(APIBase):
     """
     @APIBase.ensure_request_data
     @APIBase.exceptions_to_errors
-    @APIBase.ensure_role('generator_contact')
+    @APIBase.ensure_role('user')
     def post(self):
         """
         Update entry in future campaign based on entry UID and campaign UID
@@ -345,7 +345,7 @@ class DeleteEntryInFutureCampaignAPI(APIBase):
     """
     @APIBase.ensure_request_data
     @APIBase.exceptions_to_errors
-    @APIBase.ensure_role('generator_contact')
+    @APIBase.ensure_role('user')
     def delete(self):
         """
         Delete an entry from future campaign planning based on UID and campaign UID
