@@ -166,6 +166,9 @@ def prefill_campaigns(conn, cursor):
         for reference in references:
             logger.info('Reference %s', reference)
             requests = mcm.get('requests', query='member_of_campaign=%s' % (reference))
+            if not requests:
+                continue
+
             for request in requests:
                 dataset = request['dataset_name']
                 logger.info('  Request %s - %s', request['prepid'], dataset)
