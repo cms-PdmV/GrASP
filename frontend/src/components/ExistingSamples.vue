@@ -23,6 +23,7 @@
         <th>Dataset Name</th>
         <th>Root Request</th>
         <th>MiniAOD Request</th>
+        <th>NanoAOD Request</th>
         <th>Chained Request</th>
         <th>Interested PWGs</th>
         <!-- <th>Notes</th> -->
@@ -46,9 +47,8 @@
             <br>
             <small>Status: {{entry.root_request_status}}</small>
           </div>
-          <div v-if="entry.root_request_total_events != 0"
-               :class="'progress-background ' + entry.root_request_status + '-background'"
-               :style="'width: ' + (entry.root_request_done_events / entry.root_request_total_events * 100) + '%;'">
+          <div :class="'progress-background ' + entry.root_request_status + '-background'"
+               :style="'width: ' + entry.rootPercentage + '%;'">
           </div>
         </td>
         <td v-if="entry.rowspan.miniaod > 0" :rowspan="entry.rowspan.miniaod" class="progress-cell">
@@ -65,10 +65,29 @@
               <small>Priority: {{entry.miniaod_priority}}</small>
               <br>
               <small>Status: {{entry.miniaod_status}}</small>
-              </div>
-            <div v-if="entry.miniaod_total_events != 0"
-                :class="'progress-background ' + entry.miniaod_status + '-background'"
-                :style="'width: ' + (entry.miniaod_done_events / entry.miniaod_total_events * 100) + '%;'">
+            </div>
+            <div :class="'progress-background ' + entry.miniaod_status + '-background'"
+                 :style="'width: ' + entry.miniaodPercentage + '%;'">
+            </div>
+          </template>
+        </td>
+        <td class="progress-cell">
+          <template v-if="entry.nanoaod.length">
+            <div>
+              <a :href="'https://cms-pdmv.cern.ch/mcm/requests?prepid=' + entry.nanoaod" target="_blank">McM</a>
+              <a :href="'https://cms-pdmv.cern.ch/pmp/historical?r=' + entry.nanoaod" target="_blank" class="ml-1">pMp</a>
+              <template v-if="entry.nanoaod_output">
+                <a :href="makeDASLink(entry.nanoaod_output)" target="_blank" class="ml-1">DAS</a>
+              </template>
+              <br>
+              <small>Events: {{entry.nanoaodEventsNice}}</small>
+              <br>
+              <small>Priority: {{entry.nanoaod_priority}}</small>
+              <br>
+              <small>Status: {{entry.nanoaod_status}}</small>
+            </div>
+            <div :class="'progress-background ' + entry.nanoaod_status + '-background'"
+                 :style="'width: ' + entry.nanoaodPercentage + '%;'">
             </div>
           </template>
         </td>
@@ -148,15 +167,52 @@ export default {
       entry.rootTotalEventsNice = this.suffixNumber(entry.root_request_total_events);
       entry.miniaodDoneEventsNice = this.suffixNumber(entry.miniaod_done_events);
       entry.miniaodTotalEventsNice = this.suffixNumber(entry.miniaod_total_events);
-      if ((entry.root_request_status == 'submitted' || entry.root_request_status == 'done') && entry.root_request_output.length) {
-        entry.rootEventsNice = entry.rootDoneEventsNice + '/' + entry.rootTotalEventsNice;
+      entry.nanoaodDoneEventsNice = this.suffixNumber(entry.nanoaod_done_events);
+      entry.nanoaodTotalEventsNice = this.suffixNumber(entry.nanoaod_total_events);
+      if (entry.root_request_status == 'submitted' || entry.root_request_status == 'done') {
+        if (entry.root_request_total_events != 0) {
+          entry.rootPercentage = entry.root_request_done_events / entry.root_request_total_events * 100;
+        } else {
+          entry.rootPercentage = 100;
+        }
+        if (entry.root_request_output.length) {
+          entry.rootEventsNice = entry.rootDoneEventsNice + '/' + entry.rootTotalEventsNice;
+        } else {
+          entry.rootEventsNice = entry.rootTotalEventsNice;
+        }
       } else {
+        entry.rootPercentage = 100;
         entry.rootEventsNice = entry.rootTotalEventsNice;
       }
-      if ((entry.miniaod_status == 'submitted' || entry.miniaod_status == 'done') && entry.miniaod_output.length) {
-        entry.miniaodEventsNice = entry.miniaodDoneEventsNice + '/' + entry.miniaodTotalEventsNice;
+      if (entry.miniaod_status == 'submitted' || entry.miniaod_status == 'done') {
+        if (entry.miniaod_total_events != 0) {
+          entry.miniaodPercentage = entry.miniaod_done_events / entry.miniaod_total_events * 100;
+        } else {
+          entry.miniaodPercentage = 100;
+        }
+        if (entry.miniaod_output.length) {
+          entry.miniaodEventsNice = entry.miniaodDoneEventsNice + '/' + entry.miniaodTotalEventsNice;
+        } else {
+          entry.miniaodEventsNice = entry.miniaodTotalEventsNice;
+        }
       } else {
+        entry.miniaodPercentage = 100;
         entry.miniaodEventsNice = entry.miniaodTotalEventsNice;
+      }
+      if (entry.nanoaod_status == 'submitted' || entry.nanoaod_status == 'done') {
+        if (entry.nanoaod_total_events != 0) {
+          entry.nanoaodPercentage = entry.nanoaod_done_events / entry.nanoaod_total_events * 100;
+        } else {
+          entry.nanoaodPercentage = 100;
+        }
+        if (entry.nanoaod_output.length) {
+          entry.nanoaodEventsNice = entry.nanoaodDoneEventsNice + '/' + entry.nanoaodTotalEventsNice;
+        } else {
+          entry.nanoaodEventsNice = entry.nanoaodTotalEventsNice;
+        }
+      } else {
+        entry.nanoaodPercentage = 100;
+        entry.nanoaodEventsNice = entry.nanoaodTotalEventsNice;
       }
     },
     fetchCampaign: function(campaignName) {

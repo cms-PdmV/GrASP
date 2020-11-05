@@ -92,10 +92,14 @@ class GetExistingCampaignAPI(APIBase):
                              'miniaod_done_events',
                              'miniaod_status',
                              'miniaod_output',
+                             'nanoaod',
+                             'nanoaod_priority',
+                             'nanoaod_total_events',
+                             'nanoaod_done_events',
+                             'nanoaod_status',
+                             'nanoaod_output',
                              'interested_pwgs',
-                             'ref_interested_pwgs',
-                             'cross_section',
-                             'notes'],
+                             'ref_interested_pwgs'],
                             query_where,
                             query_args)
         finally:

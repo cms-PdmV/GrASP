@@ -32,7 +32,7 @@ export const utilsMixin = {
               'You can then close the newly opened tab, dismiss this alert and try performing same action again.');
     },
     suffixNumber(number) {
-      if (number === undefined || number === '') {
+      if (number === undefined || number === '' || number == null) {
         return '';
       }
       let stripNumber = '';
