@@ -59,10 +59,10 @@ class GetExistingCampaignAPI(APIBase):
             cursor = conn.cursor()
             # Get the campaign itself
             campaigns = query(cursor,
-                             'existing_campaigns',
-                             ['uid', 'name'],
-                             'WHERE name = ?',
-                             [campaign_name])
+                              'existing_campaigns',
+                              ['uid', 'name'],
+                              'WHERE name = ?',
+                              [campaign_name])
             if not campaigns:
                 raise Exception('Could not find given campaign')
 
@@ -185,7 +185,10 @@ class GetAllExistingCampaignsAPI(APIBase):
         conn = sqlite3.connect(self.db_path)
         try:
             cursor = conn.cursor()
-            campaigns = query(cursor, 'existing_campaigns', ['uid', 'name'])
+            campaigns = query(cursor,
+                              'existing_campaigns',
+                              ['uid', 'name'],
+                              'ORDER BY name COLLATE NOCASE')
         finally:
             conn.close()
 

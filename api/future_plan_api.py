@@ -83,7 +83,7 @@ class GetFutureCampaignAPI(APIBase):
                 where_args.append(interested_pwg)
 
             where_clause += '''ORDER BY dataset
-                            COLLATE NOCASE'''
+                               COLLATE NOCASE'''
             entries = query(cursor,
                             'future_campaign_entries',
                             ['uid',
@@ -189,7 +189,8 @@ class GetAllFutureCampaignsAPI(APIBase):
                               ['uid',
                                'name',
                                'reference',
-                               'prefilled'])
+                               'prefilled'],
+                              'ORDER BY name COLLATE NOCASE')
         finally:
             conn.close()
 
