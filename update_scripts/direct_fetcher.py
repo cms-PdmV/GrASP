@@ -12,10 +12,13 @@ class DirectFetcher():
 
 
     def get(self, database, doc_id):
-        url = '/%s/%s' % (database, doc_id)
-        self.http_client.request('GET', url, headers=self.headers)
-        res = json.loads(self.http_client.getresponse().read())
-        return res
+        try:
+            url = '/%s/%s' % (database, doc_id)
+            self.http_client.request('GET', url, headers=self.headers)
+            res = json.loads(self.http_client.getresponse().read())
+            return res
+        except:
+            return None
 
     def bulk_fetch(self, database, list_of_ids):
         url = '/%s/_bulk_get' % (database)
