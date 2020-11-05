@@ -288,3 +288,7 @@ def parse_number(n):
 
     n = int(float(n) * multiplier)
     return n
+
+
+def valid_pwg(pwg):
+    return pwg in {'B2G', 'BPH', 'BTV', 'EGM', 'EXO', 'FSQ', 'HCA', 'HGC', 'HIG', 'HIN', 'JME', 'L1T', 'LUM', 'MUO', 'PPD', 'PPS', 'SMP', 'SUS', 'TAU', 'TOP', 'TRK', 'TSG'}

@@ -7,6 +7,7 @@ import sqlite3
 import logging
 from utils import get_short_name, clean_split, sorted_join, pick_chained_requests, merge_sets, get_chain_tag, add_entry, update_entry, query
 from direct_fetcher import DirectFetcher
+from xsdb_connect import XSDBConnection
 #pylint: disable=wrong-import-position,import-error
 sys.path.append('/afs/cern.ch/cms/PPD/PdmV/tools/McM/')
 from rest import McM
@@ -16,6 +17,9 @@ from rest import McM
 mcm = McM(dev=('--dev' in sys.argv), cookie='cookie.txt')
 # Faster fetcher from McM DB
 fetcher = DirectFetcher('vocms0485' if '--dev' in sys.argv else 'vocms0490', 5984)
+# Create a connection to xsdb
+xsdb = XSDBConnection()
+xsdb_cache = {}
 
 # Logger
 logging.basicConfig(format='[%(asctime)s][%(levelname)s] %(message)s', level=logging.INFO)
@@ -97,6 +101,28 @@ def process_interested_pwgs_update(local_sample):
         logging.info('Update: %s', response)
 
 
+def get_xs_info(dataset):
+    if dataset in xsdb_cache:
+        logger.info('Found %s in cache! Saved some time...', dataset)
+        return xsdb_cache[dataset]
+
+    data = xsdb.simple_search({'DAS': dataset})
+    if data:
+        data = data[0]
+        cross_section = data.get('cross_section')
+        cross_section = float(cross_section if cross_section else 0)
+        negative_weight = data.get('fraction_negative_weight')
+        negative_weight = float(negative_weight if negative_weight else 0)
+        data = {'cross_section': cross_section,
+                'negative_weight': negative_weight}
+    else:
+        data = None
+
+    xsdb_cache[dataset] = data
+    logger.info('Fetched %s - %s', dataset, data)
+    return data
+
+
 def update_campaigns(conn):
     campaigns = get_campaigns_to_update(conn)
     for campaign in campaigns:
@@ -149,6 +175,7 @@ def update_campaigns(conn):
             else:
                 interested_pwgs = entry['interested_pwgs']
 
+
             # Check if update is needed
             logger.info('Updating %s (%s) %s %s %s', campaign_name, uid, in_reference_prepid, in_target_prepid, interested_pwgs)
             # Update in McM as well
@@ -159,6 +186,11 @@ def update_campaigns(conn):
                             'ref_interested_pwgs': interested_pwgs}
             if in_target:
                 entry_update['events'] = max(0, in_target['total_events'])
+
+            xsdb_data = get_xs_info(dataset)
+            if xsdb_data:
+                entry_update['cross_section'] = xsdb_data['cross_section']
+                entry_update['negative_weight'] = xsdb_data['negative_weight']
 
             update_entry(conn, 'future_campaign_entries', entry_update)
             conn.commit()
@@ -216,7 +248,7 @@ def prefill_campaigns(conn):
                              'cross_section': 0,
                              'negative_weight': 0}
 
-                    logger.info('    Inserting %s - %s - %s',
+                    logger.info('Inserting %s - %s - %s',
                                 entry['short_name'],
                                 entry['dataset'],
                                 entry['chain_tag'])

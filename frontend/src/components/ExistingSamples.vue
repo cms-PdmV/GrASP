@@ -6,7 +6,7 @@
         <span class="font-weight-light">where</span> {{interestedPWG}} <span class="font-weight-light">is interested</span>
       </template>
     </h1>
-    <div class="align-center" v-if="!campaign.entries">
+    <div class="align-center mt-4" v-if="!campaign.entries">
       <img src="static/loading.gif" style="width: 150px; height: 150px;"/>
       <h3>Loading table...</h3>
     </div>
@@ -151,8 +151,7 @@ export default {
         Object.assign(entry, response.data.response);
         component.processEntry(entry);
       }).catch(error => {
-        console.error(error);
-        alert(error.response);
+        alert(error.response.data.message);
         entry.broken = true;
       });
     },
@@ -229,8 +228,7 @@ export default {
         component.mergeCells(campaign.entries, ['short_name', 'dataset', 'root_request', 'miniaod'])
         component.$set(component, 'campaign', campaign);
       }).catch(error => {
-        console.error(error);
-        alert(error.response);
+        alert(error.response.data.message);
       });
     },
     startEditing: function(event, entry, attribute) {

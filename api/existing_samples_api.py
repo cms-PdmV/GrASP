@@ -7,7 +7,7 @@ import flask
 import sqlite3
 from api.api_base import APIBase
 from utils.user_info import UserInfo
-from update_scripts.utils import get_short_name, clean_split, sorted_join, query, get_chain_tag, update_entry, add_entry
+from update_scripts.utils import get_short_name, clean_split, sorted_join, query, get_chain_tag, update_entry, add_entry, valid_pwg
 
 
 class CreateExistingCampaignAPI(APIBase):
@@ -217,7 +217,12 @@ class UpdateEntryInExistingCampaignAPI(APIBase):
         user_info = UserInfo()
         entry_uid = int(data['uid'])
         # Interested pwgs
-        interested_pwgs = sorted_join(clean_split(data['interested_pwgs'].upper()))
+        interested_pwgs = clean_split(data['interested_pwgs'].upper())
+        for pwg in interested_pwgs:
+            if not valid_pwg(pwg):
+                raise Exception('"%s" is not a valid PWG' % pwg)
+
+        interested_pwgs = sorted_join(interested_pwgs)
         conn = sqlite3.connect(self.db_path)
         try:
             cursor = conn.cursor()

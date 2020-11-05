@@ -139,7 +139,7 @@ td.hidden-cell {
   text-align: right;
 }
 
-.red {
+.red-text {
   color: red;
 }
 

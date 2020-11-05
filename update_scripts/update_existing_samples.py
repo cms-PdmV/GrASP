@@ -3,6 +3,7 @@ Update data in samples table
 """
 import sys
 import time
+import json
 import sqlite3
 import logging
 from utils import query, pick_chained_requests, chained_request_to_steps, sorted_join, add_entry, update_entry, clean_split, merge_sets
@@ -66,6 +67,7 @@ def get_request_if_exists(prepid):
     else:
         req = fetcher.get('requests', prepid)
         if not req:
+            logger.error('Could not find %s %s', prepid, req)
             req = {}
 
     # Get  request attributes

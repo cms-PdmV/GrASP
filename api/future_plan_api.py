@@ -7,7 +7,7 @@ import flask
 import sqlite3
 from api.api_base import APIBase
 from utils.user_info import UserInfo
-from update_scripts.utils import get_short_name, clean_split, sorted_join, add_entry, update_entry, query, parse_number
+from update_scripts.utils import get_short_name, clean_split, sorted_join, add_entry, update_entry, query, parse_number, valid_pwg
 
 
 class CreateFutureCampaignAPI(APIBase):
@@ -92,6 +92,8 @@ class GetFutureCampaignAPI(APIBase):
                              'dataset',
                              'chain_tag',
                              'events',
+                             'cross_section',
+                             'negative_weight',
                              'interested_pwgs',
                              'ref_interested_pwgs',
                              'comment',
@@ -218,6 +220,10 @@ class AddEntryToFutureCampaignAPI(APIBase):
         user_info = UserInfo()
         # Interested pwgs
         interested_pwgs = clean_split(data['interested_pwgs'].upper())
+        for pwg in interested_pwgs:
+            if not valid_pwg(pwg):
+                raise Exception('"%s" is not a valid PWG' % pwg)
+
         # Events
         events = parse_number(data['events'])
         # Create an entry
@@ -282,9 +288,15 @@ class UpdateEntryInFutureCampaignAPI(APIBase):
         user_info = UserInfo()
         entry_uid = int(data['uid'])
         # Interested pwgs
-        interested_pwgs = sorted_join(clean_split(data['interested_pwgs'].upper()))
+        interested_pwgs = clean_split(data['interested_pwgs'].upper())
+        for pwg in interested_pwgs:
+            if not valid_pwg(pwg):
+                raise Exception('"%s" is not a valid PWG' % pwg)
+
         # Events
         events = parse_number(data['events'])
+        cross_section = float(data['cross_section'])
+        negative_weight = float(data['negative_weight'])
         conn = sqlite3.connect(self.db_path)
         try:
             cursor = conn.cursor()
@@ -295,6 +307,8 @@ class UpdateEntryInFutureCampaignAPI(APIBase):
                                     'dataset',
                                     'chain_tag',
                                     'events',
+                                    'cross_section',
+                                    'negative_weight',
                                     'comment',
                                     'fragment'],
                                    'WHERE uid = ?',
@@ -310,11 +324,13 @@ class UpdateEntryInFutureCampaignAPI(APIBase):
                      'dataset': data['dataset'].strip(),
                      'chain_tag': data['chain_tag'].strip(),
                      'events': events,
-                     'interested_pwgs': interested_pwgs,
+                     'cross_section': cross_section,
+                     'negative_weight':negative_weight,
+                     'interested_pwgs': sorted_join(interested_pwgs),
                      'comment': data['comment'].strip(),
                      'fragment': data['fragment'].strip()}
             now = int(time.time())
-            for attr in ['interested_pwgs', 'dataset', 'chain_tag', 'events', 'comment', 'fragment']:
+            for attr in ['interested_pwgs', 'dataset', 'chain_tag', 'events', 'comment', 'fragment', 'cross_section', 'negative_weight']:
                 if existing_entry[attr] != entry[attr]:
                     changes_happen = True
                     add_entry(cursor,

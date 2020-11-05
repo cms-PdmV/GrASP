@@ -7,7 +7,7 @@
       </template>
     </h1>
     <h3 class="page-title" v-if="campaign && campaign.reference && campaign.reference.length"><span class="font-weight-light">Reference:</span> {{campaign.reference}}</h3>
-    <div class="align-center" v-if="!campaign.entries">
+    <div class="align-center mt-4" v-if="!campaign.entries">
       <img src="static/loading.gif" style="width: 150px; height: 150px;"/>
       <h3>Loading table...</h3>
     </div>
@@ -26,12 +26,14 @@
         <th>Dataset</th>
         <th>Chain Tag</th>
         <th>Events</th>
+        <th>Cross Section</th>
+        <th>Negative Weight</th>
         <th>Interested PWGs</th>
         <th>Comment</th>
         <th>Fragment</th>
       </tr>
       <tr v-for="entry in entries" :key="entry.dataset + entry.uid">
-        <td :title="entry.uid">{{entry.short_name}} <span class="red" v-if="entry.broken">Not saved!</span></td>
+        <td :title="entry.uid">{{entry.short_name}} <span class="red-text" v-if="entry.broken">Not saved!</span></td>
         <td class="align-center">
           <template v-if="entry.in_reference.length">
             <a :href="'https://cms-pdmv.cern.ch/mcm/requests?prepid=' + entry.in_reference" target="_blank">{{entry.in_reference}}</a>
@@ -74,6 +76,20 @@
                  v-if="entry.editing.events"
                  type="text"
                  v-model="entry.temporary.events">
+        </td>
+        <td v-on:dblclick="role('user') && startEditing($event, entry, 'cross_section')" class="align-right">
+          <template v-if="!entry.editing.cross_section">{{entry.cross_section}}</template>
+          <input @blur="stopEditing(entry, 'cross_section')"
+                 v-if="entry.editing.cross_section"
+                 type="text"
+                 v-model="entry.temporary.cross_section">
+        </td>
+        <td v-on:dblclick="role('user') && startEditing($event, entry, 'negative_weight')" class="align-right">
+          <template v-if="!entry.editing.negative_weight">{{entry.negative_weight}}</template>
+          <input @blur="stopEditing(entry, 'negative_weight')"
+                 v-if="entry.editing.negative_weight"
+                 type="text"
+                 v-model="entry.temporary.negative_weight">
         </td>
         <td v-on:dblclick="role('user') && startEditing($event, entry, 'interested_pwgs')" class="align-center">
           <template v-if="!entry.editing.interested_pwgs">{{entry.interested_pwgs}}</template>
@@ -202,8 +218,7 @@ export default {
         component.newEntry = component.getNewEntry();
         component.applyFilters();
       }).catch(error => {
-        console.error(error);
-        alert(error.response);
+        alert(error.response.data.message);
       });
     },
     updateEntry: function(entry) {
@@ -215,8 +230,7 @@ export default {
         component.processEntry(entry);
         component.applyFilters();
       }).catch(error => {
-        console.error(error);
-        alert(error.response);
+        alert(error.response.data.message);
         entry.broken = true;
       });
     },
@@ -229,8 +243,7 @@ export default {
           component.campaign.entries = component.campaign.entries.filter(item => item.uid !== entry.uid);
           component.applyFilters();
         }).catch(error => {
-          console.error(error);
-          alert(error.response);
+          alert(error.response.data.message);
           entry.broken = true;
         });
       }
@@ -274,7 +287,7 @@ export default {
         component.applyFilters();
       }).catch(error => {
         console.error(error);
-        alert(error.response);
+        alert(error.response.data.message);
       });
     },
     startEditing: function(event, entry, attribute) {
