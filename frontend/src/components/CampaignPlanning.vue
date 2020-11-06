@@ -15,7 +15,7 @@
       <RadioSelector :options="eventFilterOptions"
                     v-on:changed="onEventFilterUpdate"
                     class="mb-2">
-        Events filter:
+        Events Filter:
       </RadioSelector>
     </div>
     <table v-if="campaign.entries" class="highlight-on-hover">

@@ -21,6 +21,11 @@ from api.existing_samples_api import (CreateExistingCampaignAPI,
                                       DeleteExistingCampaignAPI,
                                       GetAllExistingCampaignsAPI,
                                       UpdateEntryInExistingCampaignAPI)
+from api.user_tags_api import (CreateUserTagAPI,
+                               GetUserTagAPI,
+                               UpdateUserTagAPI,
+                               DeleteUserTagAPI,
+                               GetAllUserTagsAPI)
 from api.system_info_api import (UserInfoAPI,
                                  UserActionHistory)
 
@@ -116,6 +121,15 @@ api.add_resource(UpdateExistingCampaignAPI, '/api/existing/update')
 api.add_resource(DeleteExistingCampaignAPI, '/api/existing/delete')
 api.add_resource(GetAllExistingCampaignsAPI, '/api/existing/get_all')
 api.add_resource(UpdateEntryInExistingCampaignAPI, '/api/existing/update_entry')
+
+# User tags
+api.add_resource(CreateUserTagAPI, '/api/user_tag/create')
+api.add_resource(GetUserTagAPI,
+                 '/api/user_tag/get/<string:tag_name>',
+                 '/api/user_tag/get/<string:tag_name>/<string:interested_pwg>')
+api.add_resource(UpdateUserTagAPI, '/api/user_tag/update')
+api.add_resource(DeleteUserTagAPI, '/api/user_tag/delete')
+api.add_resource(GetAllUserTagsAPI, '/api/user_tag/get_all')
 
 
 def main():

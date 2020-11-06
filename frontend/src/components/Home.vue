@@ -44,6 +44,23 @@
         </td>
       </tr>
     </table>
+    <h3 style="text-align: center">User Tagged Samples</h3>
+    <table>
+      <tr>
+        <th>Tag</th>
+      </tr>
+      <tr v-for="tag in userTags" :key="tag.name">
+        <td>
+          <a :href="'tags?name=' + tag.name">{{tag.name}}</a>
+          <a v-if="role('administrator')" :title="'Edit ' + tag.name" style="text-decoration: none;" :href="'tag_edit?name=' + tag.name">&#128295;</a>
+        </td>
+      </tr>
+      <tr v-if="role('production_manager')">
+        <td :colspan="pwgs.length + 2">
+          <a :href="'tag_edit'">Add new tag</a>
+        </td>
+      </tr>
+    </table>
   </div>
 </template>
 
@@ -61,6 +78,7 @@ export default {
     return {
       futureCampaigns: [],
       existingCampaigns: [],
+      userTags: [],
       pwgs: ['B2G', 'BPH', 'BTV', 'EGM', 'EXO', 'FSQ', 'HCA', 'HGC', 'HIG', 'HIN', 'JME', 'L1T', 'LUM', 'MUO', 'PPS', 'SMP', 'SUS', 'TAU', 'TOP', 'TRK', 'TSG'],
     }
   },
@@ -75,6 +93,9 @@ export default {
       });
       axios.get('api/existing/get_all').then(response => {
         component.existingCampaigns = response.data.response;
+      });
+      axios.get('api/user_tag/get_all').then(response => {
+        component.userTags = response.data.response;
       });
     },
   }

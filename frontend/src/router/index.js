@@ -5,6 +5,8 @@ import CampaignPlanning from '@/components/CampaignPlanning'
 import CampaignPlanningEdit from '@/components/CampaignPlanningEdit'
 import ExistingSamples from '@/components/ExistingSamples'
 import ExistingSamplesEdit from '@/components/ExistingSamplesEdit'
+import UserTags from '@/components/UserTags'
+import UserTagsEdit from '@/components/UserTagsEdit'
 import History from '@/components/History'
 import qs from 'qs';
 
@@ -36,6 +38,16 @@ const routes = [
     path: '/existing_edit',
     name: 'existing_edit',
     component: ExistingSamplesEdit
+  },
+  {
+    path: '/tags',
+    name: 'tags',
+    component: UserTags
+  },
+  {
+    path: '/tag_edit',
+    name: 'tag_edit',
+    component: UserTagsEdit
   },
   {
     path: '/history',

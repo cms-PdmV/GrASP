@@ -1,23 +1,23 @@
 <template>
   <div>
-    <h1 v-if="campaign.entries" class="page-title">
-      <span class="font-weight-light">Samples in</span> {{campaign.name}}
+    <h1 v-if="tag.entries" class="page-title">
+      <span class="font-weight-light">Samples tagged</span> {{tag.name}}
       <template v-if="interestedPWG">
         <span class="font-weight-light">where</span> {{interestedPWG}} <span class="font-weight-light">is interested</span>
       </template>
     </h1>
-    <div class="align-center mt-4" v-if="!campaign.entries">
+    <div class="align-center mt-4" v-if="!tag.entries">
       <img :src="'static/loading' + getRandomInt(3) + '.gif'" style="width: 120px; height: 120px;"/>
       <h3>Loading table...</h3>
     </div>
-    <div v-if="campaign.entries" class="align-center">
+    <div v-if="tag.entries" class="align-center">
       <RadioSelector :options="eventFilterOptions"
                     v-on:changed="onEventFilterUpdate"
                     class="mb-2">
         Events Filter:
       </RadioSelector>
     </div>
-    <table v-if="campaign.entries">
+    <table v-if="tag.entries">
       <tr>
         <th>Short Name<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.short_name" @input="applyFilters()"></th>
         <th>Dataset Name<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.dataset" @input="applyFilters()"></th>
@@ -25,13 +25,12 @@
         <th>MiniAOD Request<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.miniaod" @input="applyFilters()"></th>
         <th>NanoAOD Request<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.nanoaod" @input="applyFilters()"></th>
         <th>Chained Request<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.chained_request" @input="applyFilters()"></th>
-        <th>Interested PWGs</th>
-        <!-- <th>Notes</th> -->
+        <!-- <th>Interested PWGs</th> -->
       </tr>
       <tr v-for="entry in entries" :key="entry.dataset + entry.uid">
         <td v-if="entry.rowspan.short_name > 0" :rowspan="entry.rowspan.short_name">{{entry.short_name}}</td>
         <td v-if="entry.rowspan.dataset > 0" :rowspan="entry.rowspan.dataset">
-          <a :href="'https://cms-pdmv.cern.ch/mcm/requests?dataset_name=' + entry.dataset + '&member_of_campaign=' + campaign.name" target="_blank">{{entry.dataset}}</a>
+          <a :href="'https://cms-pdmv.cern.ch/mcm/requests?dataset_name=' + entry.dataset + '&member_of_tag=' + tag.name" target="_blank">{{entry.dataset}}</a>
         </td>
         <td v-if="entry.rowspan.root_request > 0" :rowspan="entry.rowspan.root_request" class="progress-cell">
           <div>
@@ -94,14 +93,6 @@
         <td>
           <a :href="'https://cms-pdmv.cern.ch/mcm/chained_requests?prepid=' + entry.chained_request" target="_blank">{{entry.chain_tag}}</a>
         </td>
-        <td v-on:dblclick="role('user') && startEditing($event, entry, 'interested_pwgs')" class="align-center">
-          <template v-if="!entry.editing.interested_pwgs">{{entry.interested_pwgs}}</template>
-          <input @blur="stopEditing(entry, 'interested_pwgs')"
-                 v-if="entry.editing.interested_pwgs"
-                 type="text"
-                 v-model="entry.temporary.interested_pwgs">
-        </td>
-        <!-- <td style="max-width: 300px" class="wrap">{{entry.notes}}</td> -->
       </tr>
     </table>
   </div>
@@ -126,7 +117,7 @@ export default {
   data () {
     return {
       interestedPWG: undefined,
-      campaign: {},
+      tag: {},
       newEntry: {},
       eventFilterOptions: [[0, 'All'], [5e6, '5M+'], [10e6, '10M+'], [20e6, '20M+'], [50e6, '50M+']],
       eventsFilter: 0,
@@ -143,17 +134,17 @@ export default {
   },
   created () {
     let query = Object.assign({}, this.$route.query);
-    let campaignName = query.name;
+    let tagName = query.name;
     if (query.pwg && query.pwg.length) {
       this.interestedPWG = query.pwg.toUpperCase();
     }
-    this.fetchCampaign(campaignName);
+    this.fetchTag(tagName);
   },
   methods: {
     updateEntry: function(entry) {
       let entryCopy = this.makeCopy(entry);
-      entryCopy['campaign_uid'] = this.campaign.uid;
-      let httpRequest = axios.post('api/existing/update_entry', entryCopy);
+      entryCopy['tag_uid'] = this.tag.uid;
+      let httpRequest = axios.post('api/user_tag/update_entry', entryCopy);
       let component = this;
       httpRequest.then(response => {
         Object.assign(entry, response.data.response);
@@ -222,43 +213,22 @@ export default {
         entry.nanoaodEventsNice = entry.nanoaodTotalEventsNice;
       }
     },
-    fetchCampaign: function(campaignName) {
+    fetchTag: function(tagName) {
       let component = this;
-      let url = 'api/existing/get/' + campaignName; 
+      let url = 'api/user_tag/get/' + tagName; 
       if (this.interestedPWG) {
         url += '/' + this.interestedPWG;
       }
       axios.get(url).then(response => {
-        let campaign = response.data.response;
-        campaign.entries.forEach(element => {
+        let tag = response.data.response;
+        tag.entries.forEach(element => {
           component.processEntry(element);
         });
-        component.mergeCells(campaign.entries, ['short_name', 'dataset', 'root_request', 'miniaod'])
-        component.$set(component, 'campaign', campaign);
+        component.mergeCells(tag.entries, ['short_name', 'dataset', 'root_request', 'miniaod'])
+        component.$set(component, 'tag', tag);
       }).catch(error => {
         alert(error.response.data.message);
       });
-    },
-    startEditing: function(event, entry, attribute) {
-      entry.temporary[attribute] = entry[attribute];
-      this.$set(entry.editing, attribute, true);
-      const target = event.target;
-      const width = target.getBoundingClientRect().width + 1;
-      this.$nextTick(() => {
-        let input = target.querySelector('input');
-        if (input) {
-          input.style.width = width + 'px';
-          input.focus();
-        }
-      })
-    },
-    stopEditing: function(entry, attribute) {
-      entry.dirty = entry.dirty || (entry[attribute] != entry.temporary[attribute]);
-      entry[attribute] = entry.temporary[attribute];
-      this.$set(entry.editing, attribute, false);
-      if (entry.dirty) {
-        this.updateEntry(entry);
-      }
     },
     mergeCells: function(list, attributes) {
       list.forEach(element => {
@@ -284,7 +254,7 @@ export default {
       this.applyFilters();
     },
     applyFilters: function() {
-      let filteredEntries = this.campaign.entries;
+      let filteredEntries = this.tag.entries;
       if (this.eventsFilter != 0) {
         filteredEntries = filteredEntries.filter(entry => entry.root_request_total_events >= this.eventsFilter);
       }
