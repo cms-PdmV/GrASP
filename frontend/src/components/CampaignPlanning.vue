@@ -274,7 +274,7 @@ export default {
     applyFilters: function() {
       let filteredEntries = this.campaign.entries;
       if (this.eventsFilter != 0) {
-        filteredEntries = filteredEntries.filter(entry => entry.root_request_total_events >= this.eventsFilter);
+        filteredEntries = filteredEntries.filter(entry => entry.events >= this.eventsFilter);
       }
       for (let attribute in this.search) {
         if (this.search[attribute]) {
