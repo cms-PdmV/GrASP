@@ -53,6 +53,9 @@ export const utilsMixin = {
       stripNumber = (Math.round(1.0 * number / multiplier) / 100.0).toFixed(2).toString();
       stripNumber = stripNumber.replace(/0+$/, '').replace(/\.$/, '');
       return stripNumber + suffix;
-    }
+    },
+    getRandomInt(max) {
+      return Math.floor(Math.random() * Math.floor(max));
+    },
   }
 }

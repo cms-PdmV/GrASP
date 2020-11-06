@@ -7,7 +7,7 @@
       </template>
     </h1>
     <div class="align-center mt-4" v-if="!campaign.entries">
-      <img src="static/loading.gif" style="width: 150px; height: 150px;"/>
+      <img :src="'static/loading' + getRandomInt(3) + '.gif'" style="width: 120px; height: 120px;"/>
       <h3>Loading table...</h3>
     </div>
     <div v-if="campaign.entries" class="align-center">
@@ -19,12 +19,12 @@
     </div>
     <table v-if="campaign.entries">
       <tr>
-        <th>Short Name</th>
-        <th>Dataset Name</th>
-        <th>Root Request</th>
-        <th>MiniAOD Request</th>
-        <th>NanoAOD Request</th>
-        <th>Chained Request</th>
+        <th>Short Name<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.short_name" @input="applyFilters()"></th>
+        <th>Dataset Name<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.dataset" @input="applyFilters()"></th>
+        <th>Root Request<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.root_request" @input="applyFilters()"></th>
+        <th>MiniAOD Request<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.miniaod" @input="applyFilters()"></th>
+        <th>NanoAOD Request<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.nanoaod" @input="applyFilters()"></th>
+        <th>Chained Request<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.chained_request" @input="applyFilters()"></th>
         <th>Interested PWGs</th>
         <!-- <th>Notes</th> -->
       </tr>
@@ -130,7 +130,15 @@ export default {
       newEntry: {},
       eventFilterOptions: [[0, 'All'], [5e6, '5M+'], [10e6, '10M+'], [20e6, '20M+'], [50e6, '50M+']],
       eventsFilter: 0,
-      entries: [], // Filtered entries
+      entries: [], // Filtered entries,
+      search: {
+        short_name: undefined,
+        dataset: undefined,
+        root_request: undefined,
+        miniaod: undefined,
+        nanoaod: undefined,
+        chained_request: undefined,
+      }
     }
   },
   created () {
@@ -271,17 +279,24 @@ export default {
         }
       }
     },
+    onEventFilterUpdate: function(events) {
+      this.eventsFilter = events;
+      this.applyFilters();
+    },
     applyFilters: function() {
       let filteredEntries = this.campaign.entries;
       if (this.eventsFilter != 0) {
         filteredEntries = filteredEntries.filter(entry => entry.root_request_total_events >= this.eventsFilter);
       }
+      for (let attribute in this.search) {
+        if (this.search[attribute]) {
+          const pattern = this.search[attribute].replace(/ /g, '*').replace(/\*/g, '.*');
+          const regex = RegExp(pattern, 'i'); // 'i' for case insensitivity
+          filteredEntries = filteredEntries.filter(entry => entry[attribute] != '' && regex.test(entry[attribute]));
+        }
+      }
       this.entries = filteredEntries;
       this.mergeCells(this.entries, ['short_name', 'dataset', 'root_request', 'miniaod']);
-    },
-    onEventFilterUpdate: function(events) {
-      this.eventsFilter = events;
-      this.applyFilters();
     },
   }
 }

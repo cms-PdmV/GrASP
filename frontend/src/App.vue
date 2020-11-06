@@ -79,7 +79,7 @@ a {
 /* Table */
 td, th {
   border: 1px #aaa solid;
-  padding: 2px 8px;
+  padding: 2px 4px;
   font-size: 0.9em;
 }
 
@@ -145,6 +145,16 @@ td.hidden-cell {
 
 .pointer {
   cursor: pointer;
+}
+
+.header-search {
+  min-width: 0;
+  width: 100%;
+  background: white;
+  border: 1px solid black;
+  font-weight: normal;
+  margin-left: -4px;
+  margin-right: -4px;
 }
 
 </style>
