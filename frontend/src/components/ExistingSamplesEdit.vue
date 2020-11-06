@@ -74,7 +74,6 @@ export default {
       axios.get('api/existing/get/' + this.campaignName).then(response => {
         component.campaign = response.data.response;
       }).catch(error => {
-        console.error(error);
         alert(error.response.data.message);
       });
     }
@@ -89,10 +88,9 @@ export default {
         httpRequest = axios.post('api/existing/update', campaign);
       }
       let component = this;
-      httpRequest.then(response => {
+      httpRequest.then(() => {
         window.location = 'existing?name=' + component.campaign.name;
       }).catch(error => {
-        console.error(error);
         alert(error.response.data.message);
       });
     },
@@ -113,7 +111,6 @@ export default {
           component.clearDialog();
           window.location = '';
         }).catch(error => {
-          console.error(error);
           alert(error.response.data.message);
         });
       }

@@ -246,7 +246,7 @@ export default {
         let entryCopy = this.makeCopy(entry);
         entryCopy['campaign_uid'] = this.campaign.uid;
         let component = this;
-        axios.delete('api/planning/delete_entry', {data: entryCopy}).then(response => {
+        axios.delete('api/planning/delete_entry', {data: entryCopy}).then(() => {
           component.campaign.entries = component.campaign.entries.filter(item => item.uid !== entry.uid);
           component.applyFilters();
         }).catch(error => {
@@ -300,7 +300,6 @@ export default {
         component.$set(component, 'campaign', campaign);
         component.applyFilters();
       }).catch(error => {
-        console.error(error);
         alert(error.response.data.message);
       });
     },

@@ -32,10 +32,10 @@
       }
     },
     watch:{
-      selectedValue: function (newValue, oldValue) {
-        this.$emit('changed', this.selectedValue);
+      selectedValue: function (newValue) {
+        this.$emit('changed', newValue);
       },
-      options: function(newValue, oldValue) {
+      options: function(newValue) {
         this.selectedValue = newValue[0][0];
       }
     }

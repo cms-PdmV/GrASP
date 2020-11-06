@@ -48,9 +48,7 @@ export default {
     let component = this;
     axios.get('api/system/history' + (this.username ? '/' + this.username : '')).then(response => {
       component.historyEntries = response.data.response;
-      console.log(response.data.response);
     }).catch(error => {
-      console.error(error);
       alert(error.response.data.message);
     });
   },
