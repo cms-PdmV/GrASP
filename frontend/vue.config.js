@@ -4,7 +4,7 @@ module.exports = {
   "transpileDependencies": [
     "vuetify"
   ],
-  publicPath: isProd ? '/rereco' : '',
+  publicPath: isProd ? '/grasp' : '',
   assetsDir: 'static/',
   devServer: {
     port: 8003,
