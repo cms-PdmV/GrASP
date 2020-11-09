@@ -290,7 +290,7 @@ export default {
       }
       for (let attribute in this.search) {
         if (this.search[attribute]) {
-          const pattern = this.search[attribute].replace(/ /g, '*').replace(/\*/g, '.*');
+          const pattern = this.search[attribute].replace(/\.\*/g, '*').replace(/ /g, '*').replace(/\*/g, '.*');
           const regex = RegExp(pattern, 'i'); // 'i' for case insensitivity
           filteredEntries = filteredEntries.filter(entry => entry[attribute] != '' && regex.test(entry[attribute]));
         }

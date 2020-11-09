@@ -172,8 +172,20 @@ def pick_chained_requests(chained_requests):
     """
     Select chained requests with newest NanoAOD version
     """
+    if len(chained_requests) <= 1:
+        return chained_requests
+
     tree = {}
     selected_chained_requests = []
+    def get_nanoaod_version(campaign):
+        if 'NanoAODv' in campaign:
+            version = campaign.lower().split('nanoaod')[-1].lstrip('v')
+            version = version.replace(version.lstrip('0123456789'), '')
+            if version != '':
+                return version
+
+        return 0
+
     for chained_request in chained_requests:
         steps = chained_request_to_steps(chained_request)
         mini_step = steps.get('miniaod')
@@ -187,14 +199,16 @@ def pick_chained_requests(chained_requests):
         if mini_step not in tree:
             tree[mini_step] = {}
 
-        if nano_step not in tree[mini_step]:
-            tree[mini_step][nano_step] = []
+        nano_version = get_nanoaod_version(nano_step)
+        if nano_version not in tree[mini_step]:
+            tree[mini_step][nano_version] = []
 
-        tree[mini_step][nano_step].append(chained_request)
+        tree[mini_step][nano_version].append(chained_request)
 
-    for mini_campaign in tree:
-        nano_campaigns = sorted(tree[mini_campaign].keys())
-        selected_chained_requests.extend(tree[mini_campaign][nano_campaigns[-1]])
+    for mini_campaign, nano_versions in tree.items():
+        # Choose campaigns with newest NanoAOD version
+        newest_nano_version = sorted(nano_versions)[-1]
+        selected_chained_requests.extend(tree[mini_campaign][newest_nano_version])
 
     return selected_chained_requests
 
@@ -292,3 +306,39 @@ def parse_number(n):
 
 def valid_pwg(pwg):
     return pwg in {'B2G', 'BPH', 'BTV', 'EGM', 'EXO', 'FSQ', 'HCA', 'HGC', 'HIG', 'HIN', 'JME', 'L1T', 'LUM', 'MUO', 'PPD', 'PPS', 'SMP', 'SUS', 'TAU', 'TOP', 'TRK', 'TSG'}
+
+
+def cmp_to_key(mycmp):
+    """
+    Convert a cmp= function into a key= function
+    """
+    class K(object):
+        def __init__(self, obj, *args):
+            self.obj = obj
+        def __lt__(self, other):
+            return mycmp(self.obj, other.obj) < 0
+        def __gt__(self, other):
+            return mycmp(self.obj, other.obj) > 0
+        def __eq__(self, other):
+            return mycmp(self.obj, other.obj) == 0
+        def __le__(self, other):
+            return mycmp(self.obj, other.obj) <= 0
+        def __ge__(self, other):
+            return mycmp(self.obj, other.obj) >= 0
+        def __ne__(self, other):
+            return mycmp(self.obj, other.obj) != 0
+    return K
+
+
+def multiarg_sort(list_of_objects, columns):
+    def comp(a, b):
+        for key in columns:
+            if a[key] < b[key]:
+                return -1
+
+            if a[key] > b[key]:
+                return 1
+
+        return 0
+
+    list_of_objects.sort(key=cmp_to_key(comp))

@@ -7,7 +7,7 @@ import flask
 import sqlite3
 from api.api_base import APIBase
 from utils.user_info import UserInfo
-from update_scripts.utils import get_short_name, clean_split, sorted_join, query, get_chain_tag, update_entry, add_entry, valid_pwg
+from update_scripts.utils import get_short_name, clean_split, sorted_join, query, get_chain_tag, update_entry, add_entry, valid_pwg, multiarg_sort
 
 
 class CreateUserTagAPI(APIBase):
@@ -109,6 +109,7 @@ class GetUserTagAPI(APIBase):
             entry['short_name'] = get_short_name(entry['dataset'])
             entry['chain_tag'] = get_chain_tag(entry['chained_request'])
 
+        multiarg_sort(entries, ['dataset', 'root_request', 'miniaod', 'nanoaod'])
         tag['entries'] = entries
         return self.output_text({'response': tag, 'success': True, 'message': ''})
 
