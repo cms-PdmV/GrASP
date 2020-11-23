@@ -48,7 +48,7 @@
 .button-group {
   border-radius: 6px;
   border: solid 1px #aaa;
-  color: var(--v-anchor-base);
+  color: var(--v-primary-base);
   display: inline-block;
   font-size: 0.9em;
   background: white;
@@ -68,7 +68,7 @@
 }
 
 .clicked {
-  background-color: var(--v-anchor-base);
+  background-color: var(--v-primary-base);
   color: white;
   font-weight: 500;
 }

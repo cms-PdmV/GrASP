@@ -13,9 +13,15 @@
     <div v-if="campaign.entries" class="align-center">
       <RadioSelector :options="eventFilterOptions"
                     v-on:changed="onEventFilterUpdate"
+                    style="display: inline-block"
                     class="mb-2">
         Events Filter:
       </RadioSelector>
+      <div class="ml-4" style="display: inline-block">
+        Download Table:
+        <v-btn small color="primary" title="Comma-separated values file" @click="downloadExcelFile('csv')">CSV</v-btn>
+        <v-btn small class="ml-1" color="primary" title="Microsoft Office Excel file" @click="downloadExcelFile('xls')">XLS</v-btn>
+      </div>
     </div>
     <table v-if="campaign.entries">
       <tr>
@@ -113,6 +119,7 @@ import axios from 'axios'
 import { utilsMixin } from '../mixins/UtilsMixin.js'
 import { roleMixin } from '../mixins/UserRoleMixin.js'
 import RadioSelector from './RadioSelector'
+import ExcelJS from 'exceljs'
 
 export default {
   name: 'existing',
@@ -297,6 +304,82 @@ export default {
       }
       this.entries = filteredEntries;
       this.mergeCells(this.entries, ['short_name', 'dataset', 'root_request', 'miniaod']);
+    },
+    downloadExcelFile: function(outputFormat) {
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Sheet');
+      worksheet.headerRow = true;
+      worksheet.columns = [
+        { header: 'Short Name', key: 'short_name'},
+        { header: 'Dataset', key: 'dataset'},
+        { header: 'Root request', key: 'root_request'},
+        { header: 'Root request status', key: 'root_request_status'},
+        { header: 'Root request priority', key: 'root_request_priority'},
+        { header: 'Root request done events', key: 'root_request_done_events'},
+        { header: 'Root request total events', key: 'root_request_total_events'},
+        { header: 'Root request output', key: 'root_request_output'},
+        { header: 'MiniAOD status', key: 'miniaod_status'},
+        { header: 'MiniAOD priority', key: 'miniaod_priority'},
+        { header: 'MiniAOD done events', key: 'miniaod_done_events'},
+        { header: 'MiniAOD total events', key: 'miniaod_total_events'},
+        { header: 'MiniAOD output', key: 'miniaod_output'},
+        { header: 'NanoAOD status', key: 'nanoaod_status'},
+        { header: 'NanoAOD priority', key: 'nanoaod_priority'},
+        { header: 'NanoAOD done events', key: 'nanoaod_done_events'},
+        { header: 'NanoAOD total events', key: 'nanoaod_total_events'},
+        { header: 'NanoAOD output', key: 'nanoaod_output'},
+        { header: 'Chained request', key: 'chained_request'},
+        { header: 'Interested PWGs', key: 'interested_pwgs'},
+      ];
+
+      for (let entry of this.entries) {
+        worksheet.addRow({'short_name': entry.short_name,
+                          'dataset': entry.dataset,
+                          'root_request': entry.root_request,
+                          'root_request_status': entry.root_request_status,
+                          'root_request_priority': entry.root_request_priority,
+                          'root_request_done_events': entry.root_request_done_events,
+                          'root_request_total_events': entry.root_request_total_events,
+                          'root_request_output': entry.root_request_output,
+                          'miniaod_status': entry.miniaod_status,
+                          'miniaod_priority': entry.miniaod_priority,
+                          'miniaod_done_events': entry.miniaod_done_events,
+                          'miniaod_total_events': entry.miniaod_total_events,
+                          'miniaod_output': entry.miniaod_output,
+                          'nanoaod_status': entry.nanoaod_status,
+                          'nanoaod_priority': entry.nanoaod_priority,
+                          'nanoaod_done_events': entry.nanoaod_done_events,
+                          'nanoaod_total_events': entry.nanoaod_total_events,
+                          'nanoaod_output': entry.nanoaod_output,
+                          'chained_request': entry.chained_request,
+                          'interested_pwgs': entry.interested_pwgs,
+                          });
+      }
+      let fileName = this.campaign.name.replace(/\*/g, 'x');
+      if (this.interestedPWG) {
+        fileName += '_' + this.interestedPWG;
+      }
+      if (outputFormat == 'xls') {
+        workbook.xlsx.writeBuffer().then(function (data) {
+          const blob = new Blob([data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+          const url = window.URL.createObjectURL(blob);
+          const anchor = document.createElement('a');
+          anchor.href = url;
+          anchor.download = fileName + '.xls';
+          anchor.click();
+          window.URL.revokeObjectURL(url);
+        });
+      } else if (outputFormat == 'csv') {
+        workbook.csv.writeBuffer().then(function (data) {
+          const blob = new Blob([data], { type: 'text/csv' });
+          const url = window.URL.createObjectURL(blob);
+          const anchor = document.createElement('a');
+          anchor.href = url;
+          anchor.download = fileName + '.csv';
+          anchor.click();
+          window.URL.revokeObjectURL(url);
+        });
+      }
     },
   }
 }
