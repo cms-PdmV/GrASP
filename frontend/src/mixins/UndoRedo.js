@@ -1,12 +1,12 @@
 const EMPTY_STATE = 'emptyState';
 
-export const undoRedoMixin = {
+export const undoRedo = {
     data() {
         return {
           done: [],
           undone: [],
           newMutation: true,
-          ignoreMutations: options.ignoreMutations|| []
+          ignoreMutations: []
         };
       },
       created() {

@@ -1,21 +1,16 @@
-import axios from 'axios';
-
 const state = {
-    entries: [] 
+    entriesCopy: [] 
 };
 
-const getters = {};
+const getters = {
+    eventEntries: (state) => state.entriesCopy
+};
 
 const actions = {};
 
 const mutations = {
-    updateEntries(stat, payload) {
-        state.entries.push(payload);
-    },
-
-    // empty state needed for the undo redo feature
-    emptyState() {
-        this.replaceState({ entries: [] });
+    commitEntries(state, payload) {
+        state.entriesCopy.push(payload);
     }
 };
 

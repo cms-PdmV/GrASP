@@ -11,6 +11,12 @@
       <img :src="'static/loading' + getRandomInt(3) + '.gif'" style="width: 120px; height: 120px;"/>
       <h3>Loading table...</h3>
     </div>
+    <div class="align-center mb-4">
+		<v-btn class="normal" v-if="canUndo" @click="undoEvent">Undo</v-btn>
+    <v-btn class="normal" v-else disabled>Undo</v-btn>
+		<v-btn class="normal" v-if="canRedo" @click="redoEvent">Redo</v-btn>
+		<v-btn class="normal" v-else disabled>Redo</v-btn>
+    </div>
     <div v-if="campaign.entries" class="align-center">
       <RadioSelector :options="eventFilterOptions"
                     v-on:changed="onEventFilterUpdate"
@@ -224,6 +230,7 @@ export default {
         let entry = response.data.response;
         component.processEntry(entry);
         component.campaign.entries.push(entry);
+        this.$store.commit('commitEntries', component.campaign.entries);
         component.newEntry = component.getNewEntry();
         component.applyFilters();
       }).catch(error => {
@@ -255,6 +262,7 @@ export default {
           alert(error.response.data.message);
           entry.broken = true;
         });
+        this.$store.commit('commitEntries', component.campaign.entries);
       }
     },
     getNewEntry: function() {
@@ -351,6 +359,15 @@ export default {
       this.eventsFilter = events;
       this.applyFilters();
     },
+    undoEvent: function() {
+      this.undo();
+      component.campaign.entries = this.$store.getters.eventEntries;
+    },
+    redoEvent: function() {
+      this.redo();
+      component.campaign.entries = this.$store.getters.eventEntries;
+
+    }
   }
 }
 </script>
@@ -381,6 +398,7 @@ td.wrap {
 tr:hover .show-on-hover {
   opacity: 1;
 }
+
 
 </style>
 
