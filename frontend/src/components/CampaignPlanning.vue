@@ -174,13 +174,15 @@
 import axios from 'axios'
 import { utilsMixin } from '../mixins/UtilsMixin.js'
 import { roleMixin } from '../mixins/UserRoleMixin.js'
+import { undoRedo } from '../mixins/UndoRedo.js'
 import RadioSelector from './RadioSelector'
 
 export default {
   name: 'planning',
   mixins: [
     utilsMixin,
-    roleMixin
+    roleMixin,
+    undoRedo,
   ],
   components: {
     RadioSelector
