@@ -1,9 +1,16 @@
 const state = {
-    entriesCopy: [] 
+    entriesCopy: [],
+    redoEntries: null,
+    undoEntries: null
 };
 
 const getters = {
-    eventEntries: (state) => state.entriesCopy
+    getUndoEntry () {
+        return state.undoEntries;
+    },
+    getRedoEntry () {
+        return state.redoEntries;
+    }
 };
 
 const actions = {};
@@ -11,6 +18,17 @@ const actions = {};
 const mutations = {
     commitEntries(state, payload) {
         state.entriesCopy.push(payload);
+    },
+    commitEntriesRedo(state, payload){
+        state.redoEntries = payload;
+    },
+    commitEntriesUndo(state, payload){
+        state.undoEntries = payload;
+    },
+
+    // empty state needed for the undo redo feature
+    emptyState() {
+        this.replaceState({ entriesCopy : [] });
     }
 };
 

@@ -230,7 +230,6 @@ export default {
         let entry = response.data.response;
         component.processEntry(entry);
         component.campaign.entries.push(entry);
-        this.$store.commit('commitEntries', component.campaign.entries);
         component.newEntry = component.getNewEntry();
         component.applyFilters();
       }).catch(error => {
@@ -257,12 +256,12 @@ export default {
         let component = this;
         axios.delete('api/planning/delete_entry', {data: entryCopy}).then(() => {
           component.campaign.entries = component.campaign.entries.filter(item => item.uid !== entry.uid);
+          this.$store.commit('commitEntries', entryCopy);
           component.applyFilters();
         }).catch(error => {
           alert(error.response.data.message);
           entry.broken = true;
         });
-        this.$store.commit('commitEntries', component.campaign.entries);
       }
     },
     getNewEntry: function() {
@@ -361,12 +360,13 @@ export default {
     },
     undoEvent: function() {
       this.undo();
-      component.campaign.entries = this.$store.getters.eventEntries;
+      let component = this;
+      component.campaign.entries.push(this.$store.getters.getUndoEntry);       
     },
     redoEvent: function() {
       this.redo();
-      component.campaign.entries = this.$store.getters.eventEntries;
-
+      let component = this;
+      component.deleteEntry(this.$store.getters.getRedoEntry); 
     }
   }
 }
