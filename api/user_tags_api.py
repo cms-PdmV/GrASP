@@ -3,8 +3,8 @@ Module that contains all existing samples APIs
 """
 import json
 import time
-import flask
 import sqlite3
+import flask
 from api.api_base import APIBase
 from utils.user_info import UserInfo
 from update_scripts.utils import get_short_name, clean_split, sorted_join, query, get_chain_tag, update_entry, add_entry, valid_pwg, multiarg_sort
@@ -16,7 +16,7 @@ class CreateUserTagAPI(APIBase):
     """
     @APIBase.ensure_request_data
     @APIBase.exceptions_to_errors
-    @APIBase.ensure_role('production_manager')
+    @APIBase.ensure_role('user')
     def put(self):
         """
         Create an empty user tag with the provided JSON content
@@ -123,7 +123,7 @@ class UpdateUserTagAPI(APIBase):
     @APIBase.ensure_role('production_manager')
     def post(self):
         """
-        Get a single user tag
+        Update a user tag
         """
         data = flask.request.data
         data = json.loads(data.decode('utf-8'))
@@ -150,7 +150,7 @@ class DeleteUserTagAPI(APIBase):
     @APIBase.ensure_role('production_manager')
     def delete(self):
         """
-        Delete a single user tag
+        Delete a user tag and all it's entries
         """
         data = flask.request.data
         data = json.loads(data.decode('utf-8'))
@@ -184,7 +184,7 @@ class GetAllUserTagsAPI(APIBase):
     @APIBase.exceptions_to_errors
     def get(self):
         """
-        Get all user tags
+        Get all user tags without their entries
         """
         self.logger.info('Getting all user tags')
         conn = sqlite3.connect(self.db_path)

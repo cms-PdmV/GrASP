@@ -18,7 +18,7 @@ class UserInfoAPI(APIBase):
     @APIBase.exceptions_to_errors
     def get(self):
         """
-        Get status of all locks in the system
+        Get info about current user
         """
         user_info = UserInfo().get_user_info()
         return self.output_text({'response': user_info, 'success': True, 'message': ''})

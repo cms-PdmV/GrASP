@@ -3,8 +3,8 @@ Module that contains all future campaign planning APIs
 """
 import json
 import time
-import flask
 import sqlite3
+import flask
 from api.api_base import APIBase
 from utils.user_info import UserInfo
 from update_scripts.utils import get_short_name, clean_split, sorted_join, add_entry, update_entry, query, parse_number, valid_pwg
@@ -52,7 +52,7 @@ class GetFutureCampaignAPI(APIBase):
     @APIBase.exceptions_to_errors
     def get(self, campaign_name, interested_pwg=None):
         """
-        Get a single future campaign
+        Get a single future campaign with all it's entries inside
         """
         campaign_name = campaign_name.strip()
         self.logger.info('Getting future campaign %s', campaign_name)
@@ -118,7 +118,7 @@ class UpdateFutureCampaignAPI(APIBase):
     @APIBase.ensure_role('production_manager')
     def post(self):
         """
-        Get a single future campaign
+        Update a future campaign
         """
         data = flask.request.data
         data = json.loads(data.decode('utf-8'))
@@ -146,7 +146,7 @@ class DeleteFutureCampaignAPI(APIBase):
     @APIBase.ensure_role('production_manager')
     def delete(self):
         """
-        Get a single future campaign
+        Delete a future campaign and all it's entries
         """
         data = flask.request.data
         data = json.loads(data.decode('utf-8'))
@@ -180,7 +180,7 @@ class GetAllFutureCampaignsAPI(APIBase):
     @APIBase.exceptions_to_errors
     def get(self):
         """
-        Get all future campaigns
+        Get all future campaigns without their entries
         """
         self.logger.info('Getting all future campaigns')
         conn = sqlite3.connect(self.db_path)

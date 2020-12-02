@@ -123,7 +123,7 @@ class UpdateExistingCampaignAPI(APIBase):
     @APIBase.ensure_role('production_manager')
     def post(self):
         """
-        Get a single existing campaign
+        Update an existing campaign
         """
         data = flask.request.data
         data = json.loads(data.decode('utf-8'))
@@ -150,7 +150,7 @@ class DeleteExistingCampaignAPI(APIBase):
     @APIBase.ensure_role('production_manager')
     def delete(self):
         """
-        Delete a single existing campaign
+        Delete a single existing campaign and it's entries
         """
         data = flask.request.data
         data = json.loads(data.decode('utf-8'))
@@ -184,7 +184,7 @@ class GetAllExistingCampaignsAPI(APIBase):
     @APIBase.exceptions_to_errors
     def get(self):
         """
-        Get all existing campaigns
+        Get all existing campaigns without their entries
         """
         self.logger.info('Getting all existing campaigns')
         conn = sqlite3.connect(self.db_path)
@@ -228,13 +228,19 @@ class UpdateEntryInExistingCampaignAPI(APIBase):
         try:
             cursor = conn.cursor()
             # Existing entry
-            existing_entry = query(cursor, 'existing_campaign_entries', ['interested_pwgs'], 'WHERE uid = ?', [entry_uid])
+            existing_entry = query(cursor,
+                                   'existing_campaign_entries',
+                                   ['interested_pwgs'],
+                                   'WHERE uid = ?',
+                                   [entry_uid])
             if not existing_entry:
                 raise Exception('Could not find entry with %s uid' % (entry_uid))
 
             old_interested_pwgs = existing_entry[0]['interested_pwgs']
             if interested_pwgs == old_interested_pwgs:
-                return self.output_text({'response': {}, 'success': True, 'message': 'Nothing changed'})
+                return self.output_text({'response': {},
+                                         'success': True,
+                                         'message': 'Nothing changed'})
 
             # Create an entry
             entry = {'uid': entry_uid,
@@ -247,7 +253,8 @@ class UpdateEntryInExistingCampaignAPI(APIBase):
                                                  'module': 'existing_samples',
                                                  'entry_uid': entry_uid,
                                                  'action': 'interested_pwgs',
-                                                 'value': '%s -> %s' % (old_interested_pwgs, interested_pwgs)})
+                                                 'value': '%s -> %s' % (old_interested_pwgs,
+                                                                        interested_pwgs)})
             conn.commit()
         finally:
             conn.close()
