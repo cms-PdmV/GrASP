@@ -2,12 +2,11 @@
 Module that contains all existing samples APIs
 """
 import json
-import time
 import sqlite3
 import flask
 from api.api_base import APIBase
 from utils.user_info import UserInfo
-from update_scripts.utils import get_short_name, clean_split, sorted_join, query, get_chain_tag, update_entry, add_entry, valid_pwg, multiarg_sort
+from update_scripts.utils import get_short_name, clean_split, sorted_join, query, get_chain_tag, update_entry, add_entry, valid_pwg, multiarg_sort, matches_regex
 
 
 class CreateUserTagAPI(APIBase):
@@ -25,6 +24,9 @@ class CreateUserTagAPI(APIBase):
         data = json.loads(data.decode('utf-8'))
         self.logger.info('Creating new user tag %s', data)
         name = data['name'].strip()
+        if not matches_regex(name, '^[a-zA-Z0-9_-]{3,25}$'):
+            raise Exception('Tag "%s" is not valid' % (name))
+
         conn = sqlite3.connect(self.db_path)
         try:
             cursor = conn.cursor()
@@ -128,11 +130,15 @@ class UpdateUserTagAPI(APIBase):
         data = flask.request.data
         data = json.loads(data.decode('utf-8'))
         self.logger.info('Updating user tag %s', data)
+        name = data['name'].strip()
+        if not matches_regex(name, '^[a-zA-Z0-9_-]{3,25}$'):
+            raise Exception('Tag "%s" is not valid' % (name))
+
         conn = sqlite3.connect(self.db_path)
         try:
             cursor = conn.cursor()
             entry = {'uid': int(data['uid']),
-                     'name': data['name'].strip()}
+                     'name': name.strip()}
             update_entry(cursor, 'user_tags', entry)
             conn.commit()
         finally:

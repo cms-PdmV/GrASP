@@ -7,7 +7,7 @@ import sqlite3
 import flask
 from api.api_base import APIBase
 from utils.user_info import UserInfo
-from update_scripts.utils import get_short_name, clean_split, sorted_join, add_entry, update_entry, query, parse_number, valid_pwg
+from update_scripts.utils import get_short_name, clean_split, sorted_join, add_entry, update_entry, query, parse_number, valid_pwg, matches_regex
 
 
 class CreateFutureCampaignAPI(APIBase):
@@ -25,7 +25,15 @@ class CreateFutureCampaignAPI(APIBase):
         data = json.loads(data.decode('utf-8'))
         self.logger.info('Creating new future campaign %s', data)
         name = data['name'].strip()
-        reference = sorted_join(clean_split(data.get('reference', '')))
+        if not matches_regex(name, '^[a-zA-Z0-9_\\*-]{3,30}$'):
+            raise Exception('Name "%s" is not valid' % (name))
+
+        references = clean_split(data.get('reference', ''))
+        for reference in references:
+            if not matches_regex(reference, '^[a-zA-Z0-9_\\*-]{3,30}$'):
+                raise Exception('Reference "%s" is not valid' % (reference))
+
+        references = sorted_join(references)
         conn = sqlite3.connect(self.db_path)
         try:
             cursor = conn.cursor()
@@ -37,7 +45,7 @@ class CreateFutureCampaignAPI(APIBase):
             if existing_campaigns:
                 raise Exception('Planned campaign %s already exists' % (name))
 
-            add_entry(cursor, 'future_campaigns', {'name': name, 'reference': reference, 'prefilled': 0})
+            add_entry(cursor, 'future_campaigns', {'name': name, 'reference': references, 'prefilled': 0})
             conn.commit()
         finally:
             conn.close()
@@ -123,11 +131,21 @@ class UpdateFutureCampaignAPI(APIBase):
         data = flask.request.data
         data = json.loads(data.decode('utf-8'))
         self.logger.info('Updating future campaign %s', data)
+        name = data['name'].strip()
+        if not matches_regex(name, '^[a-zA-Z0-9_\\*-]{3,30}$'):
+            raise Exception('Name "%s" is not valid' % (name))
+
+        references = clean_split(data.get('reference', ''))
+        for reference in references:
+            if not matches_regex(reference, '^[a-zA-Z0-9_\\*-]{3,30}$'):
+                raise Exception('Reference "%s" is not valid' % (reference))
+
+        references = sorted_join(references)
         conn = sqlite3.connect(self.db_path)
         try:
             cursor = conn.cursor()
-            entry = {'name': data['name'].strip(),
-                     'reference': sorted_join(clean_split(data['reference'])),
+            entry = {'name': name,
+                     'reference': references,
                      'uid': int(data['uid'])}
             update_entry(cursor, 'future_campaigns', entry)
             conn.commit()
@@ -226,11 +244,20 @@ class AddEntryToFutureCampaignAPI(APIBase):
 
         # Events
         events = parse_number(data['events'])
+        # Attribute validation
+        dataset = data['dataset'].strip()
+        if not matches_regex(dataset, '^[a-zA-Z0-9_-]{3,50}$'):
+            raise Exception('Dataset "%s" is not valid' % (dataset))
+
+        chain_tag = data['chain_tag'].strip()
+        if not matches_regex(chain_tag, '^[a-zA-Z0-9]{0,30}$'):
+            raise Exception('Chain tag "%s" is not valid' % (chain_tag))
+
         # Create an entry
         entry = {'campaign_uid': int(data['campaign_uid']),
-                 'short_name': get_short_name(data['dataset'].strip()),
-                 'dataset': data['dataset'].strip(),
-                 'chain_tag': data['chain_tag'].strip(),
+                 'short_name': get_short_name(dataset),
+                 'dataset': dataset,
+                 'chain_tag': chain_tag,
                  'events': events,
                  'interested_pwgs': sorted_join(interested_pwgs),
                  'ref_interested_pwgs': '',
@@ -295,6 +322,15 @@ class UpdateEntryInFutureCampaignAPI(APIBase):
 
         # Events
         events = parse_number(data['events'])
+        # Attribute validation
+        dataset = data['dataset'].strip()
+        if not matches_regex(dataset, '^[a-zA-Z0-9_-]{3,50}$'):
+            raise Exception('Dataset "%s" is not valid' % (dataset))
+
+        chain_tag = data['chain_tag'].strip()
+        if not matches_regex(chain_tag, '^[a-zA-Z0-9]{0,30}$'):
+            raise Exception('Chain tag "%s" is not valid' % (chain_tag))
+
         cross_section = float(data['cross_section'])
         negative_weight = float(data['negative_weight'])
         conn = sqlite3.connect(self.db_path)
@@ -321,8 +357,8 @@ class UpdateEntryInFutureCampaignAPI(APIBase):
             # Create an entry
             entry = {'uid': entry_uid,
                      'short_name': get_short_name(data['dataset']),
-                     'dataset': data['dataset'].strip(),
-                     'chain_tag': data['chain_tag'].strip(),
+                     'dataset': dataset,
+                     'chain_tag': chain_tag,
                      'events': events,
                      'cross_section': cross_section,
                      'negative_weight':negative_weight,

@@ -3,6 +3,7 @@ Utils module has functions that could be used in both update
 scripts and web server
 These functions do not depend on any other components
 """
+import re
 
 #pylint: disable=too-many-branches,too-many-statements
 # It is ok to have many ifs in this function
@@ -342,3 +343,15 @@ def multiarg_sort(list_of_objects, columns):
         return 0
 
     list_of_objects.sort(key=cmp_to_key(comp))
+
+
+def matches_regex(value, regex):
+    """
+    Check if given string fully matches given regex
+    """
+    matcher = re.compile(regex)
+    match = matcher.fullmatch(value)
+    if match:
+        return True
+
+    return False

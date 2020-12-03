@@ -7,7 +7,7 @@ import flask
 import sqlite3
 from api.api_base import APIBase
 from utils.user_info import UserInfo
-from update_scripts.utils import get_short_name, clean_split, sorted_join, query, get_chain_tag, update_entry, add_entry, valid_pwg, multiarg_sort
+from update_scripts.utils import get_short_name, clean_split, sorted_join, query, get_chain_tag, update_entry, add_entry, valid_pwg, multiarg_sort, matches_regex
 
 
 class CreateExistingCampaignAPI(APIBase):
@@ -25,6 +25,9 @@ class CreateExistingCampaignAPI(APIBase):
         data = json.loads(data.decode('utf-8'))
         self.logger.info('Creating new existing campaign %s', data)
         name = data['name'].strip()
+        if not matches_regex(name, '^[a-zA-Z0-9_\\*-]{3,30}$'):
+            raise Exception('Name "%s" is not valid' % (name))
+
         conn = sqlite3.connect(self.db_path)
         try:
             cursor = conn.cursor()
@@ -128,11 +131,15 @@ class UpdateExistingCampaignAPI(APIBase):
         data = flask.request.data
         data = json.loads(data.decode('utf-8'))
         self.logger.info('Updating existing campaign %s', data)
+        name = data['name'].strip()
+        if not matches_regex(name, '^[a-zA-Z0-9_\\*-]{3,30}$'):
+            raise Exception('Name "%s" is not valid' % (name))
+
         conn = sqlite3.connect(self.db_path)
         try:
             cursor = conn.cursor()
             entry = {'uid': int(data['uid']),
-                     'name': data['name'].strip()}
+                     'name': name}
             update_entry(cursor, 'existing_campaigns', entry)
             conn.commit()
         finally:

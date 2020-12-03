@@ -1,13 +1,16 @@
 <template>
   <div>
-    <h1 class="page-title" v-if="creatingNew"><span class="font-weight-light">Creating</span> new tag</h1>
+    <h1 class="page-title" v-if="creatingNew"><span class="font-weight-light">Creating</span> new user tag</h1>
     <h1 class="page-title" v-else><span class="font-weight-light">Editing</span> {{tagName}}</h1>
     <table v-if="tag">
       <tr>
-        <td>Name</td>
+        <td>Tag</td>
         <td><input type="text" v-model="tag.name"></td>
       </tr>
     </table>
+    <div v-if="creatingNew" style="text-align: center;">
+      <b>Note:</b> GrASP fetches requests from McM every 8 hours, so it might <b>take up to 8 hours</b> for requests with this tag to appear in GrASP.
+    </div>
     <div style="text-align: center;">
       <v-btn small class="mr-1 mt-1" color="primary" @click="save()">Save</v-btn>
       <v-btn small class="mr-1 mt-1" color="error" v-if="!creatingNew" @click="deleteTag()">Delete</v-btn>
@@ -124,7 +127,7 @@ export default {
 <style scoped>
 
 input {
-  min-width: 300px;
+  min-width: 200px;
 }
 
 </style>
