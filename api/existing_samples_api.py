@@ -2,12 +2,20 @@
 Module that contains all existing samples APIs
 """
 import json
-import time
-import flask
 import sqlite3
+import flask
 from api.api_base import APIBase
-from utils.user_info import UserInfo
-from update_scripts.utils import get_short_name, clean_split, sorted_join, query, get_chain_tag, update_entry, add_entry, valid_pwg, multiarg_sort, matches_regex
+from update_scripts.utils import (get_short_name,
+                                  clean_split,
+                                  sorted_join,
+                                  query,
+                                  get_chain_tag,
+                                  update_entry,
+                                  add_entry,
+                                  valid_pwg,
+                                  multiarg_sort,
+                                  matches_regex,
+                                  add_history)
 
 
 class CreateExistingCampaignAPI(APIBase):
@@ -30,8 +38,7 @@ class CreateExistingCampaignAPI(APIBase):
 
         conn = sqlite3.connect(self.db_path)
         try:
-            cursor = conn.cursor()
-            campaigns = query(cursor,
+            campaigns = query(conn,
                               'existing_campaigns',
                               ['uid'],
                               'WHERE name = ?',
@@ -39,7 +46,8 @@ class CreateExistingCampaignAPI(APIBase):
             if campaigns:
                 raise Exception('Campaign %s already exists' % (name))
 
-            add_entry(cursor, 'existing_campaigns', {'name': name})
+            add_entry(conn, 'existing_campaigns', {'name': name})
+            add_history(conn, 'existing_campaigns', 'create_new', name)
             conn.commit()
         finally:
             conn.close()
@@ -59,9 +67,8 @@ class GetExistingCampaignAPI(APIBase):
         self.logger.info('Getting campaign %s', campaign_name)
         conn = sqlite3.connect(self.db_path)
         try:
-            cursor = conn.cursor()
             # Get the campaign itself
-            campaigns = query(cursor,
+            campaigns = query(conn,
                               'existing_campaigns',
                               ['uid', 'name'],
                               'WHERE name = ?',
@@ -78,7 +85,7 @@ class GetExistingCampaignAPI(APIBase):
                 query_where += ' AND interested_pwgs LIKE ?'
 
             query_where += ' ORDER BY dataset COLLATE NOCASE'
-            entries = query(cursor,
+            entries = query(conn,
                             'existing_campaign_entries',
                             ['uid',
                              'chained_request',
@@ -132,20 +139,23 @@ class UpdateExistingCampaignAPI(APIBase):
         data = json.loads(data.decode('utf-8'))
         self.logger.info('Updating existing campaign %s', data)
         name = data['name'].strip()
+        uid = int(data['uid'])
         if not matches_regex(name, '^[a-zA-Z0-9_\\*-]{3,30}$'):
             raise Exception('Name "%s" is not valid' % (name))
 
         conn = sqlite3.connect(self.db_path)
         try:
-            cursor = conn.cursor()
-            entry = {'uid': int(data['uid']),
-                     'name': name}
-            update_entry(cursor, 'existing_campaigns', entry)
+            old_entry = query(conn, 'existing_campaigns', ['name'], 'WHERE uid = ?', [uid])[0]
+            new_entry = {'uid': uid,
+                         'name': name.strip()}
+            update_entry(conn, 'existing_campaigns', new_entry)
+            old_name = old_entry['name']
+            add_history(conn, 'existing_campaigns', 'update', '%s -> %s' % (old_name, name))
             conn.commit()
         finally:
             conn.close()
 
-        return self.output_text({'response': {}, 'success': True, 'message': ''})
+        return self.output_text({'response': new_entry, 'success': True, 'message': ''})
 
 
 class DeleteExistingCampaignAPI(APIBase):
@@ -166,17 +176,17 @@ class DeleteExistingCampaignAPI(APIBase):
         campaign_uid = data['uid']
         conn = sqlite3.connect(self.db_path)
         try:
-            cursor = conn.cursor()
-            cursor.execute('''DELETE FROM existing_campaign_entries
-                              WHERE campaign_uid IN (SELECT uid
-                                                     FROM existing_campaigns
-                                                     WHERE name = ?)
-                              AND campaign_uid = ?''',
-                           [campaign_name, campaign_uid])
-            cursor.execute('''DELETE FROM existing_campaigns
-                              WHERE name = ?
-                              AND uid = ?''',
-                           [campaign_name, campaign_uid])
+            conn.execute('''DELETE FROM existing_campaign_entries
+                            WHERE campaign_uid IN (SELECT uid
+                                                   FROM existing_campaigns
+                                                   WHERE name = ?)
+                            AND campaign_uid = ?''',
+                         [campaign_name, campaign_uid])
+            conn.execute('''DELETE FROM existing_campaigns
+                            WHERE name = ?
+                            AND uid = ?''',
+                         [campaign_name, campaign_uid])
+            add_history(conn, 'existing_campaigns', 'delete', campaign_name)
             conn.commit()
         finally:
             conn.close()
@@ -222,7 +232,6 @@ class UpdateEntryInExistingCampaignAPI(APIBase):
         data = json.loads(data.decode('utf-8'))
         self.logger.info('Editing entry in existing samples %s', data)
         # Prepare user info for history
-        user_info = UserInfo()
         entry_uid = int(data['uid'])
         # Interested pwgs
         interested_pwgs = clean_split(data['interested_pwgs'].upper())
@@ -233,17 +242,20 @@ class UpdateEntryInExistingCampaignAPI(APIBase):
         interested_pwgs = sorted_join(interested_pwgs)
         conn = sqlite3.connect(self.db_path)
         try:
-            cursor = conn.cursor()
             # Existing entry
-            existing_entry = query(cursor,
+            existing_entry = query(conn,
                                    'existing_campaign_entries',
-                                   ['interested_pwgs'],
+                                   ['root_request',
+                                    'miniaod',
+                                    'nanoaod',
+                                    'interested_pwgs'],
                                    'WHERE uid = ?',
                                    [entry_uid])
             if not existing_entry:
                 raise Exception('Could not find entry with %s uid' % (entry_uid))
 
-            old_interested_pwgs = existing_entry[0]['interested_pwgs']
+            existing_entry = existing_entry[0]
+            old_interested_pwgs = existing_entry['interested_pwgs']
             if interested_pwgs == old_interested_pwgs:
                 return self.output_text({'response': {},
                                          'success': True,
@@ -253,15 +265,18 @@ class UpdateEntryInExistingCampaignAPI(APIBase):
             entry = {'uid': entry_uid,
                      'interested_pwgs': interested_pwgs}
             # Update entry in DB
-            update_entry(cursor, 'existing_campaign_entries', entry)
+            update_entry(conn, 'existing_campaign_entries', entry)
             # Update history
-            add_entry(cursor, 'action_history', {'username': user_info.get_username(),
-                                                 'time': int(time.time()),
-                                                 'module': 'existing_samples',
-                                                 'entry_uid': entry_uid,
-                                                 'action': 'interested_pwgs',
-                                                 'value': '%s -> %s' % (old_interested_pwgs,
-                                                                        interested_pwgs)})
+            if existing_entry['nanoaod']:
+                updated_request = existing_entry['nanoaod']
+            elif existing_entry['miniaod']:
+                updated_request = existing_entry['miniaod']
+            else:
+                updated_request = existing_entry['root_request']
+
+            add_history(conn, 'existing_campaigns', 'update', '%s: %s -> %s' % (updated_request,
+                                                                                old_interested_pwgs,
+                                                                                interested_pwgs))
             conn.commit()
         finally:
             conn.close()

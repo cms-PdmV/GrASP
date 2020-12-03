@@ -35,7 +35,7 @@ class XSDBConnection():
                 print('Unfortunately sso cookie file cannot be made automatically. Quitting...')
                 sys.exit(1)
         else:
-            print('Found a cookie file at %s. Make sure it\'s not expired!' % (self.cookie_filename))
+            print('Found a cookie file at %s' % (self.cookie_filename))
 
         self.curl = pycurl.Curl()
         print('Using sso-cookie file %s' % (self.cookie_filename))
@@ -46,10 +46,12 @@ class XSDBConnection():
         self.curl.setopt(pycurl.CAPATH, '/etc/pki/tls/certs')
         self.curl.setopt(pycurl.HTTPHEADER,
                          ['Content-Type:application/json',
-                         'Accept:application/json'])
+                          'Accept:application/json'])
 
     def __generate_cookie(self):
-        output = os.popen('cern-get-sso-cookie -u https://%s -o %s --krb' % (self.server, self.cookie_filename)).read()
+        output = os.popen('cern-get-sso-cookie -u https://%s -o %s --krb' % (self.server,
+                                                                             self.cookie_filename))
+        output = output.read()
         if not os.path.isfile(self.cookie_filename):
             print(output)
 

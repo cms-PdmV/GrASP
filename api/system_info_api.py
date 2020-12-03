@@ -42,7 +42,7 @@ class UserActionHistory(APIBase):
         cursor = conn.cursor()
         history = query(cursor,
                         'action_history',
-                        ['uid', 'username', 'time', 'module', 'entry_uid', 'action', 'value'],
+                        ['uid', 'username', 'time', 'module', 'action', 'value'],
                         'WHERE username = ?' if username else None,
                         [username] if username else [],)
         conn.close()

@@ -3,7 +3,9 @@ Utils module has functions that could be used in both update
 scripts and web server
 These functions do not depend on any other components
 """
+import time
 import re
+from utils.user_info import UserInfo
 
 #pylint: disable=too-many-branches,too-many-statements
 # It is ok to have many ifs in this function
@@ -112,6 +114,7 @@ def get_physics_process_name(dataset_name):
 
     return physname, phys_shortname
 
+
 def get_physics_short_name(physname):
     """
     Get physics process short name from a physics name
@@ -142,10 +145,16 @@ def get_physics_short_name(physname):
 
 
 def clean_split(string, separator=','):
+    """
+    Split string on separators and return all non-empty values
+    """
     return [x.strip() for x in string.split(separator) if x.strip()]
 
 
 def sorted_join(items, separator=','):
+    """
+    Sort strings and then join them with separator
+    """
     return separator.join(sorted(list(set(items))))
 
 
@@ -215,6 +224,9 @@ def pick_chained_requests(chained_requests):
 
 
 def merge_sets(reference, set_one, set_two):
+    """
+    Merge two sets based on reference
+    """
     reference = set(reference)
     set_one = set(set_one)
     set_two = set(set_two)
@@ -229,6 +241,9 @@ def merge_sets(reference, set_one, set_two):
 
 
 def query(cursor, table_name, attributes, where=None, where_args=None):
+    """
+    Perform a query in SQL database using given cursor and query arguments
+    """
     query_str = 'SELECT %s FROM %s' % (','.join(attributes), table_name)
     query_args = []
     if where:
@@ -250,6 +265,9 @@ def query(cursor, table_name, attributes, where=None, where_args=None):
 
 
 def add_entry(cursor, table_name, entry):
+    """
+    Add entry so a SQL table
+    """
     keys = list(entry.keys())
     values = [entry[key] for key in keys]
     question_marks = ','.join(['?'] * len(values))
@@ -258,6 +276,9 @@ def add_entry(cursor, table_name, entry):
 
 
 def update_entry(cursor, table_name, entry):
+    """
+    Update entry in a SQL table based on uid
+    """
     keys = list(entry.keys())
     values = [entry[key] for key in keys]
     values.append(entry['uid'])
@@ -288,56 +309,80 @@ def get_chain_tag(name):
     return 'Classical'
 
 
-def parse_number(n):
+def parse_number(number):
+    """
+    Parse string into number, k, m and g suffixes are allowed
+    """
     multiplier = 1
-    n = str(n)
-    while n and n[-1] not in '0123456789':
-        if n[-1].lower() == 'k':
+    number = str(number)
+    while number and number[-1] not in '0123456789':
+        if number[-1].lower() == 'k':
             multiplier *= 1000
-        elif n[-1].lower() == 'm':
+        elif number[-1].lower() == 'm':
             multiplier *= 1000000
-        elif n[-1].lower() == 'g':
+        elif number[-1].lower() == 'g':
             multiplier *= 1000000000
 
-        n = n[:-1]
+        number = number[:-1]
 
-    n = int(float(n) * multiplier)
-    return n
+    number = int(float(number) * multiplier)
+    return number
 
 
 def valid_pwg(pwg):
-    return pwg in {'B2G', 'BPH', 'BTV', 'EGM', 'EXO', 'FSQ', 'HCA', 'HGC', 'HIG', 'HIN', 'JME', 'L1T', 'LUM', 'MUO', 'PPD', 'PPS', 'SMP', 'SUS', 'TAU', 'TOP', 'TRK', 'TSG'}
+    """
+    Return whether given PWG is in list of allowed PWGs
+    """
+    return pwg in {'B2G', 'BPH', 'BTV', 'EGM', 'EXO',
+                   'FSQ', 'HCA', 'HGC', 'HIG', 'HIN',
+                   'JME', 'L1T', 'LUM', 'MUO', 'PPD',
+                   'PPS', 'SMP', 'SUS', 'TAU', 'TOP',
+                   'TRK', 'TSG'}
 
 
 def cmp_to_key(mycmp):
     """
     Convert a cmp= function into a key= function
     """
-    class K(object):
+    class ComparerClass():
+        """
+        Class that implements all comparison methods
+        """
         def __init__(self, obj, *args):
             self.obj = obj
+            super(args)
+
         def __lt__(self, other):
             return mycmp(self.obj, other.obj) < 0
+
         def __gt__(self, other):
             return mycmp(self.obj, other.obj) > 0
+
         def __eq__(self, other):
             return mycmp(self.obj, other.obj) == 0
+
         def __le__(self, other):
             return mycmp(self.obj, other.obj) <= 0
+
         def __ge__(self, other):
             return mycmp(self.obj, other.obj) >= 0
+
         def __ne__(self, other):
             return mycmp(self.obj, other.obj) != 0
-    return K
+
+    return ComparerClass
 
 
 def multiarg_sort(list_of_objects, columns):
-    def comp(a, b):
+    """
+    Sort list of objects based on multiple arguments
+    """
+    def comp(left_value, right_value):
         for key in columns:
-            if a[key] < b[key]:
+            if left_value[key] < right_value[key]:
                 return -1
 
-            if a[key] > b[key]:
+            if left_value[key] > right_value[key]:
                 return 1
 
         return 0
@@ -355,3 +400,17 @@ def matches_regex(value, regex):
         return True
 
     return False
+
+
+def add_history(conn, module, action, value):
+    """
+    Add history entry to history table
+    """
+    # Update history
+    user_info = UserInfo()
+    now = int(time.time())
+    add_entry(conn, 'action_history', {'username': user_info.get_username(),
+                                       'time': now,
+                                       'module': module,
+                                       'action': action,
+                                       'value': value})
