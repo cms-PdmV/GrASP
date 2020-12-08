@@ -34,7 +34,7 @@
             {% endfor %}
             <ul style="margin: 6px;">
               {% for (method_name, method_doc) in endpoint.methods.items() %}
-                <li><b>{{method_name}}</b>{% if method_doc.role %} (Requires "{{method_doc.role}}" role){% endif %}: {{method_doc.doc}}</li>
+                <li><b>{{method_name}}</b>{% if method_doc.role %} (Requires "{{method_doc.role}}" role in McM){% endif %}: {{method_doc.doc}}</li>
               {% endfor %}
             </ul>
           </li>

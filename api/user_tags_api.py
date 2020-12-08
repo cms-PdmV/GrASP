@@ -2,12 +2,17 @@
 Module that contains all existing samples APIs
 """
 import json
-import time
-import flask
 import sqlite3
+import flask
 from api.api_base import APIBase
-from utils.user_info import UserInfo
-from update_scripts.utils import get_short_name, clean_split, sorted_join, query, get_chain_tag, update_entry, add_entry, valid_pwg, multiarg_sort
+from update_scripts.utils import (get_short_name,
+                                  query,
+                                  get_chain_tag,
+                                  update_entry,
+                                  add_entry,
+                                  multiarg_sort,
+                                  matches_regex,
+                                  add_history)
 
 
 class CreateUserTagAPI(APIBase):
@@ -16,7 +21,7 @@ class CreateUserTagAPI(APIBase):
     """
     @APIBase.ensure_request_data
     @APIBase.exceptions_to_errors
-    @APIBase.ensure_role('production_manager')
+    @APIBase.ensure_role('user')
     def put(self):
         """
         Create an empty user tag with the provided JSON content
@@ -25,10 +30,12 @@ class CreateUserTagAPI(APIBase):
         data = json.loads(data.decode('utf-8'))
         self.logger.info('Creating new user tag %s', data)
         name = data['name'].strip()
+        if not matches_regex(name, '^[a-zA-Z0-9_-]{3,25}$'):
+            raise Exception('Tag "%s" is not valid' % (name))
+
         conn = sqlite3.connect(self.db_path)
         try:
-            cursor = conn.cursor()
-            tags = query(cursor,
+            tags = query(conn,
                          'user_tags',
                          ['uid'],
                          'WHERE name = ?',
@@ -36,7 +43,8 @@ class CreateUserTagAPI(APIBase):
             if tags:
                 raise Exception('Campaign %s already exists' % (name))
 
-            add_entry(cursor, 'user_tags', {'name': name})
+            add_entry(conn, 'user_tags', {'name': name})
+            add_history(conn, 'user_tags', 'create_new', name)
             conn.commit()
         finally:
             conn.close()
@@ -56,9 +64,8 @@ class GetUserTagAPI(APIBase):
         self.logger.info('Getting tag %s', tag_name)
         conn = sqlite3.connect(self.db_path)
         try:
-            cursor = conn.cursor()
             # Get the tag itself
-            tags = query(cursor,
+            tags = query(conn,
                          'user_tags',
                          ['uid', 'name'],
                          'WHERE name = ?',
@@ -75,7 +82,7 @@ class GetUserTagAPI(APIBase):
                 query_where += ' AND interested_pwgs LIKE ?'
 
             query_where += ' ORDER BY dataset COLLATE NOCASE'
-            entries = query(cursor,
+            entries = query(conn,
                             'user_tag_entries',
                             ['uid',
                              'chained_request',
@@ -123,22 +130,29 @@ class UpdateUserTagAPI(APIBase):
     @APIBase.ensure_role('production_manager')
     def post(self):
         """
-        Get a single user tag
+        Update a user tag
         """
         data = flask.request.data
         data = json.loads(data.decode('utf-8'))
         self.logger.info('Updating user tag %s', data)
+        name = data['name'].strip()
+        uid = int(data['uid'])
+        if not matches_regex(name, '^[a-zA-Z0-9_-]{3,25}$'):
+            raise Exception('Tag "%s" is not valid' % (name))
+
         conn = sqlite3.connect(self.db_path)
         try:
-            cursor = conn.cursor()
-            entry = {'uid': int(data['uid']),
-                     'name': data['name'].strip()}
-            update_entry(cursor, 'user_tags', entry)
+            old_entry = query(conn, 'user_tags', ['name'], 'WHERE uid = ?', [uid])[0]
+            new_entry = {'uid': uid,
+                         'name': name.strip()}
+            update_entry(conn, 'user_tags', new_entry)
+            old_name = old_entry['name']
+            add_history(conn, 'user_tags', 'update', '%s -> %s' % (old_name, name))
             conn.commit()
         finally:
             conn.close()
 
-        return self.output_text({'response': {}, 'success': True, 'message': ''})
+        return self.output_text({'response': new_entry, 'success': True, 'message': ''})
 
 
 class DeleteUserTagAPI(APIBase):
@@ -150,7 +164,7 @@ class DeleteUserTagAPI(APIBase):
     @APIBase.ensure_role('production_manager')
     def delete(self):
         """
-        Delete a single user tag
+        Delete a user tag and all it's entries
         """
         data = flask.request.data
         data = json.loads(data.decode('utf-8'))
@@ -159,17 +173,17 @@ class DeleteUserTagAPI(APIBase):
         tag_uid = data['uid']
         conn = sqlite3.connect(self.db_path)
         try:
-            cursor = conn.cursor()
-            cursor.execute('''DELETE FROM user_tag_entries
-                              WHERE campaign_uid IN (SELECT uid
-                                                     FROM user_tags
-                                                     WHERE name = ?)
-                              AND campaign_uid = ?''',
-                           [tag_name, tag_uid])
-            cursor.execute('''DELETE FROM user_tags
-                              WHERE name = ?
-                              AND uid = ?''',
-                           [tag_name, tag_uid])
+            conn.execute('''DELETE FROM user_tag_entries
+                            WHERE campaign_uid IN (SELECT uid
+                                                   FROM user_tags
+                                                   WHERE name = ?)
+                            AND campaign_uid = ?''',
+                         [tag_name, tag_uid])
+            conn.execute('''DELETE FROM user_tags
+                            WHERE name = ?
+                            AND uid = ?''',
+                         [tag_name, tag_uid])
+            add_history(conn, 'user_tags', 'delete', tag_name)
             conn.commit()
         finally:
             conn.close()
@@ -184,13 +198,12 @@ class GetAllUserTagsAPI(APIBase):
     @APIBase.exceptions_to_errors
     def get(self):
         """
-        Get all user tags
+        Get all user tags without their entries
         """
         self.logger.info('Getting all user tags')
         conn = sqlite3.connect(self.db_path)
         try:
-            cursor = conn.cursor()
-            tags = query(cursor,
+            tags = query(conn,
                          'user_tags',
                          ['uid', 'name'],
                          'ORDER BY name COLLATE NOCASE')

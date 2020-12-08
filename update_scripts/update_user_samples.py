@@ -4,13 +4,12 @@ import sqlite3
 import logging
 from utils import query
 from update_existing_samples import ExistingSamplesUpdater
-#pylint: disable=wrong-import-position,import-error
-sys.path.append('/afs/cern.ch/cms/PPD/PdmV/tools/McM/')
-from rest import McM
-#pylint: enable=wrong-import-position,import-error
+
 
 class UserSamplesUpdater(ExistingSamplesUpdater):
-
+    """
+    User tagged samples updater
+    """
     def __init__(self, db_connection, dev=True):
         ExistingSamplesUpdater.__init__(self, db_connection, dev)
         self.updated_chained_requests = None

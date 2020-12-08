@@ -2,12 +2,19 @@
 Module that contains all future campaign planning APIs
 """
 import json
-import time
-import flask
 import sqlite3
+import flask
 from api.api_base import APIBase
-from utils.user_info import UserInfo
-from update_scripts.utils import get_short_name, clean_split, sorted_join, add_entry, update_entry, query, parse_number, valid_pwg
+from update_scripts.utils import (get_short_name,
+                                  clean_split,
+                                  sorted_join,
+                                  add_entry,
+                                  update_entry,
+                                  query,
+                                  parse_number,
+                                  valid_pwg,
+                                  matches_regex,
+                                  add_history)
 
 
 class CreateFutureCampaignAPI(APIBase):
@@ -25,11 +32,18 @@ class CreateFutureCampaignAPI(APIBase):
         data = json.loads(data.decode('utf-8'))
         self.logger.info('Creating new future campaign %s', data)
         name = data['name'].strip()
-        reference = sorted_join(clean_split(data.get('reference', '')))
+        if not matches_regex(name, '^[a-zA-Z0-9_\\*-]{3,30}$'):
+            raise Exception('Name "%s" is not valid' % (name))
+
+        references = clean_split(data.get('reference', ''))
+        for reference in references:
+            if not matches_regex(reference, '^[a-zA-Z0-9_\\*-]{3,30}$'):
+                raise Exception('Reference "%s" is not valid' % (reference))
+
+        references = sorted_join(references)
         conn = sqlite3.connect(self.db_path)
         try:
-            cursor = conn.cursor()
-            existing_campaigns = query(cursor,
+            existing_campaigns = query(conn,
                                        'future_campaigns',
                                        ['uid'],
                                        'WHERE name = ?',
@@ -37,7 +51,13 @@ class CreateFutureCampaignAPI(APIBase):
             if existing_campaigns:
                 raise Exception('Planned campaign %s already exists' % (name))
 
-            add_entry(cursor, 'future_campaigns', {'name': name, 'reference': reference, 'prefilled': 0})
+            add_entry(conn,
+                      'future_campaigns',
+                      {'name': name, 'reference': references, 'prefilled': 0})
+            add_history(conn,
+                        'future_campaigns',
+                        'create_new',
+                        'Name: %s References: %s' % (name, references))
             conn.commit()
         finally:
             conn.close()
@@ -52,15 +72,14 @@ class GetFutureCampaignAPI(APIBase):
     @APIBase.exceptions_to_errors
     def get(self, campaign_name, interested_pwg=None):
         """
-        Get a single future campaign
+        Get a single future campaign with all it's entries inside
         """
         campaign_name = campaign_name.strip()
         self.logger.info('Getting future campaign %s', campaign_name)
         conn = sqlite3.connect(self.db_path)
         try:
-            cursor = conn.cursor()
             # Get the campaign itself
-            campaigns = query(cursor,
+            campaigns = query(conn,
                               'future_campaigns',
                               ['uid',
                                'name',
@@ -84,7 +103,7 @@ class GetFutureCampaignAPI(APIBase):
 
             where_clause += '''ORDER BY dataset
                                COLLATE NOCASE'''
-            entries = query(cursor,
+            entries = query(conn,
                             'future_campaign_entries',
                             ['uid',
                              'campaign_uid',
@@ -118,23 +137,47 @@ class UpdateFutureCampaignAPI(APIBase):
     @APIBase.ensure_role('production_manager')
     def post(self):
         """
-        Get a single future campaign
+        Update a future campaign
         """
         data = flask.request.data
         data = json.loads(data.decode('utf-8'))
         self.logger.info('Updating future campaign %s', data)
+        name = data['name'].strip()
+        uid = int(data['uid'])
+        if not matches_regex(name, '^[a-zA-Z0-9_\\*-]{3,30}$'):
+            raise Exception('Name "%s" is not valid' % (name))
+
+        references = clean_split(data.get('reference', ''))
+        for reference in references:
+            if not matches_regex(reference, '^[a-zA-Z0-9_\\*-]{3,30}$'):
+                raise Exception('Reference "%s" is not valid' % (reference))
+
+        references = sorted_join(references)
         conn = sqlite3.connect(self.db_path)
         try:
-            cursor = conn.cursor()
-            entry = {'name': data['name'].strip(),
-                     'reference': sorted_join(clean_split(data['reference'])),
-                     'uid': int(data['uid'])}
-            update_entry(cursor, 'future_campaigns', entry)
+            old_entry = query(conn,
+                              'future_campaigns',
+                              ['name', 'reference'],
+                              'WHERE uid = ?',
+                              [uid])[0]
+            new_entry = {'uid': uid,
+                         'reference': references,
+                         'name': name.strip()}
+            update_entry(conn, 'future_campaigns', new_entry)
+            old_name = old_entry['name']
+            old_reference = old_entry['reference']
+            updates = []
+            if name != old_name:
+                updates.append('Name: %s -> %s' % (old_name, name))
+            if old_reference != references:
+                updates.append('References: %s -> %s' % (old_reference, references))
+
+            add_history(conn, 'future_campaigns', 'update', ', '.join(updates))
             conn.commit()
         finally:
             conn.close()
 
-        return self.output_text({'response': entry, 'success': True, 'message': ''})
+        return self.output_text({'response': new_entry, 'success': True, 'message': ''})
 
 
 class DeleteFutureCampaignAPI(APIBase):
@@ -146,7 +189,7 @@ class DeleteFutureCampaignAPI(APIBase):
     @APIBase.ensure_role('production_manager')
     def delete(self):
         """
-        Get a single future campaign
+        Delete a future campaign and all it's entries
         """
         data = flask.request.data
         data = json.loads(data.decode('utf-8'))
@@ -155,17 +198,17 @@ class DeleteFutureCampaignAPI(APIBase):
         campaign_uid = data['uid']
         conn = sqlite3.connect(self.db_path)
         try:
-            cursor = conn.cursor()
-            cursor.execute('''DELETE FROM future_campaign_entries
-                              WHERE campaign_uid IN (SELECT uid
-                                                     FROM future_campaigns
-                                                     WHERE name = ?)
-                              AND campaign_uid = ?''',
-                           [campaign_name, campaign_uid])
-            cursor.execute('''DELETE FROM future_campaigns
-                              WHERE name = ?
-                              AND uid = ?''',
-                           [campaign_name, campaign_uid])
+            conn.execute('''DELETE FROM future_campaign_entries
+                            WHERE campaign_uid IN (SELECT uid
+                                                   FROM future_campaigns
+                                                   WHERE name = ?)
+                            AND campaign_uid = ?''',
+                         [campaign_name, campaign_uid])
+            conn.execute('''DELETE FROM future_campaigns
+                            WHERE name = ?
+                            AND uid = ?''',
+                         [campaign_name, campaign_uid])
+            add_history(conn, 'future_campaigns', 'delete', campaign_name)
             conn.commit()
         finally:
             conn.close()
@@ -180,13 +223,12 @@ class GetAllFutureCampaignsAPI(APIBase):
     @APIBase.exceptions_to_errors
     def get(self):
         """
-        Get all future campaigns
+        Get all future campaigns without their entries
         """
         self.logger.info('Getting all future campaigns')
         conn = sqlite3.connect(self.db_path)
         try:
-            cursor = conn.cursor()
-            campaigns = query(cursor,
+            campaigns = query(conn,
                               'future_campaigns',
                               ['uid',
                                'name',
@@ -217,7 +259,6 @@ class AddEntryToFutureCampaignAPI(APIBase):
         data = json.loads(data.decode('utf-8'))
         self.logger.info('Adding entry to future campaign %s', data)
         # Prepare user info for history
-        user_info = UserInfo()
         # Interested pwgs
         interested_pwgs = clean_split(data['interested_pwgs'].upper())
         for pwg in interested_pwgs:
@@ -226,16 +267,28 @@ class AddEntryToFutureCampaignAPI(APIBase):
 
         # Events
         events = parse_number(data['events'])
+        # Attribute validation
+        dataset = data['dataset'].strip()
+        if not matches_regex(dataset, '^[a-zA-Z0-9_-]{3,50}$'):
+            raise Exception('Dataset "%s" is not valid' % (dataset))
+
+        chain_tag = data['chain_tag'].strip()
+        if not matches_regex(chain_tag, '^[a-zA-Z0-9]{0,30}$'):
+            raise Exception('Chain tag "%s" is not valid' % (chain_tag))
+
         # Create an entry
-        entry = {'campaign_uid': int(data['campaign_uid']),
-                 'short_name': get_short_name(data['dataset'].strip()),
-                 'dataset': data['dataset'].strip(),
-                 'chain_tag': data['chain_tag'].strip(),
+        campaign_uid = int(data['campaign_uid'])
+        entry = {'campaign_uid': campaign_uid,
+                 'short_name': get_short_name(dataset),
+                 'dataset': dataset,
+                 'chain_tag': chain_tag,
                  'events': events,
                  'interested_pwgs': sorted_join(interested_pwgs),
                  'ref_interested_pwgs': '',
                  'comment': data.get('comment', '').strip(),
                  'fragment': data.get('fragment', '').strip(),
+                 'cross_section': 0,
+                 'negative_weight': 0,
                  'in_reference': '',
                  'in_target': '',}
         conn = sqlite3.connect(self.db_path)
@@ -253,16 +306,19 @@ class AddEntryToFutureCampaignAPI(APIBase):
             add_entry(cursor, 'future_campaign_entries', entry)
             entry['uid'] = cursor.lastrowid
             # Update history
-            add_entry(cursor,
-                      'action_history',
-                      {'username': user_info.get_username(),
-                       'time': int(time.time()),
-                       'module': 'campaign_planning',
-                       'entry_uid': entry['uid'],
-                       'action': 'add',
-                       'value': ('%s %s %s' % (entry['campaign_uid'],
-                                               entry['dataset'],
-                                               entry['chain_tag']))})
+            campaign = query(conn,
+                             'future_campaigns',
+                             ['name'],
+                             'WHERE uid = ?',
+                             [campaign_uid])[0]
+            add_history(conn,
+                        'future_campaigns',
+                        'add_entry',
+                        'Campaign: %s Dataset: %s Chain Tag: %s Events: %s PWGs: %s' % (campaign['name'],
+                                                                                        dataset,
+                                                                                        chain_tag,
+                                                                                        events,
+                                                                                        sorted_join(interested_pwgs)))
             conn.commit()
         finally:
             conn.close()
@@ -285,7 +341,6 @@ class UpdateEntryInFutureCampaignAPI(APIBase):
         data = json.loads(data.decode('utf-8'))
         self.logger.info('Editing entry in future campaign %s', data)
         # Prepare user info for history
-        user_info = UserInfo()
         entry_uid = int(data['uid'])
         # Interested pwgs
         interested_pwgs = clean_split(data['interested_pwgs'].upper())
@@ -295,15 +350,24 @@ class UpdateEntryInFutureCampaignAPI(APIBase):
 
         # Events
         events = parse_number(data['events'])
-        cross_section = float(data['cross_section'])
-        negative_weight = float(data['negative_weight'])
+        # Attribute validation
+        dataset = data['dataset'].strip()
+        if not matches_regex(dataset, '^[a-zA-Z0-9_-]{3,50}$'):
+            raise Exception('Dataset "%s" is not valid' % (dataset))
+
+        chain_tag = data['chain_tag'].strip()
+        if not matches_regex(chain_tag, '^[a-zA-Z0-9]{0,30}$'):
+            raise Exception('Chain tag "%s" is not valid' % (chain_tag))
+
+        cross_section = float(data.get('cross_section', 0))
+        negative_weight = float(data.get('negative_weight', 0))
         conn = sqlite3.connect(self.db_path)
         try:
-            cursor = conn.cursor()
             # Existing entry
-            existing_entry = query(cursor,
+            existing_entry = query(conn,
                                    'future_campaign_entries',
-                                   ['interested_pwgs',
+                                   ['campaign_uid',
+                                    'interested_pwgs',
                                     'dataset',
                                     'chain_tag',
                                     'events',
@@ -321,26 +385,31 @@ class UpdateEntryInFutureCampaignAPI(APIBase):
             # Create an entry
             entry = {'uid': entry_uid,
                      'short_name': get_short_name(data['dataset']),
-                     'dataset': data['dataset'].strip(),
-                     'chain_tag': data['chain_tag'].strip(),
+                     'dataset': dataset,
+                     'chain_tag': chain_tag,
                      'events': events,
                      'cross_section': cross_section,
                      'negative_weight':negative_weight,
                      'interested_pwgs': sorted_join(interested_pwgs),
                      'comment': data['comment'].strip(),
                      'fragment': data['fragment'].strip()}
-            now = int(time.time())
-            for attr in ['interested_pwgs', 'dataset', 'chain_tag', 'events', 'comment', 'fragment', 'cross_section', 'negative_weight']:
+
+            campaign = query(conn,
+                             'future_campaigns',
+                             ['name'],
+                             'WHERE uid = ?',
+                             [existing_entry['campaign_uid']])[0]
+            for attr in ['interested_pwgs', 'dataset', 'chain_tag', 'events', 'comment',
+                         'fragment', 'cross_section', 'negative_weight']:
                 if existing_entry[attr] != entry[attr]:
                     changes_happen = True
-                    add_entry(cursor,
-                              'action_history',
-                              {'username': user_info.get_username(),
-                               'time': now,
-                               'module': 'existing_samples',
-                               'entry_uid': entry_uid,
-                               'action': attr,
-                               'value': '%s -> %s' % (existing_entry[attr], entry[attr])})
+                    add_history(conn,
+                                'future_campaigns',
+                                'update_entry',
+                                '%s %s: %s -> %s' % (campaign['name'],
+                                                     dataset,
+                                                     existing_entry[attr],
+                                                     entry[attr]))
 
             if not changes_happen:
                 return self.output_text({'response': {},
@@ -348,7 +417,7 @@ class UpdateEntryInFutureCampaignAPI(APIBase):
                                          'message': 'Nothing changed'})
 
             # Update entry in DB
-            update_entry(cursor, 'future_campaign_entries', entry)
+            update_entry(conn, 'future_campaign_entries', entry)
             conn.commit()
         finally:
             conn.close()
@@ -371,37 +440,38 @@ class DeleteEntryInFutureCampaignAPI(APIBase):
         data = json.loads(data.decode('utf-8'))
         self.logger.info('Deleting entry in future campaign %s', data)
         # Prepare user info for history
-        user_info = UserInfo()
         entry_uid = int(data['uid'])
         campaign_uid = int(data['campaign_uid'])
         conn = sqlite3.connect(self.db_path)
         try:
-            cursor = conn.cursor()
             # Existing entry
-            existing_entry = query(cursor,
+            existing_entry = query(conn,
                                    'future_campaign_entries',
-                                   ['dataset', 'chain_tag'],
+                                   ['dataset', 'chain_tag', 'events', 'interested_pwgs'],
                                    'WHERE uid = ?',
                                    [entry_uid])
             if not existing_entry:
                 raise Exception('Could not find entry with %s uid' % (entry_uid))
 
             existing_entry = existing_entry[0]
-            cursor.execute('''DELETE FROM future_campaign_entries
-                              WHERE uid = ?
-                              AND campaign_uid = ?''',
-                           [entry_uid, campaign_uid])
+            conn.execute('''DELETE FROM future_campaign_entries
+                            WHERE uid = ?
+                            AND campaign_uid = ?''',
+                         [entry_uid, campaign_uid])
             # Update history
-            add_entry(cursor,
-                      'action_history',
-                      {'username': user_info.get_username(),
-                       'time': int(time.time()),
-                       'module': 'campaign_planning',
-                       'entry_uid': entry_uid,
-                       'action': 'delete',
-                       'value': ('%s %s %s' % (campaign_uid,
-                                               existing_entry['dataset'],
-                                               existing_entry['chain_tag'])).strip()})
+            campaign = query(conn,
+                             'future_campaigns',
+                             ['name'],
+                             'WHERE uid = ?',
+                             [campaign_uid])[0]
+            add_history(conn,
+                        'future_campaigns',
+                        'delete_entry',
+                        'Campaign: %s Dataset: %s Chain Tag: %s Events: %s PWGs: %s' % (campaign['name'],
+                                                                                        existing_entry['dataset'],
+                                                                                        existing_entry['chain_tag'],
+                                                                                        existing_entry['events'],
+                                                                                        existing_entry['interested_pwgs']))
             conn.commit()
         finally:
             conn.close()

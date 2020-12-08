@@ -30,23 +30,22 @@ def update_users(conn):
 
     # Get all McM users and insert
     users = mcm.get('users')
-    cursor = conn.cursor()
     for user in users:
         logger.info('Inserting %s (%s - %s)',
                     user['fullname'],
                     user['username'],
                     user['role'])
-        cursor.execute('''INSERT INTO mcm_users (username, name, role)
-                          VALUES (?, ?, ?)''',
-                       [user['username'],
-                        user['fullname'],
-                        user['role']])
+        conn.execute('''INSERT INTO mcm_users (username, name, role)
+                        VALUES (?, ?, ?)''',
+                     [user['username'],
+                      user['fullname'],
+                      user['role']])
         conn.commit()
 
     conn.close()
 
 
-if __name__ == '__main__':
+def main():
     try:
         conn = sqlite3.connect('../data.db')
         update_users(conn)
@@ -54,3 +53,7 @@ if __name__ == '__main__':
         logger.error(ex)
     finally:
         conn.close()
+
+
+if __name__ == '__main__':
+    main()

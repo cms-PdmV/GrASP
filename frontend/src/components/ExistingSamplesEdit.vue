@@ -124,7 +124,7 @@ export default {
 <style scoped>
 
 input {
-  min-width: 300px;
+  min-width: 450px;
 }
 
 </style>

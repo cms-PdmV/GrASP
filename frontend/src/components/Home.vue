@@ -18,7 +18,7 @@
       </tr>
       <tr v-if="role('production_manager')">
         <td :colspan="pwgs.length + 2">
-          <a :href="'existing_edit'">Add new campaign</a>
+          <a :href="'existing_edit'"><i>Add new campaign</i></a>
         </td>
       </tr>
     </table>
@@ -40,7 +40,7 @@
       </tr>
       <tr v-if="role('production_manager')">
         <td :colspan="pwgs.length + 2">
-          <a :href="'planning_edit'">Add new campaign</a>
+          <a :href="'planning_edit'"><i>Add new campaign</i></a>
         </td>
       </tr>
     </table>
@@ -55,9 +55,9 @@
           <a v-if="role('administrator')" :title="'Edit ' + tag.name" style="text-decoration: none;" :href="'tag_edit?name=' + tag.name">&#128295;</a>
         </td>
       </tr>
-      <tr v-if="role('production_manager')">
+      <tr v-if="role('user')">
         <td :colspan="pwgs.length + 2">
-          <a :href="'tag_edit'">Add new tag</a>
+          <a :href="'tag_edit'"><i>Add new tag</i></a>
         </td>
       </tr>
     </table>

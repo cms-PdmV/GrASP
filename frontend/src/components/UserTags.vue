@@ -167,47 +167,25 @@ export default {
       entry.miniaodTotalEventsNice = this.suffixNumber(entry.miniaod_total_events);
       entry.nanoaodDoneEventsNice = this.suffixNumber(entry.nanoaod_done_events);
       entry.nanoaodTotalEventsNice = this.suffixNumber(entry.nanoaod_total_events);
-      if (entry.root_request_status == 'submitted' || entry.root_request_status == 'done') {
-        if (entry.root_request_total_events != 0) {
-          entry.rootPercentage = entry.root_request_done_events / entry.root_request_total_events * 100;
-        } else {
-          entry.rootPercentage = 100;
-        }
-        if (entry.root_request_output.length) {
-          entry.rootEventsNice = entry.rootDoneEventsNice + '/' + entry.rootTotalEventsNice;
-        } else {
-          entry.rootEventsNice = entry.rootTotalEventsNice;
-        }
+      if ((entry.root_request_status == 'submitted' || entry.root_request_status == 'done') && entry.root_request_output.length && entry.root_request_total_events) {
+        entry.rootPercentage = entry.root_request_done_events / entry.root_request_total_events * 100;
+        entry.rootEventsNice = entry.rootDoneEventsNice + '/' + entry.rootTotalEventsNice;
       } else {
         entry.rootPercentage = 100;
         entry.rootEventsNice = entry.rootTotalEventsNice;
       }
-      if (entry.miniaod_status == 'submitted' || entry.miniaod_status == 'done') {
-        if (entry.miniaod_total_events != 0) {
-          entry.miniaodPercentage = entry.miniaod_done_events / entry.miniaod_total_events * 100;
-        } else {
-          entry.miniaodPercentage = 100;
-        }
-        if (entry.miniaod_output.length) {
-          entry.miniaodEventsNice = entry.miniaodDoneEventsNice + '/' + entry.miniaodTotalEventsNice;
-        } else {
-          entry.miniaodEventsNice = entry.miniaodTotalEventsNice;
-        }
+
+      if ((entry.miniaod_status == 'submitted' || entry.miniaod_status == 'done') && entry.miniaod_output.length && entry.miniaod_total_events) {
+        entry.miniaodPercentage = entry.miniaod_done_events / entry.miniaod_total_events * 100;
+        entry.miniaodEventsNice = entry.miniaodDoneEventsNice + '/' + entry.miniaodTotalEventsNice;
       } else {
         entry.miniaodPercentage = 100;
         entry.miniaodEventsNice = entry.miniaodTotalEventsNice;
       }
-      if (entry.nanoaod_status == 'submitted' || entry.nanoaod_status == 'done') {
-        if (entry.nanoaod_total_events != 0) {
-          entry.nanoaodPercentage = entry.nanoaod_done_events / entry.nanoaod_total_events * 100;
-        } else {
-          entry.nanoaodPercentage = 100;
-        }
-        if (entry.nanoaod_output.length) {
-          entry.nanoaodEventsNice = entry.nanoaodDoneEventsNice + '/' + entry.nanoaodTotalEventsNice;
-        } else {
-          entry.nanoaodEventsNice = entry.nanoaodTotalEventsNice;
-        }
+
+      if ((entry.nanoaod_status == 'submitted' || entry.nanoaod_status == 'done') && entry.nanoaod_output.length && entry.nanoaod_total_events) {
+        entry.nanoaodPercentage = entry.nanoaod_done_events / entry.nanoaod_total_events * 100;
+        entry.nanoaodEventsNice = entry.nanoaodDoneEventsNice + '/' + entry.nanoaodTotalEventsNice;
       } else {
         entry.nanoaodPercentage = 100;
         entry.nanoaodEventsNice = entry.nanoaodTotalEventsNice;
