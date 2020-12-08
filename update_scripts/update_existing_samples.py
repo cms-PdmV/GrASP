@@ -3,7 +3,6 @@ Update data in samples table
 """
 import sys
 import time
-import json
 import sqlite3
 import logging
 from utils import query, pick_chained_requests, chained_request_to_steps, sorted_join, add_entry, update_entry, clean_split, merge_sets
@@ -47,7 +46,7 @@ class ExistingSamplesUpdater():
                       'root_request',
                       'miniaod',
                       'nanoaod'],
-                      'WHERE campaign_uid = ? AND root_request = ? AND chained_request = ?',
+                     'WHERE campaign_uid = ? AND root_request = ? AND chained_request = ?',
                      [campaign_uid, root_request, chained_request])
         if not rows:
             return None
@@ -135,7 +134,7 @@ class ExistingSamplesUpdater():
         if not request['member_of_chain']:
             # Create a fake chain request
             chained_requests = [{'prepid': '',
-                                'chain': [request_prepid]}]
+                                 'chain': [request_prepid]}]
         else:
             # Fetch all chained requests that this request is member of
             chained_requests = self.fetcher.bulk_fetch('chained_requests', request['member_of_chain'])

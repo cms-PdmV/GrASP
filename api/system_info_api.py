@@ -18,7 +18,7 @@ class UserInfoAPI(APIBase):
     @APIBase.exceptions_to_errors
     def get(self):
         """
-        Get status of all locks in the system
+        Get info about current user
         """
         user_info = UserInfo().get_user_info()
         return self.output_text({'response': user_info, 'success': True, 'message': ''})
@@ -42,7 +42,7 @@ class UserActionHistory(APIBase):
         cursor = conn.cursor()
         history = query(cursor,
                         'action_history',
-                        ['uid', 'username', 'time', 'module', 'entry_uid', 'action', 'value'],
+                        ['uid', 'username', 'time', 'module', 'action', 'value'],
                         'WHERE username = ?' if username else None,
                         [username] if username else [],)
         conn.close()

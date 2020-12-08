@@ -18,7 +18,7 @@ mcm = McM(dev=('--dev' in sys.argv), cookie='cookie.txt')
 # Faster fetcher from McM DB
 fetcher = DirectFetcher('vocms0485' if '--dev' in sys.argv else 'vocms0490', 5984)
 # Create a connection to xsdb
-xsdb = XSDBConnection()
+xsdb = XSDBConnection(cookie='xsdb-cookie.txt')
 xsdb_cache = {}
 
 # Logger
