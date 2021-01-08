@@ -23,6 +23,14 @@
         <v-btn small class="ml-1" color="primary" title="Microsoft Office Excel file" @click="downloadExcelFile('xls')">XLS</v-btn>
       </div>
     </div>
+    <div v-if="campaign.entries" class="align-center ma-2">
+      <b>I am going to add or remove</b>
+      <select v-model="selectedPWG" class="ml-2 mr-2">
+        <option disabled selected value=''></option>
+        <option v-for="pwg in allPWGs" :key="pwg" :value="pwg">{{pwg}}</option>
+      </select>
+      <b>physics working group as interested PWG in samples</b>
+    </div>
     <table v-if="campaign.entries">
       <tr>
         <th>Short Name<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.short_name" @input="applyFilters()"></th>
@@ -100,14 +108,14 @@
         <td>
           <a :href="'https://cms-pdmv.cern.ch/mcm/chained_requests?prepid=' + entry.chained_request" target="_blank">{{entry.chain_tag}}</a>
         </td>
-        <td v-on:dblclick="role('user') && startEditing($event, entry, 'interested_pwgs')" class="align-center">
-          <template v-if="!entry.editing.interested_pwgs">{{entry.interested_pwgs}}</template>
-          <input @blur="stopEditing(entry, 'interested_pwgs')"
-                 v-if="entry.editing.interested_pwgs"
-                 type="text"
-                 v-model="entry.temporary.interested_pwgs">
+        <td class="align-center">
+          {{entry.interested_pwgs}}
+          <template v-if="selectedPWG && role('user')">
+            <br>
+            <span class="add-pwg-link" v-if="!entry.interested_pwgs.includes(selectedPWG)" @click="addPWGToEntry(selectedPWG, entry)">Add {{selectedPWG}}</span>
+            <span class="remove-pwg-link" v-if="entry.interested_pwgs.includes(selectedPWG)" @click="removePWGFromEntry(selectedPWG, entry)">Remove {{selectedPWG}}</span>
+          </template>
         </td>
-        <!-- <td style="max-width: 300px" class="wrap">{{entry.notes}}</td> -->
       </tr>
     </table>
   </div>
@@ -133,6 +141,10 @@ export default {
   data () {
     return {
       interestedPWG: undefined,
+      selectedPWG: undefined,
+      allPWGs: ['B2G', 'BPH', 'BTV', 'EGM', 'EXO', 'FSQ', 'HCA',
+                'HGC', 'HIG', 'HIN', 'JME', 'L1T', 'LUM', 'MUO',
+                'PPS', 'SMP', 'SUS', 'TAU', 'TOP', 'TRK', 'TSG'],
       campaign: {},
       newEntry: {},
       eventFilterOptions: [[0, 'All'], [5e6, '5M+'], [10e6, '10M+'], [20e6, '20M+'], [50e6, '50M+']],
@@ -167,16 +179,11 @@ export default {
         component.processEntry(entry);
       }).catch(error => {
         alert(error.response.data.message);
-        entry.broken = true;
       });
     },
     processEntry: function(entry) {
       // Add or set to default some attributes
       // and calculate number with SI suffix
-      entry.editing = {};
-      entry.temporary = {};
-      entry.dirty = false;
-      entry.broken = false;
       entry.rootDoneEventsNice = this.suffixNumber(entry.root_request_done_events);
       entry.rootTotalEventsNice = this.suffixNumber(entry.root_request_total_events);
       entry.miniaodDoneEventsNice = this.suffixNumber(entry.miniaod_done_events);
@@ -224,26 +231,13 @@ export default {
         alert(error.response.data.message);
       });
     },
-    startEditing: function(event, entry, attribute) {
-      entry.temporary[attribute] = entry[attribute];
-      this.$set(entry.editing, attribute, true);
-      const target = event.target;
-      const width = target.getBoundingClientRect().width + 1;
-      this.$nextTick(() => {
-        let input = target.querySelector('input');
-        if (input) {
-          input.style.width = width + 'px';
-          input.focus();
-        }
-      })
+    addPWGToEntry: function(pwg, entry) {
+      entry.interested_pwgs = (this.cleanSplit(entry.interested_pwgs, ',').concat([pwg])).sort().join(',');
+      this.updateEntry(entry);
     },
-    stopEditing: function(entry, attribute) {
-      entry.dirty = entry.dirty || (entry[attribute] != entry.temporary[attribute]);
-      entry[attribute] = entry.temporary[attribute];
-      this.$set(entry.editing, attribute, false);
-      if (entry.dirty) {
-        this.updateEntry(entry);
-      }
+    removePWGFromEntry: function(pwg, entry) {
+      entry.interested_pwgs = (this.cleanSplit(entry.interested_pwgs, ',').filter(function(p) { return p !== pwg})).join(',');
+      this.updateEntry(entry);
     },
     mergeCells: function(list, attributes) {
       list.forEach(element => {
@@ -414,6 +408,25 @@ td.wrap {
 td>div:first-child {
   position: relative;
   z-index: 2;
+}
+
+select {
+  appearance: auto;
+  border: 1px solid black;
+  background: white;
+}
+
+.add-pwg-link, .remove-pwg-link {
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.add-pwg-link {
+  color: green;
+}
+
+.remove-pwg-link {
+  color: red;
 }
 
 </style>
