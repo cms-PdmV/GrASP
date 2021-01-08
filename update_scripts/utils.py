@@ -5,7 +5,6 @@ These functions do not depend on any other components
 """
 import time
 import re
-from utils.user_info import UserInfo
 
 #pylint: disable=too-many-branches,too-many-statements
 # It is ok to have many ifs in this function
@@ -178,7 +177,7 @@ def chained_request_to_steps(chained_request):
     return steps
 
 
-def pick_chained_requests(chained_requests):
+def pick_chained_requests(chained_requests, number_of_chains=1):
     """
     Select chained requests with newest NanoAOD version
     """
@@ -192,7 +191,7 @@ def pick_chained_requests(chained_requests):
             version = campaign.lower().split('nanoaod')[-1].lstrip('v')
             version = version.replace(version.lstrip('0123456789'), '')
             if version != '':
-                return version
+                return int(version)
 
         return 0
 
@@ -216,9 +215,10 @@ def pick_chained_requests(chained_requests):
         tree[mini_step][nano_version].append(chained_request)
 
     for mini_campaign, nano_versions in tree.items():
-        # Choose campaigns with newest NanoAOD version
-        newest_nano_version = sorted(nano_versions)[-1]
-        selected_chained_requests.extend(tree[mini_campaign][newest_nano_version])
+        # Choose campaigns with number of newest NanoAOD versions
+        sorted_nano_versions = sorted(nano_versions, reverse=True)
+        for nano_version in sorted_nano_versions[:number_of_chains]:
+            selected_chained_requests.extend(tree[mini_campaign][nano_version])
 
     return selected_chained_requests
 
@@ -350,7 +350,6 @@ def cmp_to_key(mycmp):
         """
         def __init__(self, obj, *args):
             self.obj = obj
-            super(args)
 
         def __lt__(self, other):
             return mycmp(self.obj, other.obj) < 0
@@ -407,6 +406,7 @@ def add_history(conn, module, action, value):
     Add history entry to history table
     """
     # Update history
+    from utils.user_info import UserInfo
     user_info = UserInfo()
     now = int(time.time())
     add_entry(conn, 'action_history', {'username': user_info.get_username(),

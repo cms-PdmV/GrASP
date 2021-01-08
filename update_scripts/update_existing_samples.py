@@ -138,7 +138,7 @@ class ExistingSamplesUpdater():
         else:
             # Fetch all chained requests that this request is member of
             chained_requests = self.fetcher.bulk_fetch('chained_requests', request['member_of_chain'])
-            chained_requests = pick_chained_requests(chained_requests)
+            chained_requests = pick_chained_requests(chained_requests, 2)
 
         for chained_request in chained_requests:
             chained_request_prepid = chained_request['prepid']

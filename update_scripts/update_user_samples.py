@@ -61,6 +61,7 @@ class UserSamplesUpdater(ExistingSamplesUpdater):
                 self.logger.error('Error processing %s', tag)
                 self.logger.error(ex)
 
+        self.conn.commit()
         # Vacuum to reclaim some space
         self.conn.execute('VACUUM;')
         self.conn.commit()
