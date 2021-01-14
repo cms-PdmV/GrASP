@@ -228,7 +228,7 @@ def prefill_campaigns(conn):
                 chain_tags = []
                 if chained_request_prepids:
                     chained_requests = fetcher.bulk_fetch('chained_requests', chained_request_prepids)
-                    chained_requests = pick_chained_requests(chained_requests)
+                    chained_requests = pick_chained_requests(chained_requests, 2)
                     chain_tags = [get_chain_tag(cr['prepid']) for cr in chained_requests]
                 else:
                     chain_tags = ['']
