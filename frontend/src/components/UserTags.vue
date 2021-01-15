@@ -29,7 +29,7 @@
       </tr>
       <tr v-for="entry in entries" :key="entry.dataset + entry.uid">
         <td v-if="entry.rowspan.short_name > 0" :rowspan="entry.rowspan.short_name">{{entry.short_name}}</td>
-        <td v-if="entry.rowspan.dataset > 0" :rowspan="entry.rowspan.dataset">
+        <td class="dataset-column" v-if="entry.rowspan.dataset > 0" :rowspan="entry.rowspan.dataset">
           <a :href="'https://cms-pdmv.cern.ch/mcm/requests?dataset_name=' + entry.dataset + '&member_of_tag=' + tag.name" target="_blank">{{entry.dataset}}</a>
         </td>
         <td v-if="entry.rowspan.root_request > 0" :rowspan="entry.rowspan.root_request" class="progress-cell">
@@ -41,8 +41,10 @@
             </template>
             <br>
             <small>Events: {{entry.rootEventsNice}}</small>
-            <br>
-            <small>Priority: {{entry.root_request_priority}}</small>
+            <template v-if="entry.root_request_status === 'submitted'">
+              <br>
+              <small>Priority: {{entry.root_request_priority}}</small>
+            </template>
             <br>
             <small>Status: {{entry.root_request_status}}</small>
           </div>
@@ -60,8 +62,10 @@
               </template>
               <br>
               <small>Events: {{entry.miniaodEventsNice}}</small>
-              <br>
-              <small>Priority: {{entry.miniaod_priority}}</small>
+              <template v-if="entry.miniaod_status === 'submitted'">
+                <br>
+                <small>Priority: {{entry.miniaod_priority}}</small>
+              </template>
               <br>
               <small>Status: {{entry.miniaod_status}}</small>
             </div>
@@ -80,8 +84,10 @@
               </template>
               <br>
               <small>Events: {{entry.nanoaodEventsNice}}</small>
-              <br>
-              <small>Priority: {{entry.nanoaod_priority}}</small>
+              <template v-if="entry.nanoaod_status === 'submitted'">
+                <br>
+                <small>Priority: {{entry.nanoaod_priority}}</small>
+              </template>
               <br>
               <small>Status: {{entry.nanoaod_status}}</small>
             </div>
@@ -301,6 +307,12 @@ td.wrap {
 td>div:first-child {
   position: relative;
   z-index: 2;
+}
+
+.dataset-column {
+  max-width: 285px;
+  white-space: normal;
+  line-break: anywhere;
 }
 
 </style>

@@ -378,10 +378,16 @@ def multiarg_sort(list_of_objects, columns):
     """
     def comp(left_value, right_value):
         for key in columns:
-            if left_value[key] < right_value[key]:
+            left = left_value[key]
+            right = right_value[key]
+            if isinstance(left, str) and isinstance(right, str):
+                left = left.lower()
+                right = right.lower()
+
+            if left < right:
                 return -1
 
-            if left_value[key] > right_value[key]:
+            if left > right:
                 return 1
 
         return 0
