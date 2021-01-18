@@ -225,6 +225,9 @@ export default {
     if (query.chain_tag && query.chain_tag.length) {
       this.search.chain_tag = query.chain_tag.trim();
     }
+    if (query.events && query.events.length) {
+      this.eventsFilter = parseInt(query.events);
+    }
     this.newEntry = this.getNewEntry();
     this.fetchCampaign(campaignName);
   },
@@ -291,6 +294,11 @@ export default {
       let filteredEntries = this.campaign.entries;
       if (this.eventsFilter != 0) {
         filteredEntries = filteredEntries.filter(entry => entry.events >= this.eventsFilter);
+        query['events'] = this.eventsFilter;
+      } else {
+        if ('events' in query) {
+          delete query['events'];
+        }
       }
       for (let attribute in this.search) {
         if (this.search[attribute]) {
