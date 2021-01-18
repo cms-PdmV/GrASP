@@ -158,3 +158,15 @@ td.hidden-cell {
 }
 
 </style>
+
+<style>
+
+.v-app-bar--is-scrolled {
+  height: 38px !important;
+}
+
+.v-app-bar--is-scrolled > div {
+  height: 100% !important;
+}
+
+</style>

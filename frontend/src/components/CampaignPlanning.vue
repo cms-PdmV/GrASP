@@ -12,13 +12,25 @@
       <h3>Loading table...</h3>
     </div>
     <div v-if="campaign.entries" class="align-center">
-      <RadioSelector :options="eventFilterOptions"
-                    v-on:changed="onEventFilterUpdate"
-                    class="mb-2">
+      <div class="ml-1 mr-1" style="display: inline-block">
         Events Filter:
-      </RadioSelector>
+        <template v-for="eventsPair in eventFilterOptions">
+          <a :key="eventsPair[0]"
+             class="ml-1 mr-1"
+             :title="'Shov samples with > ' + eventsPair[0] + ' events'"
+             @click="onEventFilterUpdate(eventsPair[0])"
+             :class="eventsPair[0] == eventsFilter ? 'bold-text' : ''">{{eventsPair[1]}}</a>
+        </template>
+      </div>
+      |
+      <div class="ml-1 mr-1" style="display: inline-block">
+        <a class="ml-1 mr-1"
+           title="Click here to go to GrASP's github issues"
+           target="_blank"
+           href="https://github.com/cms-PdmV/GrASP/issues/new/choose">Report a bug or suggest a feature</a>
+      </div>
     </div>
-    <table v-if="campaign.entries" class="highlight-on-hover">
+    <table v-if="campaign.entries" class="mt-2 highlight-on-hover">
       <tr>
         <th>Short Name<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.short_name" @input="applyFilters()"></th>
         <th>In Reference Campaign<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.in_reference" @input="applyFilters()"></th>
@@ -174,7 +186,7 @@
 import axios from 'axios'
 import { utilsMixin } from '../mixins/UtilsMixin.js'
 import { roleMixin } from '../mixins/UserRoleMixin.js'
-import RadioSelector from './RadioSelector'
+import ExcelJS from 'exceljs'
 
 export default {
   name: 'planning',
@@ -182,9 +194,6 @@ export default {
     utilsMixin,
     roleMixin
   ],
-  components: {
-    RadioSelector
-  },
   data () {
     return {
       campaign: {},
@@ -378,6 +387,10 @@ td.wrap {
 
 tr:hover .show-on-hover {
   opacity: 1;
+}
+
+.bold-text {
+  font-weight: 900;
 }
 
 </style>
