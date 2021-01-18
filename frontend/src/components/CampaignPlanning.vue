@@ -219,6 +219,24 @@ export default {
     if (query.pwg && query.pwg.length) {
       this.interestedPWG = query.pwg.toUpperCase();
     }
+    if (query.short_name && query.short_name.length) {
+      this.search.short_name = query.short_name.trim();
+    }
+    if (query.in_reference && query.in_reference.length) {
+      this.search.in_reference = query.in_reference.trim();
+    }
+    if (query.in_target && query.in_target.length) {
+      this.search.in_target = query.in_target.trim();
+    }
+    if (query.dataset && query.dataset.length) {
+      this.search.dataset = query.dataset.trim();
+    }
+    if (query.chain_tag && query.chain_tag.length) {
+      this.search.chain_tag = query.chain_tag.trim();
+    }
+    if (query.events && query.events.length) {
+      this.eventsFilter = parseInt(query.events);
+    }
     this.newEntry = this.getNewEntry();
     this.fetchCampaign(campaignName);
   },
@@ -281,19 +299,32 @@ export default {
       entry.niceEvents = this.suffixNumber(entry.events);
     },
     applyFilters: function() {
+      let query = Object.assign({}, this.$route.query);
       let filteredEntries = this.campaign.entries;
       if (this.eventsFilter != 0) {
         filteredEntries = filteredEntries.filter(entry => entry.events >= this.eventsFilter);
+        query['events'] = this.eventsFilter;
+      } else {
+        if ('events' in query) {
+          delete query['events'];
+        }
       }
       for (let attribute in this.search) {
         if (this.search[attribute]) {
           const pattern = this.search[attribute].replace(/\.\*/g, '*').replace(/ /g, '*').replace(/\*/g, '.*');
           const regex = RegExp(pattern, 'i'); // 'i' for case insensitivity
           filteredEntries = filteredEntries.filter(entry => entry[attribute] != '' && regex.test(entry[attribute]));
+          // Update query parameters
+          query[attribute] = this.search[attribute];
+        } else {
+          if (attribute in query) {
+            delete query[attribute];
+          }
         }
       }
       this.entries = filteredEntries;
       this.recalculateChainTagSums();
+      this.$router.replace({query: query}).catch(() => {});
     },
     fetchCampaign: function(campaignName) {
       let component = this;

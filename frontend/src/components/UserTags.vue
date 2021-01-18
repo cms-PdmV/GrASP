@@ -159,6 +159,27 @@ export default {
     if (query.pwg && query.pwg.length) {
       this.interestedPWG = query.pwg.toUpperCase();
     }
+    if (query.short_name && query.short_name.length) {
+      this.search.short_name = query.short_name.trim();
+    }
+    if (query.dataset && query.dataset.length) {
+      this.search.dataset = query.dataset.trim();
+    }
+    if (query.root_request && query.root_request.length) {
+      this.search.root_request = query.root_request.trim();
+    }
+    if (query.miniaod && query.miniaod.length) {
+      this.search.miniaod = query.miniaod.trim();
+    }
+    if (query.nanoaod && query.nanoaod.length) {
+      this.search.nanoaod = query.nanoaod.trim();
+    }
+    if (query.chained_request && query.chained_request.length) {
+      this.search.chained_request = query.chained_request.trim();
+    }
+    if (query.events && query.events.length) {
+      this.eventsFilter = parseInt(query.events);
+    }
     this.fetchTag(tagName);
   },
   methods: {
@@ -254,19 +275,32 @@ export default {
       this.applyFilters();
     },
     applyFilters: function() {
+      let query = Object.assign({}, this.$route.query);
       let filteredEntries = this.tag.entries;
       if (this.eventsFilter != 0) {
         filteredEntries = filteredEntries.filter(entry => entry.root_request_total_events >= this.eventsFilter);
+        query['events'] = this.eventsFilter;
+      } else {
+        if ('events' in query) {
+          delete query['events'];
+        }
       }
       for (let attribute in this.search) {
         if (this.search[attribute]) {
           const pattern = this.search[attribute].replace(/ /g, '*').replace(/\*/g, '.*');
           const regex = RegExp(pattern, 'i'); // 'i' for case insensitivity
           filteredEntries = filteredEntries.filter(entry => entry[attribute] != '' && regex.test(entry[attribute]));
+          // Update query parameters
+          query[attribute] = this.search[attribute];
+        } else {
+          if (attribute in query) {
+            delete query[attribute];
+          }
         }
       }
       this.entries = filteredEntries;
       this.mergeCells(this.entries, ['short_name', 'dataset', 'root_request', 'miniaod']);
+      this.$router.replace({query: query}).catch(() => {});
     },
         downloadExcelFile: function(outputFormat) {
       const workbook = new ExcelJS.Workbook();
