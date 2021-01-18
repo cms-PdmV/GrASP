@@ -11,16 +11,28 @@
       <h3>Loading table...</h3>
     </div>
     <div v-if="campaign.entries" class="align-center">
-      <RadioSelector :options="eventFilterOptions"
-                    v-on:changed="onEventFilterUpdate"
-                    style="display: inline-block"
-                    class="mb-2">
+      <div class="ml-1 mr-1" style="display: inline-block">
         Events Filter:
-      </RadioSelector>
-      <div class="ml-4" style="display: inline-block">
+        <template v-for="eventsPair in eventFilterOptions">
+          <a :key="eventsPair[0]"
+             class="ml-1 mr-1"
+             :title="'Shov samples with > ' + eventsPair[0] + ' events'"
+             @click="onEventFilterUpdate(eventsPair[0])"
+             :class="eventsPair[0] == eventsFilter ? 'bold-text' : ''">{{eventsPair[1]}}</a>
+        </template>
+      </div>
+      |
+      <div class="ml-1 mr-1" style="display: inline-block">
         Download Table:
-        <v-btn small color="primary" title="Comma-separated values file" @click="downloadExcelFile('csv')">CSV</v-btn>
-        <v-btn small class="ml-1" color="primary" title="Microsoft Office Excel file" @click="downloadExcelFile('xls')">XLS</v-btn>
+        <a title="Comma-separated values file" class="ml-1 mr-1" @click="downloadExcelFile('csv')">CSV</a>
+        <a title="Microsoft Office Excel file" class="ml-1 mr-1" @click="downloadExcelFile('xls')">XLS</a>
+      </div>
+      |
+      <div class="ml-1 mr-1" style="display: inline-block">
+        <a class="ml-1 mr-1"
+           title="Click here to go to GrASP's github issues"
+           target="_blank"
+           href="https://github.com/cms-PdmV/GrASP/issues/new/choose">Report a bug or suggest a feature</a>
       </div>
     </div>
     <div v-if="campaign.entries" class="align-center ma-2">
@@ -132,7 +144,6 @@
 import axios from 'axios'
 import { utilsMixin } from '../mixins/UtilsMixin.js'
 import { roleMixin } from '../mixins/UserRoleMixin.js'
-import RadioSelector from './RadioSelector'
 import ExcelJS from 'exceljs'
 
 export default {
@@ -141,9 +152,6 @@ export default {
     utilsMixin,
     roleMixin
   ],
-  components: {
-    RadioSelector
-  },
   data () {
     return {
       interestedPWG: undefined,
@@ -233,6 +241,7 @@ export default {
         });
         component.mergeCells(campaign.entries, ['short_name', 'dataset', 'root_request', 'miniaod'])
         component.$set(component, 'campaign', campaign);
+        component.applyFilters();
       }).catch(error => {
         alert(error.response.data.message);
       });
@@ -439,6 +448,10 @@ select {
   max-width: 285px;
   white-space: normal;
   line-break: anywhere;
+}
+
+.bold-text {
+  font-weight: 900;
 }
 
 </style>
