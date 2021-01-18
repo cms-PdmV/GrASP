@@ -29,7 +29,7 @@ def update_users(conn):
     conn.commit()
 
     # Get all McM users and insert
-    users = mcm.get('users')
+    users = mcm.get('users', query='username=*')
     for user in users:
         logger.info('Inserting %s (%s - %s)',
                     user['fullname'],
