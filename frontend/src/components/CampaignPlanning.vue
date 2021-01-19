@@ -17,6 +17,12 @@
 		<v-btn class="normal" v-if="canRedo" @click="redoEvent">Redo</v-btn>
 		<v-btn class="normal" v-else disabled>Redo</v-btn>
     </div>
+    <div class="align-center mb-4">
+		<p>
+      {{action}}
+      {{entriesCopy}}
+    </p>
+    </div>
     <div v-if="campaign.entries" class="align-center">
       <RadioSelector :options="eventFilterOptions"
                     v-on:changed="onEventFilterUpdate"
@@ -195,6 +201,8 @@ export default {
   },
   data () {
     return {
+      action: [],
+      entriesCopy: [],
       campaign: {},
       interestedPWG: '',
       newEntry: {},
@@ -361,13 +369,15 @@ export default {
     undoEvent: function() {
       this.undo();
       let component = this;
-      let action = this.$store.getters.getUndoAction;
-      console.log(action);
-      if (action[-1] == 'delete') {
+      let action_ = this.$store.getters.getUndoAction;
+      this.action.push(action_);
+      this.entriesCopy.push(this.$store.getters.getUndoEntry);
+      console.log(action_);
+      if (action_[action_.length - 1] == 'delete') {
         let entry = this.$store.getters.getUndoEntry;
-        console.log(entry);
-        
-        component.AddEntry();
+        console.log(entry[entry.length - 1]);
+        this.newEntry = entry[entry.length - 1]; 
+        component.addEntry();
       }
  
     },
