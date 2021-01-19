@@ -256,7 +256,7 @@ export default {
         let component = this;
         axios.delete('api/planning/delete_entry', {data: entryCopy}).then(() => {
           component.campaign.entries = component.campaign.entries.filter(item => item.uid !== entry.uid);
-          this.$store.commit('commitEntries', entryCopy);
+          this.$store.commit('commitEntries', {action: 'delete', entry: entryCopy});
           component.applyFilters();
         }).catch(error => {
           alert(error.response.data.message);
@@ -361,12 +361,19 @@ export default {
     undoEvent: function() {
       this.undo();
       let component = this;
-      component.campaign.entries.push(this.$store.getters.getUndoEntry);       
+      let action = this.$store.getters.getUndoAction;
+      console.log(action);
+      if (action[-1] == 'delete') {
+        let entry = this.$store.getters.getUndoEntry;
+        console.log(entry);
+        
+        component.AddEntry();
+      }
+ 
     },
     redoEvent: function() {
       this.redo();
       let component = this;
-      component.deleteEntry(this.$store.getters.getRedoEntry); 
     }
   }
 }

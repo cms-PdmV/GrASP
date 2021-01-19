@@ -1,15 +1,17 @@
 const state = {
+    action: [],
+    entry: [],
     entriesCopy: [],
     redoEntries: null,
     undoEntries: null
 };
 
 const getters = {
-    getUndoEntry () {
-        return state.undoEntries;
+    getUndoEntry: state => {
+        return state.entry;
     },
-    getRedoEntry () {
-        return state.redoEntries;
+    getUndoAction: state => {
+        return state.action;
     }
 };
 
@@ -17,9 +19,11 @@ const actions = {};
 
 const mutations = {
     commitEntries(state, payload) {
-        state.entriesCopy.push(payload);
+        state.action.push(payload.action);
+        state.entry.push(payload.entry);
+
     },
-    commitEntriesRedo(state, payload){
+    commitEntriesRedo(state, action, payload){
         state.redoEntries = payload;
     },
     commitEntriesUndo(state, payload){

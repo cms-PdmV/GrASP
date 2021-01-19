@@ -27,11 +27,9 @@ export const undoRedo = {
       methods: {
         redo() {
             let commit = this.undone.pop();
-            this.$store.commit('commitEntriesRedo', commit.payload);
         },
         undo() {
             let mutation = this.done.pop();
-            this.$store.commit('commitEntriesUndo', mutation.payload);
             this.undone.push(mutation); 
             this.done.pop();      
         }
