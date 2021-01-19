@@ -240,6 +240,7 @@ export default {
         component.campaign.entries.push(entry);
         component.newEntry = component.getNewEntry();
         component.applyFilters();
+        this.$store.commit('commitEntries', {action: 'add', entry: newEntry});
       }).catch(error => {
         alert(error.response.data.message);
       });
@@ -379,11 +380,27 @@ export default {
         this.newEntry = entry[entry.length - 1]; 
         component.addEntry();
       }
- 
+      if (action_[action_.length - 1] == 'add') {
+        let entry = this.$store.getters.getUndoEntry;
+        console.log(entry[entry.length - 1]);
+        entry[entry.length - 1].uid = 0;
+        component.deleteEntry(entry[entry.length - 1]);
+      }
+
     },
     redoEvent: function() {
       this.redo();
       let component = this;
+      let action_ = this.$store.getters.getUndoAction;
+      this.action.push(action_);
+      this.entriesCopy.push(this.$store.getters.getUndoEntry);
+      console.log(action_);
+      if (action_[action_.length - 1] == 'add') {
+        let entry = this.$store.getters.getUndoEntry;
+        console.log(entry[entry.length - 1]);
+        entry[entry.length - 1].uid = 0;
+        component.deleteEntry(entry[entry.length - 1]);
+      }
     }
   }
 }
