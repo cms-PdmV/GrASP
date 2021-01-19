@@ -17,12 +17,6 @@
 		<v-btn class="normal" v-if="canRedo" @click="redoEvent">Redo</v-btn>
 		<v-btn class="normal" v-else disabled>Redo</v-btn>
     </div>
-    <div class="align-center mb-4">
-		<p>
-      {{action}}
-      {{entriesCopy}}
-    </p>
-    </div>
     <div v-if="campaign.entries" class="align-center">
       <RadioSelector :options="eventFilterOptions"
                     v-on:changed="onEventFilterUpdate"
@@ -201,8 +195,6 @@ export default {
   },
   data () {
     return {
-      action: [],
-      entriesCopy: [],
       campaign: {},
       interestedPWG: '',
       newEntry: {},
@@ -252,7 +244,8 @@ export default {
       axios.post('api/planning/update_entry', entryCopy).then(response => {
         Object.assign(entry, response.data.response);
         component.processEntry(entry);
-        component.applyFilters();
+        component.applyFilters();        
+        this.$store.commit('commitEntries', {action: 'update', entry: entryCopy});
       }).catch(error => {
         alert(error.response.data.message);
         entry.broken = true;
@@ -265,8 +258,8 @@ export default {
         let component = this;
         axios.delete('api/planning/delete_entry', {data: entryCopy}).then(() => {
           component.campaign.entries = component.campaign.entries.filter(item => item.uid !== entry.uid);
-          this.$store.commit('commitEntries', {action: 'delete', entry: entryCopy});
           component.applyFilters();
+          this.$store.commit('commitEntries', {action: 'delete', entry: entryCopy});
         }).catch(error => {
           alert(error.response.data.message);
           entry.broken = true;
@@ -323,6 +316,7 @@ export default {
     },
     startEditing: function(event, entry, attribute) {
       entry.temporary[attribute] = entry[attribute];
+      this.$store.commit('commitEntries', {action: 'update', entry: entry});
       this.$set(entry.editing, attribute, true);
       const target = event.target;
       const width = target.getBoundingClientRect().width + 1;
@@ -371,8 +365,6 @@ export default {
       this.undo();
       let component = this;
       let action_ = this.$store.getters.getUndoAction;
-      this.action.push(action_);
-      this.entriesCopy.push(this.$store.getters.getUndoEntry);
       console.log(action_);
       if (action_[action_.length - 1] == 'delete') {
         let entry = this.$store.getters.getUndoEntry;
@@ -380,10 +372,17 @@ export default {
         this.newEntry = entry[entry.length - 1]; 
         component.addEntry();
       }
+      if (action_[action_.length - 1] == 'update') {
+        let entry = this.$store.getters.getUndoEntry;
+        console.log(entry[entry.length - 2]);
+        component.deleteEntry(entry[entry.length -2]);
+        this.newEntry = entry[entry.length - 3]; 
+        component.addEntry();
+      }
       if (action_[action_.length - 1] == 'add') {
         let entry = this.$store.getters.getUndoEntry;
         console.log(entry[entry.length - 1]);
-        entry[entry.length - 1].uid = 0;
+        entry[entry.length - 1].uid += 1;
         component.deleteEntry(entry[entry.length - 1]);
       }
 
@@ -392,13 +391,24 @@ export default {
       this.redo();
       let component = this;
       let action_ = this.$store.getters.getUndoAction;
-      this.action.push(action_);
-      this.entriesCopy.push(this.$store.getters.getUndoEntry);
       console.log(action_);
+      if (action_[action_.length - 1] == 'delete') {
+        let entry = this.$store.getters.getUndoEntry;
+        console.log(entry[entry.length - 1]);
+        this.newEntry = entry[entry.length - 1]; 
+        component.addEntry();
+      }
+      if (action_[action_.length - 1] == 'update') {
+        let entry = this.$store.getters.getUndoEntry;
+        console.log(entry[entry.length - 2]);
+        component.deleteEntry(entry[entry.length -2]);
+        this.newEntry = entry[entry.length - 3]; 
+        component.addEntry();
+      }
       if (action_[action_.length - 1] == 'add') {
         let entry = this.$store.getters.getUndoEntry;
         console.log(entry[entry.length - 1]);
-        entry[entry.length - 1].uid = 0;
+        entry[entry.length - 1].uid += 1;
         component.deleteEntry(entry[entry.length - 1]);
       }
     }
