@@ -12,6 +12,10 @@ const getters = {
     },
     getUndoAction: state => {
         return state.action;
+    },
+    popUndo: state => {
+        state.action.pop();
+        state.entry.pop();
     }
 };
 

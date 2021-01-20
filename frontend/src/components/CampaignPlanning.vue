@@ -371,6 +371,8 @@ export default {
         console.log(entry[entry.length - 1]);
         this.newEntry = entry[entry.length - 1]; 
         component.addEntry();
+        this.$store.getters.popUndo();
+        this.$store.getters.popUndo();
       }
       if (action_[action_.length - 1] == 'update') {
         let entry = this.$store.getters.getUndoEntry;
@@ -378,12 +380,16 @@ export default {
         component.deleteEntry(entry[entry.length -2]);
         this.newEntry = entry[entry.length - 3]; 
         component.addEntry();
+        this.$store.getters.popUndo();
+        this.$store.getters.popUndo();
       }
       if (action_[action_.length - 1] == 'add') {
         let entry = this.$store.getters.getUndoEntry;
         console.log(entry[entry.length - 1]);
         entry[entry.length - 1].uid += 1;
         component.deleteEntry(entry[entry.length - 1]);
+        this.$store.getters.popUndo();
+        this.$store.getters.popUndo();
       }
 
     },
@@ -397,6 +403,9 @@ export default {
         console.log(entry[entry.length - 1]);
         this.newEntry = entry[entry.length - 1]; 
         component.addEntry();
+        this.$store.getters.popUndo();
+        this.$store.getters.popUndo();
+
       }
       if (action_[action_.length - 1] == 'update') {
         let entry = this.$store.getters.getUndoEntry;
@@ -404,12 +413,18 @@ export default {
         component.deleteEntry(entry[entry.length -2]);
         this.newEntry = entry[entry.length - 3]; 
         component.addEntry();
+        this.$store.getters.popUndo();
+        this.$store.getters.popUndo();
+        this.$store.getters.popUndo();
+        this.$store.getters.popUndo();
       }
       if (action_[action_.length - 1] == 'add') {
         let entry = this.$store.getters.getUndoEntry;
         console.log(entry[entry.length - 1]);
         entry[entry.length - 1].uid += 1;
         component.deleteEntry(entry[entry.length - 1]);
+        this.$store.getters.popUndo();
+        this.$store.getters.popUndo();
       }
     }
   }
