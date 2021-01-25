@@ -11,17 +11,37 @@
       <h3>Loading table...</h3>
     </div>
     <div v-if="campaign.entries" class="align-center">
-      <RadioSelector :options="eventFilterOptions"
-                    v-on:changed="onEventFilterUpdate"
-                    style="display: inline-block"
-                    class="mb-2">
+      <div class="ml-1 mr-1" style="display: inline-block">
         Events Filter:
-      </RadioSelector>
-      <div class="ml-4" style="display: inline-block">
-        Download Table:
-        <v-btn small color="primary" title="Comma-separated values file" @click="downloadExcelFile('csv')">CSV</v-btn>
-        <v-btn small class="ml-1" color="primary" title="Microsoft Office Excel file" @click="downloadExcelFile('xls')">XLS</v-btn>
+        <template v-for="eventsPair in eventFilterOptions">
+          <a :key="eventsPair[0]"
+             class="ml-1 mr-1"
+             :title="'Shov samples with > ' + eventsPair[0] + ' events'"
+             @click="onEventFilterUpdate(eventsPair[0])"
+             :class="eventsPair[0] == eventsFilter ? 'bold-text' : ''">{{eventsPair[1]}}</a>
+        </template>
       </div>
+      |
+      <div class="ml-1 mr-1" style="display: inline-block">
+        Download Table:
+        <a title="Comma-separated values file" class="ml-1 mr-1" @click="downloadExcelFile('csv')">CSV</a>
+        <a title="Microsoft Office Excel file" class="ml-1 mr-1" @click="downloadExcelFile('xls')">XLS</a>
+      </div>
+      |
+      <div class="ml-1 mr-1" style="display: inline-block">
+        <a class="ml-1 mr-1"
+           title="Click here to go to GrASP's github issues"
+           target="_blank"
+           href="https://github.com/cms-PdmV/GrASP/issues/new/choose">Report a bug or suggest a feature</a>
+      </div>
+    </div>
+    <div v-if="campaign.entries" class="align-center ma-2">
+      <b>I am going to add or remove</b>
+      <select v-model="selectedPWG" class="ml-2 mr-2">
+        <option disabled selected value=''></option>
+        <option v-for="pwg in allPWGs" :key="pwg" :value="pwg">{{pwg}}</option>
+      </select>
+      <b>physics working group as interested PWG in samples</b>
     </div>
     <table v-if="campaign.entries">
       <tr>
@@ -36,7 +56,7 @@
       </tr>
       <tr v-for="entry in entries" :key="entry.dataset + entry.uid">
         <td v-if="entry.rowspan.short_name > 0" :rowspan="entry.rowspan.short_name">{{entry.short_name}}</td>
-        <td v-if="entry.rowspan.dataset > 0" :rowspan="entry.rowspan.dataset">
+        <td class="dataset-column" v-if="entry.rowspan.dataset > 0" :rowspan="entry.rowspan.dataset">
           <a :href="'https://cms-pdmv.cern.ch/mcm/requests?dataset_name=' + entry.dataset + '&member_of_campaign=' + campaign.name" target="_blank">{{entry.dataset}}</a>
         </td>
         <td v-if="entry.rowspan.root_request > 0" :rowspan="entry.rowspan.root_request" class="progress-cell">
@@ -48,8 +68,10 @@
             </template>
             <br>
             <small>Events: {{entry.rootEventsNice}}</small>
-            <br>
-            <small>Priority: {{entry.root_request_priority}}</small>
+            <template v-if="entry.root_request_status === 'submitted'">
+              <br>
+              <small>Priority: {{entry.root_request_priority}}</small>
+            </template>
             <br>
             <small>Status: {{entry.root_request_status}}</small>
           </div>
@@ -67,8 +89,10 @@
               </template>
               <br>
               <small>Events: {{entry.miniaodEventsNice}}</small>
-              <br>
-              <small>Priority: {{entry.miniaod_priority}}</small>
+              <template v-if="entry.miniaod_status === 'submitted'">
+                <br>
+                <small>Priority: {{entry.miniaod_priority}}</small>
+              </template>
               <br>
               <small>Status: {{entry.miniaod_status}}</small>
             </div>
@@ -87,8 +111,10 @@
               </template>
               <br>
               <small>Events: {{entry.nanoaodEventsNice}}</small>
-              <br>
-              <small>Priority: {{entry.nanoaod_priority}}</small>
+              <template v-if="entry.nanoaod_status === 'submitted'">
+                <br>
+                <small>Priority: {{entry.nanoaod_priority}}</small>
+              </template>
               <br>
               <small>Status: {{entry.nanoaod_status}}</small>
             </div>
@@ -100,14 +126,14 @@
         <td>
           <a :href="'https://cms-pdmv.cern.ch/mcm/chained_requests?prepid=' + entry.chained_request" target="_blank">{{entry.chain_tag}}</a>
         </td>
-        <td v-on:dblclick="role('user') && startEditing($event, entry, 'interested_pwgs')" class="align-center">
-          <template v-if="!entry.editing.interested_pwgs">{{entry.interested_pwgs}}</template>
-          <input @blur="stopEditing(entry, 'interested_pwgs')"
-                 v-if="entry.editing.interested_pwgs"
-                 type="text"
-                 v-model="entry.temporary.interested_pwgs">
+        <td class="align-center">
+          {{entry.interested_pwgs}}
+          <template v-if="selectedPWG && role('user')">
+            <br>
+            <span class="add-pwg-link" v-if="!entry.interested_pwgs.includes(selectedPWG)" @click="addPWGToEntry(selectedPWG, entry)">Add {{selectedPWG}}</span>
+            <span class="remove-pwg-link" v-if="entry.interested_pwgs.includes(selectedPWG)" @click="removePWGFromEntry(selectedPWG, entry)">Remove {{selectedPWG}}</span>
+          </template>
         </td>
-        <!-- <td style="max-width: 300px" class="wrap">{{entry.notes}}</td> -->
       </tr>
     </table>
   </div>
@@ -118,7 +144,6 @@
 import axios from 'axios'
 import { utilsMixin } from '../mixins/UtilsMixin.js'
 import { roleMixin } from '../mixins/UserRoleMixin.js'
-import RadioSelector from './RadioSelector'
 import ExcelJS from 'exceljs'
 
 export default {
@@ -127,12 +152,13 @@ export default {
     utilsMixin,
     roleMixin
   ],
-  components: {
-    RadioSelector
-  },
   data () {
     return {
       interestedPWG: undefined,
+      selectedPWG: undefined,
+      allPWGs: ['B2G', 'BPH', 'BTV', 'EGM', 'EXO', 'FSQ', 'HCA',
+                'HGC', 'HIG', 'HIN', 'JME', 'L1T', 'LUM', 'MUO',
+                'PPS', 'SMP', 'SUS', 'TAU', 'TOP', 'TRK', 'TSG'],
       campaign: {},
       newEntry: {},
       eventFilterOptions: [[0, 'All'], [5e6, '5M+'], [10e6, '10M+'], [20e6, '20M+'], [50e6, '50M+']],
@@ -154,6 +180,27 @@ export default {
     if (query.pwg && query.pwg.length) {
       this.interestedPWG = query.pwg.toUpperCase();
     }
+    if (query.short_name && query.short_name.length) {
+      this.search.short_name = query.short_name.trim();
+    }
+    if (query.dataset && query.dataset.length) {
+      this.search.dataset = query.dataset.trim();
+    }
+    if (query.root_request && query.root_request.length) {
+      this.search.root_request = query.root_request.trim();
+    }
+    if (query.miniaod && query.miniaod.length) {
+      this.search.miniaod = query.miniaod.trim();
+    }
+    if (query.nanoaod && query.nanoaod.length) {
+      this.search.nanoaod = query.nanoaod.trim();
+    }
+    if (query.chained_request && query.chained_request.length) {
+      this.search.chained_request = query.chained_request.trim();
+    }
+    if (query.events && query.events.length) {
+      this.eventsFilter = parseInt(query.events);
+    }
     this.fetchCampaign(campaignName);
   },
   methods: {
@@ -167,16 +214,11 @@ export default {
         component.processEntry(entry);
       }).catch(error => {
         alert(error.response.data.message);
-        entry.broken = true;
       });
     },
     processEntry: function(entry) {
       // Add or set to default some attributes
       // and calculate number with SI suffix
-      entry.editing = {};
-      entry.temporary = {};
-      entry.dirty = false;
-      entry.broken = false;
       entry.rootDoneEventsNice = this.suffixNumber(entry.root_request_done_events);
       entry.rootTotalEventsNice = this.suffixNumber(entry.root_request_total_events);
       entry.miniaodDoneEventsNice = this.suffixNumber(entry.miniaod_done_events);
@@ -220,30 +262,18 @@ export default {
         });
         component.mergeCells(campaign.entries, ['short_name', 'dataset', 'root_request', 'miniaod'])
         component.$set(component, 'campaign', campaign);
+        component.applyFilters();
       }).catch(error => {
         alert(error.response.data.message);
       });
     },
-    startEditing: function(event, entry, attribute) {
-      entry.temporary[attribute] = entry[attribute];
-      this.$set(entry.editing, attribute, true);
-      const target = event.target;
-      const width = target.getBoundingClientRect().width + 1;
-      this.$nextTick(() => {
-        let input = target.querySelector('input');
-        if (input) {
-          input.style.width = width + 'px';
-          input.focus();
-        }
-      })
+    addPWGToEntry: function(pwg, entry) {
+      entry.interested_pwgs = (this.cleanSplit(entry.interested_pwgs, ',').concat([pwg])).sort().join(',');
+      this.updateEntry(entry);
     },
-    stopEditing: function(entry, attribute) {
-      entry.dirty = entry.dirty || (entry[attribute] != entry.temporary[attribute]);
-      entry[attribute] = entry.temporary[attribute];
-      this.$set(entry.editing, attribute, false);
-      if (entry.dirty) {
-        this.updateEntry(entry);
-      }
+    removePWGFromEntry: function(pwg, entry) {
+      entry.interested_pwgs = (this.cleanSplit(entry.interested_pwgs, ',').filter(function(p) { return p !== pwg})).join(',');
+      this.updateEntry(entry);
     },
     mergeCells: function(list, attributes) {
       list.forEach(element => {
@@ -269,19 +299,32 @@ export default {
       this.applyFilters();
     },
     applyFilters: function() {
+      let query = Object.assign({}, this.$route.query);
       let filteredEntries = this.campaign.entries;
       if (this.eventsFilter != 0) {
         filteredEntries = filteredEntries.filter(entry => entry.root_request_total_events >= this.eventsFilter);
+        query['events'] = this.eventsFilter;
+      } else {
+        if ('events' in query) {
+          delete query['events'];
+        }
       }
       for (let attribute in this.search) {
         if (this.search[attribute]) {
           const pattern = this.search[attribute].replace(/\.\*/g, '*').replace(/ /g, '*').replace(/\*/g, '.*');
           const regex = RegExp(pattern, 'i'); // 'i' for case insensitivity
           filteredEntries = filteredEntries.filter(entry => entry[attribute] != '' && regex.test(entry[attribute]));
+          // Update query parameters
+          query[attribute] = this.search[attribute];
+        } else {
+          if (attribute in query) {
+            delete query[attribute];
+          }
         }
       }
       this.entries = filteredEntries;
       this.mergeCells(this.entries, ['short_name', 'dataset', 'root_request', 'miniaod']);
+      this.$router.replace({query: query}).catch(() => {});
     },
     downloadExcelFile: function(outputFormat) {
       const workbook = new ExcelJS.Workbook();
@@ -414,6 +457,35 @@ td.wrap {
 td>div:first-child {
   position: relative;
   z-index: 2;
+}
+
+select {
+  appearance: auto;
+  border: 1px solid black;
+  background: white;
+}
+
+.add-pwg-link, .remove-pwg-link {
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.add-pwg-link {
+  color: green;
+}
+
+.remove-pwg-link {
+  color: red;
+}
+
+.dataset-column {
+  max-width: 285px;
+  white-space: normal;
+  line-break: anywhere;
+}
+
+.bold-text {
+  font-weight: 900;
 }
 
 </style>

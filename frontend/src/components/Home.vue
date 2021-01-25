@@ -61,6 +61,8 @@
         </td>
       </tr>
     </table>
+    <h3 style="text-align: center">GrASP Improvement</h3>
+    <div style="text-align: center"><a href="https://github.com/cms-PdmV/GrASP/issues/new/choose">Report a bug or suggest a feature</a></div>
   </div>
 </template>
 

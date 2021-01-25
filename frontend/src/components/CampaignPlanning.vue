@@ -12,13 +12,25 @@
       <h3>Loading table...</h3>
     </div>
     <div v-if="campaign.entries" class="align-center">
-      <RadioSelector :options="eventFilterOptions"
-                    v-on:changed="onEventFilterUpdate"
-                    class="mb-2">
+      <div class="ml-1 mr-1" style="display: inline-block">
         Events Filter:
-      </RadioSelector>
+        <template v-for="eventsPair in eventFilterOptions">
+          <a :key="eventsPair[0]"
+             class="ml-1 mr-1"
+             :title="'Shov samples with > ' + eventsPair[0] + ' events'"
+             @click="onEventFilterUpdate(eventsPair[0])"
+             :class="eventsPair[0] == eventsFilter ? 'bold-text' : ''">{{eventsPair[1]}}</a>
+        </template>
+      </div>
+      |
+      <div class="ml-1 mr-1" style="display: inline-block">
+        <a class="ml-1 mr-1"
+           title="Click here to go to GrASP's github issues"
+           target="_blank"
+           href="https://github.com/cms-PdmV/GrASP/issues/new/choose">Report a bug or suggest a feature</a>
+      </div>
     </div>
-    <table v-if="campaign.entries" class="highlight-on-hover">
+    <table v-if="campaign.entries" class="mt-2 highlight-on-hover">
       <tr>
         <th>Short Name<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.short_name" @input="applyFilters()"></th>
         <th>In Reference Campaign<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.in_reference" @input="applyFilters()"></th>
@@ -174,7 +186,7 @@
 import axios from 'axios'
 import { utilsMixin } from '../mixins/UtilsMixin.js'
 import { roleMixin } from '../mixins/UserRoleMixin.js'
-import RadioSelector from './RadioSelector'
+import ExcelJS from 'exceljs'
 
 export default {
   name: 'planning',
@@ -182,9 +194,6 @@ export default {
     utilsMixin,
     roleMixin
   ],
-  components: {
-    RadioSelector
-  },
   data () {
     return {
       campaign: {},
@@ -209,6 +218,24 @@ export default {
     let campaignName = query.name;
     if (query.pwg && query.pwg.length) {
       this.interestedPWG = query.pwg.toUpperCase();
+    }
+    if (query.short_name && query.short_name.length) {
+      this.search.short_name = query.short_name.trim();
+    }
+    if (query.in_reference && query.in_reference.length) {
+      this.search.in_reference = query.in_reference.trim();
+    }
+    if (query.in_target && query.in_target.length) {
+      this.search.in_target = query.in_target.trim();
+    }
+    if (query.dataset && query.dataset.length) {
+      this.search.dataset = query.dataset.trim();
+    }
+    if (query.chain_tag && query.chain_tag.length) {
+      this.search.chain_tag = query.chain_tag.trim();
+    }
+    if (query.events && query.events.length) {
+      this.eventsFilter = parseInt(query.events);
     }
     this.newEntry = this.getNewEntry();
     this.fetchCampaign(campaignName);
@@ -272,19 +299,32 @@ export default {
       entry.niceEvents = this.suffixNumber(entry.events);
     },
     applyFilters: function() {
+      let query = Object.assign({}, this.$route.query);
       let filteredEntries = this.campaign.entries;
       if (this.eventsFilter != 0) {
         filteredEntries = filteredEntries.filter(entry => entry.events >= this.eventsFilter);
+        query['events'] = this.eventsFilter;
+      } else {
+        if ('events' in query) {
+          delete query['events'];
+        }
       }
       for (let attribute in this.search) {
         if (this.search[attribute]) {
           const pattern = this.search[attribute].replace(/\.\*/g, '*').replace(/ /g, '*').replace(/\*/g, '.*');
           const regex = RegExp(pattern, 'i'); // 'i' for case insensitivity
           filteredEntries = filteredEntries.filter(entry => entry[attribute] != '' && regex.test(entry[attribute]));
+          // Update query parameters
+          query[attribute] = this.search[attribute];
+        } else {
+          if (attribute in query) {
+            delete query[attribute];
+          }
         }
       }
       this.entries = filteredEntries;
       this.recalculateChainTagSums();
+      this.$router.replace({query: query}).catch(() => {});
     },
     fetchCampaign: function(campaignName) {
       let component = this;
@@ -378,6 +418,10 @@ td.wrap {
 
 tr:hover .show-on-hover {
   opacity: 1;
+}
+
+.bold-text {
+  font-weight: 900;
 }
 
 </style>

@@ -119,7 +119,7 @@ class GetExistingCampaignAPI(APIBase):
             entry['short_name'] = get_short_name(entry['dataset'])
             entry['chain_tag'] = get_chain_tag(entry['chained_request'])
 
-        multiarg_sort(entries, ['dataset', 'root_request', 'miniaod', 'nanoaod'])
+        multiarg_sort(entries, ['short_name', 'dataset', 'root_request', 'miniaod', 'nanoaod'])
         campaign['entries'] = entries
         return self.output_text({'response': campaign, 'success': True, 'message': ''})
 

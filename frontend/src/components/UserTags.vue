@@ -11,13 +11,31 @@
       <h3>Loading table...</h3>
     </div>
     <div v-if="tag.entries" class="align-center">
-      <RadioSelector :options="eventFilterOptions"
-                    v-on:changed="onEventFilterUpdate"
-                    class="mb-2">
+      <div class="ml-1 mr-1" style="display: inline-block">
         Events Filter:
-      </RadioSelector>
+        <template v-for="eventsPair in eventFilterOptions">
+          <a :key="eventsPair[0]"
+             class="ml-1 mr-1"
+             :title="'Shov samples with > ' + eventsPair[0] + ' events'"
+             @click="onEventFilterUpdate(eventsPair[0])"
+             :class="eventsPair[0] == eventsFilter ? 'bold-text' : ''">{{eventsPair[1]}}</a>
+        </template>
+      </div>
+      |
+      <div class="ml-1 mr-1" style="display: inline-block">
+        Download Table:
+        <a title="Comma-separated values file" class="ml-1 mr-1" @click="downloadExcelFile('csv')">CSV</a>
+        <a title="Microsoft Office Excel file" class="ml-1 mr-1" @click="downloadExcelFile('xls')">XLS</a>
+      </div>
+      |
+      <div class="ml-1 mr-1" style="display: inline-block">
+        <a class="ml-1 mr-1"
+           title="Click here to go to GrASP's github issues"
+           target="_blank"
+           href="https://github.com/cms-PdmV/GrASP/issues/new/choose">Report a bug or suggest a feature</a>
+      </div>
     </div>
-    <table v-if="tag.entries">
+    <table class="mt-2" v-if="tag.entries">
       <tr>
         <th>Short Name<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.short_name" @input="applyFilters()"></th>
         <th>Dataset Name<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.dataset" @input="applyFilters()"></th>
@@ -29,7 +47,7 @@
       </tr>
       <tr v-for="entry in entries" :key="entry.dataset + entry.uid">
         <td v-if="entry.rowspan.short_name > 0" :rowspan="entry.rowspan.short_name">{{entry.short_name}}</td>
-        <td v-if="entry.rowspan.dataset > 0" :rowspan="entry.rowspan.dataset">
+        <td class="dataset-column" v-if="entry.rowspan.dataset > 0" :rowspan="entry.rowspan.dataset">
           <a :href="'https://cms-pdmv.cern.ch/mcm/requests?dataset_name=' + entry.dataset + '&member_of_tag=' + tag.name" target="_blank">{{entry.dataset}}</a>
         </td>
         <td v-if="entry.rowspan.root_request > 0" :rowspan="entry.rowspan.root_request" class="progress-cell">
@@ -41,8 +59,10 @@
             </template>
             <br>
             <small>Events: {{entry.rootEventsNice}}</small>
-            <br>
-            <small>Priority: {{entry.root_request_priority}}</small>
+            <template v-if="entry.root_request_status === 'submitted'">
+              <br>
+              <small>Priority: {{entry.root_request_priority}}</small>
+            </template>
             <br>
             <small>Status: {{entry.root_request_status}}</small>
           </div>
@@ -60,8 +80,10 @@
               </template>
               <br>
               <small>Events: {{entry.miniaodEventsNice}}</small>
-              <br>
-              <small>Priority: {{entry.miniaod_priority}}</small>
+              <template v-if="entry.miniaod_status === 'submitted'">
+                <br>
+                <small>Priority: {{entry.miniaod_priority}}</small>
+              </template>
               <br>
               <small>Status: {{entry.miniaod_status}}</small>
             </div>
@@ -80,8 +102,10 @@
               </template>
               <br>
               <small>Events: {{entry.nanoaodEventsNice}}</small>
-              <br>
-              <small>Priority: {{entry.nanoaod_priority}}</small>
+              <template v-if="entry.nanoaod_status === 'submitted'">
+                <br>
+                <small>Priority: {{entry.nanoaod_priority}}</small>
+              </template>
               <br>
               <small>Status: {{entry.nanoaod_status}}</small>
             </div>
@@ -103,7 +127,7 @@
 import axios from 'axios'
 import { utilsMixin } from '../mixins/UtilsMixin.js'
 import { roleMixin } from '../mixins/UserRoleMixin.js'
-import RadioSelector from './RadioSelector'
+import ExcelJS from 'exceljs'
 
 export default {
   name: 'existing',
@@ -111,9 +135,6 @@ export default {
     utilsMixin,
     roleMixin
   ],
-  components: {
-    RadioSelector
-  },
   data () {
     return {
       interestedPWG: undefined,
@@ -137,6 +158,27 @@ export default {
     let tagName = query.name;
     if (query.pwg && query.pwg.length) {
       this.interestedPWG = query.pwg.toUpperCase();
+    }
+    if (query.short_name && query.short_name.length) {
+      this.search.short_name = query.short_name.trim();
+    }
+    if (query.dataset && query.dataset.length) {
+      this.search.dataset = query.dataset.trim();
+    }
+    if (query.root_request && query.root_request.length) {
+      this.search.root_request = query.root_request.trim();
+    }
+    if (query.miniaod && query.miniaod.length) {
+      this.search.miniaod = query.miniaod.trim();
+    }
+    if (query.nanoaod && query.nanoaod.length) {
+      this.search.nanoaod = query.nanoaod.trim();
+    }
+    if (query.chained_request && query.chained_request.length) {
+      this.search.chained_request = query.chained_request.trim();
+    }
+    if (query.events && query.events.length) {
+      this.eventsFilter = parseInt(query.events);
     }
     this.fetchTag(tagName);
   },
@@ -204,6 +246,7 @@ export default {
         });
         component.mergeCells(tag.entries, ['short_name', 'dataset', 'root_request', 'miniaod'])
         component.$set(component, 'tag', tag);
+        component.applyFilters();
       }).catch(error => {
         alert(error.response.data.message);
       });
@@ -232,19 +275,106 @@ export default {
       this.applyFilters();
     },
     applyFilters: function() {
+      let query = Object.assign({}, this.$route.query);
       let filteredEntries = this.tag.entries;
       if (this.eventsFilter != 0) {
         filteredEntries = filteredEntries.filter(entry => entry.root_request_total_events >= this.eventsFilter);
+        query['events'] = this.eventsFilter;
+      } else {
+        if ('events' in query) {
+          delete query['events'];
+        }
       }
       for (let attribute in this.search) {
         if (this.search[attribute]) {
           const pattern = this.search[attribute].replace(/ /g, '*').replace(/\*/g, '.*');
           const regex = RegExp(pattern, 'i'); // 'i' for case insensitivity
           filteredEntries = filteredEntries.filter(entry => entry[attribute] != '' && regex.test(entry[attribute]));
+          // Update query parameters
+          query[attribute] = this.search[attribute];
+        } else {
+          if (attribute in query) {
+            delete query[attribute];
+          }
         }
       }
       this.entries = filteredEntries;
       this.mergeCells(this.entries, ['short_name', 'dataset', 'root_request', 'miniaod']);
+      this.$router.replace({query: query}).catch(() => {});
+    },
+        downloadExcelFile: function(outputFormat) {
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Sheet');
+      worksheet.headerRow = true;
+      worksheet.columns = [
+        { header: 'Short Name', key: 'short_name'},
+        { header: 'Dataset', key: 'dataset'},
+        { header: 'Root request', key: 'root_request'},
+        { header: 'Root request status', key: 'root_request_status'},
+        { header: 'Root request priority', key: 'root_request_priority'},
+        { header: 'Root request done events', key: 'root_request_done_events'},
+        { header: 'Root request total events', key: 'root_request_total_events'},
+        { header: 'Root request output', key: 'root_request_output'},
+        { header: 'MiniAOD status', key: 'miniaod_status'},
+        { header: 'MiniAOD priority', key: 'miniaod_priority'},
+        { header: 'MiniAOD done events', key: 'miniaod_done_events'},
+        { header: 'MiniAOD total events', key: 'miniaod_total_events'},
+        { header: 'MiniAOD output', key: 'miniaod_output'},
+        { header: 'NanoAOD status', key: 'nanoaod_status'},
+        { header: 'NanoAOD priority', key: 'nanoaod_priority'},
+        { header: 'NanoAOD done events', key: 'nanoaod_done_events'},
+        { header: 'NanoAOD total events', key: 'nanoaod_total_events'},
+        { header: 'NanoAOD output', key: 'nanoaod_output'},
+        { header: 'Chained request', key: 'chained_request'},
+      ];
+
+      for (let entry of this.entries) {
+        worksheet.addRow({'short_name': entry.short_name,
+                          'dataset': entry.dataset,
+                          'root_request': entry.root_request,
+                          'root_request_status': entry.root_request_status,
+                          'root_request_priority': entry.root_request_priority,
+                          'root_request_done_events': entry.root_request_done_events,
+                          'root_request_total_events': entry.root_request_total_events,
+                          'root_request_output': entry.root_request_output,
+                          'miniaod_status': entry.miniaod_status,
+                          'miniaod_priority': entry.miniaod_priority,
+                          'miniaod_done_events': entry.miniaod_done_events,
+                          'miniaod_total_events': entry.miniaod_total_events,
+                          'miniaod_output': entry.miniaod_output,
+                          'nanoaod_status': entry.nanoaod_status,
+                          'nanoaod_priority': entry.nanoaod_priority,
+                          'nanoaod_done_events': entry.nanoaod_done_events,
+                          'nanoaod_total_events': entry.nanoaod_total_events,
+                          'nanoaod_output': entry.nanoaod_output,
+                          'chained_request': entry.chained_request,
+                          });
+      }
+      let fileName = this.tag.name.replace(/\*/g, 'x');
+      if (this.interestedPWG) {
+        fileName += '_' + this.interestedPWG;
+      }
+      if (outputFormat == 'xls') {
+        workbook.xlsx.writeBuffer().then(function (data) {
+          const blob = new Blob([data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+          const url = window.URL.createObjectURL(blob);
+          const anchor = document.createElement('a');
+          anchor.href = url;
+          anchor.download = fileName + '.xls';
+          anchor.click();
+          window.URL.revokeObjectURL(url);
+        });
+      } else if (outputFormat == 'csv') {
+        workbook.csv.writeBuffer().then(function (data) {
+          const blob = new Blob([data], { type: 'text/csv' });
+          const url = window.URL.createObjectURL(blob);
+          const anchor = document.createElement('a');
+          anchor.href = url;
+          anchor.download = fileName + '.csv';
+          anchor.click();
+          window.URL.revokeObjectURL(url);
+        });
+      }
     },
   }
 }
@@ -301,6 +431,16 @@ td.wrap {
 td>div:first-child {
   position: relative;
   z-index: 2;
+}
+
+.dataset-column {
+  max-width: 285px;
+  white-space: normal;
+  line-break: anywhere;
+}
+
+.bold-text {
+  font-weight: 900;
 }
 
 </style>
