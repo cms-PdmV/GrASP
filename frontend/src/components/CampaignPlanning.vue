@@ -12,10 +12,8 @@
       <h3>Loading table...</h3>
     </div>
     <div class="align-center mb-4">
-		<v-btn class="normal" v-if="canUndo" @click="undoEvent">Undo</v-btn>
-    <v-btn class="normal" v-else disabled>Undo</v-btn>
-		<v-btn class="normal" v-if="canRedo" @click="redoEvent">Redo</v-btn>
-		<v-btn class="normal" v-else disabled>Redo</v-btn>
+		<v-btn class="normal ma-1" small :disabled="!undoStack.length" @click="undoEvent">Undo</v-btn>
+		<v-btn class="normal ma-1" small :disabled="!redoStack.length" @click="redoEvent">Redo</v-btn>
     </div>
     <div v-if="campaign.entries" class="align-center">
       <RadioSelector :options="eventFilterOptions"
@@ -24,6 +22,20 @@
         Events Filter:
       </RadioSelector>
     </div>
+    <h5>Undo stack:</h5>
+    <ul v-for="(stackItem, index) in undoStack" :key="index">
+      <li>
+        Action: {{stackItem.action}} |
+        <template v-if="stackItem.action == 'edit'">Dataset {{stackItem.entry.dataset}} -> {{stackItem.beforeEdit.dataset}}</template>
+      </li>
+    </ul>
+    <h5>Redo stack:</h5>
+    <ul v-for="(stackItem, index) in redoStack" :key="index">
+      <li>
+        Action: {{stackItem.action}} |
+        <template v-if="stackItem.action == 'edit'">Dataset {{stackItem.entry.dataset}} -> {{stackItem.beforeEdit.dataset}}</template>
+      </li>
+    </ul>
     <table v-if="campaign.entries" class="highlight-on-hover">
       <tr>
         <th>Short Name<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.short_name" @input="applyFilters()"></th>
@@ -61,7 +73,7 @@
             {{entry.dataset}}
             <span v-if="userInfo.role_index >= 1"
                   class="pointer show-on-hover"
-                  @click="deleteEntry(entry);"
+                  @click="deleteEntryAction(entry);"
                   title="Delete this entry from planning table">&#10060;</span>
           </template>
           <input @blur="stopEditing(entry, 'dataset')"
@@ -169,7 +181,7 @@
         </tr>
       </table>
       <div class="align-center mb-4">
-        <v-btn small class="mr-1 mt-1" color="primary" @click="addEntry()">Add entry</v-btn>
+        <v-btn small class="mr-1 mt-1" color="primary" @click="addEntryAction()">Add entry</v-btn>
       </div>
     </template>
   </div>
@@ -209,7 +221,9 @@ export default {
         in_target: undefined,
         dataset: undefined,
         chain_tag: undefined,
-      }
+      },
+      undoStack: [],
+      redoStack: [],
     }
   },
   created () {
@@ -222,7 +236,21 @@ export default {
     this.fetchCampaign(campaignName);
   },
   methods: {
-    addEntry: function() {
+    addEntryAction: function() {
+      console.log('addEntryAction');
+      const component = this;
+      this.addEntry(this.newEntry, function(addedEntry) {
+        component.undoStack.push({'action': 'add', 'entry': addedEntry});
+      });
+    },
+    deleteEntryAction: function(entry) {
+      console.log('deleteEntryAction');
+      const component = this;
+      this.deleteEntry(entry, function(deletedEntry) {
+        component.undoStack.push({'action': 'delete', 'entry': deletedEntry});
+      });
+    },
+    addEntry: function(entry, onSuccess) {
       let newEntry = this.makeCopy(this.newEntry);
       newEntry['campaign_uid'] = this.campaign.uid;
       let component = this;
@@ -232,26 +260,30 @@ export default {
         component.campaign.entries.push(entry);
         component.newEntry = component.getNewEntry();
         component.applyFilters();
-        this.$store.commit('commitEntries', {action: 'add', entry: newEntry});
+        if (onSuccess) {
+          onSuccess(entry);
+        }
       }).catch(error => {
         alert(error.response.data.message);
       });
     },
-    updateEntry: function(entry) {
+    updateEntry: function(entry, onSuccess) {
       let entryCopy = this.makeCopy(entry);
       entryCopy['campaign_uid'] = this.campaign.uid;
       let component = this;
       axios.post('api/planning/update_entry', entryCopy).then(response => {
         Object.assign(entry, response.data.response);
         component.processEntry(entry);
-        component.applyFilters();        
-        this.$store.commit('commitEntries', {action: 'update', entry: entryCopy});
+        component.applyFilters();
+        if (onSuccess) {
+          onSuccess(entry);
+        }
       }).catch(error => {
         alert(error.response.data.message);
         entry.broken = true;
       });
     },
-    deleteEntry: function(entry) {
+    deleteEntry: function(entry, onSuccess) {
       if (confirm("Are you sure you want to delete " + entry.dataset + " " + entry.chain_tag + " with " + entry.events + " events ?")) {
         let entryCopy = this.makeCopy(entry);
         entryCopy['campaign_uid'] = this.campaign.uid;
@@ -259,7 +291,9 @@ export default {
         axios.delete('api/planning/delete_entry', {data: entryCopy}).then(() => {
           component.campaign.entries = component.campaign.entries.filter(item => item.uid !== entry.uid);
           component.applyFilters();
-          this.$store.commit('commitEntries', {action: 'delete', entry: entryCopy});
+          if (onSuccess) {
+            onSuccess(entry);
+          }
         }).catch(error => {
           alert(error.response.data.message);
           entry.broken = true;
@@ -334,8 +368,13 @@ export default {
         // Value not updated
         return
       }
+      let entryBeforeEdit = this.makeCopy(entry);
+      const component = this;
       entry[attribute] = entry.temporary[attribute];
-      this.updateEntry(entry);
+      this.updateEntry(entry, function(editedEntry) {
+        component.undoStack.push({'action': 'edit', 'entry': entry, 'beforeEdit': entryBeforeEdit});
+        component.redoStack = [];
+      });
     },
     recalculateChainTagSums: function() {
       let sums = {};
@@ -362,69 +401,71 @@ export default {
       this.applyFilters();
     },
     undoEvent: function() {
-      this.undo();
-      let component = this;
-      let action_ = this.$store.getters.getUndoAction;
-      console.log(action_);
-      if (action_[action_.length - 1] == 'delete') {
-        let entry = this.$store.getters.getUndoEntry;
-        console.log(entry[entry.length - 1]);
-        this.newEntry = entry[entry.length - 1]; 
-        component.addEntry();
-        this.$store.getters.popUndo();
-        this.$store.getters.popUndo();
+      if (!this.undoStack.length){
+        console.log('Nothing to undo')
+        return;
       }
-      if (action_[action_.length - 1] == 'update') {
-        let entry = this.$store.getters.getUndoEntry;
-        console.log(entry[entry.length - 2]);
-        component.deleteEntry(entry[entry.length -2]);
-        this.newEntry = entry[entry.length - 3]; 
-        component.addEntry();
-        this.$store.getters.popUndo();
-        this.$store.getters.popUndo();
+      const component = this;
+      let action = this.undoStack.pop()
+      if (action.action == 'edit') {
+        console.log('Undo edit ' + action.entry.uid)
+        // Save before edit copy
+        let beforeEdit = this.makeCopy(action.entry);
+        // Copy all properties from source object to
+        // a target object and return the target object
+        let entry = Object.assign(action.entry, action.beforeEdit);
+        this.updateEntry(entry, function(updatedEntry) {
+          component.redoStack.push({'action': 'edit', 'entry': entry, 'beforeEdit': beforeEdit});
+        });
+      } else if (action.action == 'add') {
+        console.log('Undo add ' + action.entry.uid)
+        // Save before edit copy
+        let entry = this.makeCopy(action.entry);
+        this.deleteEntry(entry, function(deletedEntry) {
+        component.redoStack.push({'action': 'delete', 'entry': deletedEntry});  
+        });     
+      } else if (action.action == 'delete') {
+        console.log('Undo delete ' + action.entry.uid)
+        // Save before edit copy
+        let entry = this.makeCopy(action.entry);
+        this.newEntry = entry;
+        this.addEntry(this.newEntry, function(addedEntry) {
+        component.redoStack.push({'action': 'add', 'entry': addedEntry});
+      }); 
       }
-      if (action_[action_.length - 1] == 'add') {
-        let entry = this.$store.getters.getUndoEntry;
-        console.log(entry[entry.length - 1]);
-        entry[entry.length - 1].uid += 1;
-        component.deleteEntry(entry[entry.length - 1]);
-        this.$store.getters.popUndo();
-        this.$store.getters.popUndo();
-      }
-
     },
     redoEvent: function() {
-      this.redo();
-      let component = this;
-      let action_ = this.$store.getters.getUndoAction;
-      console.log(action_);
-      if (action_[action_.length - 1] == 'delete') {
-        let entry = this.$store.getters.getUndoEntry;
-        console.log(entry[entry.length - 1]);
-        this.newEntry = entry[entry.length - 1]; 
-        component.addEntry();
-        this.$store.getters.popUndo();
-        this.$store.getters.popUndo();
-
+      if (!this.redoStack.length){
+        console.log('Nothing to undo')
+        return;
       }
-      if (action_[action_.length - 1] == 'update') {
-        let entry = this.$store.getters.getUndoEntry;
-        console.log(entry[entry.length - 2]);
-        component.deleteEntry(entry[entry.length -2]);
-        this.newEntry = entry[entry.length - 3]; 
-        component.addEntry();
-        this.$store.getters.popUndo();
-        this.$store.getters.popUndo();
-        this.$store.getters.popUndo();
-        this.$store.getters.popUndo();
-      }
-      if (action_[action_.length - 1] == 'add') {
-        let entry = this.$store.getters.getUndoEntry;
-        console.log(entry[entry.length - 1]);
-        entry[entry.length - 1].uid += 1;
-        component.deleteEntry(entry[entry.length - 1]);
-        this.$store.getters.popUndo();
-        this.$store.getters.popUndo();
+      const component = this;
+      let action = this.redoStack.pop()
+      if (action.action == 'edit') {
+        console.log('Redo edit ' + action.entry.uid)
+        // Save before edit copy
+        let beforeEdit = this.makeCopy(action.entry);
+        // Copy all properties from source object to
+        // a target object and return the target object
+        let entry = Object.assign(action.entry, action.beforeEdit);
+        this.updateEntry(entry, function(updatedEntry) {
+          component.undoStack.push({'action': 'edit', 'entry': entry, 'beforeEdit': beforeEdit});
+        });
+      } else if (action.action == 'add') {
+        console.log('Redo add ' + action.entry.uid)
+        // Save before edit copy
+        let entry = this.makeCopy(action.entry);
+        this.deleteEntry(entry, function(deletedEntry) {
+        component.undoStack.push({'action': 'delete', 'entry': deletedEntry});  
+        });     
+      } else if (action.action == 'delete') {
+        console.log('Redo delete ' + action.entry.uid)
+        // Save before edit copy
+        let entry = this.makeCopy(action.entry);
+        this.newEntry = entry;
+        this.addEntry(this.newEntry, function(addedEntry) {
+        component.undoStack.push({'action': 'add', 'entry': addedEntry});
+      }); 
       }
     }
   }

@@ -12,10 +12,6 @@ const getters = {
     },
     getUndoAction: state => {
         return state.action;
-    },
-    popUndo: state => {
-        state.action.pop();
-        state.entry.pop();
     }
 };
 
@@ -32,6 +28,10 @@ const mutations = {
     },
     commitEntriesUndo(state, payload){
         state.undoEntries = payload;
+    },
+    popUndo(state) {
+        state.action.pop();
+        state.entry.pop();
     },
 
     // empty state needed for the undo redo feature
