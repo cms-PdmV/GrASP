@@ -11,6 +11,10 @@
       <img :src="'static/loading' + getRandomInt(3) + '.gif'" style="width: 120px; height: 120px;"/>
       <h3>Loading table...</h3>
     </div>
+    <div class="align-center mb-4">
+		<v-btn class="normal ma-1" small :disabled="!undoStack.length" @click="undoEvent">Undo</v-btn>
+		<v-btn class="normal ma-1" small :disabled="!redoStack.length" @click="redoEvent">Redo</v-btn>
+    </div>
     <div v-if="campaign.entries" class="align-center">
       <div class="ml-1 mr-1" style="display: inline-block">
         Events Filter:
@@ -67,7 +71,7 @@
             {{entry.dataset}}
             <span v-if="userInfo.role_index >= 1"
                   class="pointer show-on-hover"
-                  @click="deleteEntry(entry);"
+                  @click="deleteEntryAction(entry);"
                   title="Delete this entry from planning table">&#10060;</span>
           </template>
           <input @blur="stopEditing(entry, 'dataset')"
@@ -175,7 +179,7 @@
         </tr>
       </table>
       <div class="align-center mb-4">
-        <v-btn small class="mr-1 mt-1" color="primary" @click="addEntry()">Add entry</v-btn>
+        <v-btn small class="mr-1 mt-1" color="primary" @click="addEntryAction()">Add entry</v-btn>
       </div>
     </template>
   </div>
@@ -210,7 +214,9 @@ export default {
         in_target: undefined,
         dataset: undefined,
         chain_tag: undefined,
-      }
+      },
+      undoStack: [],
+      redoStack: [],
     }
   },
   created () {
@@ -241,7 +247,21 @@ export default {
     this.fetchCampaign(campaignName);
   },
   methods: {
-    addEntry: function() {
+    addEntryAction: function() {
+      console.log('addEntryAction');
+      const component = this;
+      this.addEntry(this.newEntry, function(addedEntry) {
+        component.undoStack.push({'action': 'add', 'entry': addedEntry});
+      });
+    },
+    deleteEntryAction: function(entry) {
+      console.log('deleteEntryAction');
+      const component = this;
+      this.deleteEntry(entry, function(deletedEntry) {
+        component.undoStack.push({'action': 'delete', 'entry': deletedEntry});
+      });
+    },    
+    addEntry: function(entry, onSuccess) {
       let newEntry = this.makeCopy(this.newEntry);
       newEntry['campaign_uid'] = this.campaign.uid;
       let component = this;
@@ -251,11 +271,14 @@ export default {
         component.campaign.entries.push(entry);
         component.newEntry = component.getNewEntry();
         component.applyFilters();
+        if (onSuccess) {
+          onSuccess(entry);
+        }        
       }).catch(error => {
         alert(error.response.data.message);
       });
     },
-    updateEntry: function(entry) {
+    updateEntry: function(entry, onSuccess) {
       let entryCopy = this.makeCopy(entry);
       entryCopy['campaign_uid'] = this.campaign.uid;
       let component = this;
@@ -263,12 +286,15 @@ export default {
         Object.assign(entry, response.data.response);
         component.processEntry(entry);
         component.applyFilters();
+        if (onSuccess) {
+          onSuccess(entry);
+        }        
       }).catch(error => {
         alert(error.response.data.message);
         entry.broken = true;
       });
     },
-    deleteEntry: function(entry) {
+    deleteEntry: function(entry, onSuccess) {
       if (confirm("Are you sure you want to delete " + entry.dataset + " " + entry.chain_tag + " with " + entry.events + " events ?")) {
         let entryCopy = this.makeCopy(entry);
         entryCopy['campaign_uid'] = this.campaign.uid;
@@ -276,6 +302,9 @@ export default {
         axios.delete('api/planning/delete_entry', {data: entryCopy}).then(() => {
           component.campaign.entries = component.campaign.entries.filter(item => item.uid !== entry.uid);
           component.applyFilters();
+          if (onSuccess) {
+            onSuccess(entry);
+          }         
         }).catch(error => {
           alert(error.response.data.message);
           entry.broken = true;
@@ -362,8 +391,13 @@ export default {
         // Value not updated
         return
       }
+      let entryBeforeEdit = this.makeCopy(entry);
+      const component = this;
       entry[attribute] = entry.temporary[attribute];
-      this.updateEntry(entry);
+      this.updateEntry(entry, function(editedEntry) {
+        component.undoStack.push({'action': 'edit', 'entry': entry, 'beforeEdit': entryBeforeEdit});
+        component.redoStack = [];
+      });
     },
     recalculateChainTagSums: function() {
       let sums = {};
@@ -389,6 +423,74 @@ export default {
       this.eventsFilter = events;
       this.applyFilters();
     },
+    undoEvent: function() {
+      if (!this.undoStack.length){
+        console.log('Nothing to undo')
+        return;
+      }
+      const component = this;
+      let action = this.undoStack.pop()
+      if (action.action == 'edit') {
+        console.log('Undo edit ' + action.entry.uid)
+        // Save before edit copy
+        let beforeEdit = this.makeCopy(action.entry);
+        // Copy all properties from source object to
+        // a target object and return the target object
+        let entry = Object.assign(action.entry, action.beforeEdit);
+        this.updateEntry(entry, function(updatedEntry) {
+          component.redoStack.push({'action': 'edit', 'entry': entry, 'beforeEdit': beforeEdit});
+        });
+      } else if (action.action == 'add') {
+        console.log('Undo add ' + action.entry.uid)
+        // Save before edit copy
+        let entry = this.makeCopy(action.entry);
+        this.deleteEntry(entry, function(deletedEntry) {
+        component.redoStack.push({'action': 'delete', 'entry': deletedEntry});  
+        });     
+      } else if (action.action == 'delete') {
+        console.log('Undo delete ' + action.entry.uid)
+        // Save before edit copy
+        let entry = this.makeCopy(action.entry);
+        this.newEntry = entry;
+        this.addEntry(this.newEntry, function(addedEntry) {
+        component.redoStack.push({'action': 'add', 'entry': addedEntry});
+      }); 
+      }
+    },
+    redoEvent: function() {
+      if (!this.redoStack.length){
+        console.log('Nothing to undo')
+        return;
+      }
+      const component = this;
+      let action = this.redoStack.pop()
+      if (action.action == 'edit') {
+        console.log('Redo edit ' + action.entry.uid)
+        // Save before edit copy
+        let beforeEdit = this.makeCopy(action.entry);
+        // Copy all properties from source object to
+        // a target object and return the target object
+        let entry = Object.assign(action.entry, action.beforeEdit);
+        this.updateEntry(entry, function(updatedEntry) {
+          component.undoStack.push({'action': 'edit', 'entry': entry, 'beforeEdit': beforeEdit});
+        });
+      } else if (action.action == 'add') {
+        console.log('Redo add ' + action.entry.uid)
+        // Save before edit copy
+        let entry = this.makeCopy(action.entry);
+        this.deleteEntry(entry, function(deletedEntry) {
+        component.undoStack.push({'action': 'delete', 'entry': deletedEntry});  
+        });     
+      } else if (action.action == 'delete') {
+        console.log('Redo delete ' + action.entry.uid)
+        // Save before edit copy
+        let entry = this.makeCopy(action.entry);
+        this.newEntry = entry;
+        this.addEntry(this.newEntry, function(addedEntry) {
+        component.undoStack.push({'action': 'add', 'entry': addedEntry});
+      }); 
+      }
+    }    
   }
 }
 </script>
