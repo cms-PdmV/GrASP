@@ -1,6 +1,7 @@
 """
 Main module that starts flask web server
 """
+import os
 import logging
 import argparse
 from flask_restful import Api
@@ -148,6 +149,12 @@ def main():
     debug = args.get('debug', False)
     port = args.get('port', 8088)
     host = args.get('host', '127.0.0.1')
+    if os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
+        # Do only once, before the reloader
+        pid = os.getpid()
+        with open('rereco.pid', 'w') as pid_file:
+            pid_file.write(str(pid))
+
     app.run(host=host,
             port=port,
             debug=debug,
