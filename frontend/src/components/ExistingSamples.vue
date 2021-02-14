@@ -275,26 +275,28 @@ export default {
     },
     addPWGToEntryAction: function(pwg, entry) {
       const component = this;
-      this.addPWGToEntry(pwg, entry, function(deletedEntry) {
+      component.addPWGToEntry(pwg, entry, function(deletedEntry) {
         component.undoStack.push({'action': 'add', 'entry': entry, 'pwg': pwg});
       });
     },
     addPWGToEntry: function(pwg, entry, onSuccess) {
+      const component = this;
       entry.interested_pwgs = (this.cleanSplit(entry.interested_pwgs, ',').concat([pwg])).sort().join(',');
-      this.updateEntry(entry);
+      component.updateEntry(entry);
       if (onSuccess) {
         onSuccess(entry);
       }  
     },
     removePWGFromEntryAction: function(pwg, entry) {
       const component = this;
-      this.removePWGFromEntry(pwg, entry, function(deletedEntry) {
+      component.removePWGFromEntry(pwg, entry, function(deletedEntry) {
         component.undoStack.push({'action': 'remove', 'entry': entry, 'pwg': pwg});
       });
     },
     removePWGFromEntry: function(pwg, entry, onSuccess) {
+      const component = this;
       entry.interested_pwgs = (this.cleanSplit(entry.interested_pwgs, ',').filter(function(p) { return p !== pwg})).join(',');
-      this.updateEntry(entry);
+      component.updateEntry(entry);
       if (onSuccess) {
         onSuccess(entry);
       }
@@ -434,17 +436,17 @@ export default {
       let action = this.undoStack.pop()
       if (action.action == 'add') {
         // Save before edit copy
-        let entry = this.makeCopy(action.entry);
+        let entryCopy = Object.assign(action.entry, action.entry);
         let pwgCopy = action.pwg;
-        this.removePWGFromEntry(pwgCopy, entry, function(updatedEntry) {
-          component.redoStack.push({'action': 'remove', 'entry': entry, 'pwg': pwgCopy});
+        component.removePWGFromEntry(pwgCopy, entryCopy, function(updatedEntry) {
+          component.redoStack.push({'action': 'remove', 'entry': entryCopy, 'pwg': pwgCopy});
         });
       } else if (action.action == 'remove') {
         // Save before edit copy
-        let entry = this.makeCopy(action.entry);
+        let entryCopy = Object.assign(action.entry, action.entry);
         let pwgCopy = action.pwg;
-        this.addPWGToEntry(pwgCopy, entry, function(updatedEntry) {
-          component.redoStack.push({'action': 'add', 'entry': entry, 'pwg': pwgCopy});
+        component.addPWGToEntry(pwgCopy, entryCopy, function(updatedEntry) {
+          component.redoStack.push({'action': 'add', 'entry': entryCopy, 'pwg': pwgCopy});
         });
       }
     },
@@ -456,17 +458,17 @@ export default {
       let action = this.redoStack.pop()
       if (action.action == 'remove') {
         // Save before edit copy
-        let entry = this.makeCopy(action.entry);
+        let entryCopy = Object.assign(action.entry, action.entry);
         let pwgCopy = action.pwg;
-        this.addPWGToEntry(pwgCopy, entry, function(updatedEntry) {
-          component.undoStack.push({'action': 'add', 'entry': entry, 'pwg': pwgCopy});
+        component.addPWGToEntry(pwgCopy, entryCopy, function(updatedEntry) {
+          component.undoStack.push({'action': 'add', 'entry': entryCopy, 'pwg': pwgCopy});
         });
       } else if (action.action == 'add') {
         // Save before edit copy
-        let entry = this.makeCopy(action.entry);
+        let entryCopy = Object.assign(action.entry, action.entry);
         let pwgCopy = action.pwg;
-        this.removePWGFromEntry(pwgCopy, entry, function(updatedEntry) {
-          component.undoStack.push({'action': 'remove', 'entry': entry, 'pwg': pwgCopy});
+        component.removePWGFromEntry(pwgCopy, entryCopy, function(updatedEntry) {
+          component.undoStack.push({'action': 'remove', 'entry': entryCopy, 'pwg': pwgCopy});
         });
       } 
     }
