@@ -11,9 +11,9 @@
       <img :src="'static/loading' + getRandomInt(3) + '.gif'" style="width: 120px; height: 120px;"/>
       <h3>Loading table...</h3>
     </div>
-    <div class="align-center mb-4">
-		<v-btn class="normal ma-1" small :disabled="!undoStack.length" @click="undoEvent">Undo</v-btn>
-		<v-btn class="normal ma-1" small :disabled="!redoStack.length" @click="redoEvent">Redo</v-btn>
+    <div class="align-center mb-4" v-if="undoStack.length || redoStack.length">
+    <v-btn class="normal ma-1" small :disabled="!undoStack.length" @click="undoEvent">Undo</v-btn>
+    <v-btn class="normal ma-1" small :disabled="!redoStack.length" @click="redoEvent">Redo</v-btn>
     </div>
     <div v-if="campaign.entries" class="align-center">
       <div class="ml-1 mr-1" style="display: inline-block">
@@ -248,14 +248,12 @@ export default {
   },
   methods: {
     addEntryAction: function() {
-      console.log('addEntryAction');
       const component = this;
       this.addEntry(this.newEntry, function(addedEntry) {
         component.undoStack.push({'action': 'add', 'entry': addedEntry});
       });
     },
     deleteEntryAction: function(entry) {
-      console.log('deleteEntryAction');
       const component = this;
       this.deleteEntry(entry, function(deletedEntry) {
         component.undoStack.push({'action': 'delete', 'entry': deletedEntry});
@@ -425,13 +423,11 @@ export default {
     },
     undoEvent: function() {
       if (!this.undoStack.length){
-        console.log('Nothing to undo')
         return;
       }
       const component = this;
       let action = this.undoStack.pop()
       if (action.action == 'edit') {
-        console.log('Undo edit ' + action.entry.uid)
         // Save before edit copy
         let beforeEdit = this.makeCopy(action.entry);
         // Copy all properties from source object to
@@ -441,14 +437,12 @@ export default {
           component.redoStack.push({'action': 'edit', 'entry': entry, 'beforeEdit': beforeEdit});
         });
       } else if (action.action == 'add') {
-        console.log('Undo add ' + action.entry.uid)
         // Save before edit copy
         let entry = this.makeCopy(action.entry);
         this.deleteEntry(entry, function(deletedEntry) {
         component.redoStack.push({'action': 'delete', 'entry': deletedEntry});  
         });     
       } else if (action.action == 'delete') {
-        console.log('Undo delete ' + action.entry.uid)
         // Save before edit copy
         let entry = this.makeCopy(action.entry);
         this.newEntry = entry;
@@ -459,13 +453,11 @@ export default {
     },
     redoEvent: function() {
       if (!this.redoStack.length){
-        console.log('Nothing to undo')
         return;
       }
       const component = this;
       let action = this.redoStack.pop()
       if (action.action == 'edit') {
-        console.log('Redo edit ' + action.entry.uid)
         // Save before edit copy
         let beforeEdit = this.makeCopy(action.entry);
         // Copy all properties from source object to
@@ -475,14 +467,12 @@ export default {
           component.undoStack.push({'action': 'edit', 'entry': entry, 'beforeEdit': beforeEdit});
         });
       } else if (action.action == 'add') {
-        console.log('Redo add ' + action.entry.uid)
         // Save before edit copy
         let entry = this.makeCopy(action.entry);
         this.deleteEntry(entry, function(deletedEntry) {
         component.undoStack.push({'action': 'delete', 'entry': deletedEntry});  
         });     
       } else if (action.action == 'delete') {
-        console.log('Redo delete ' + action.entry.uid)
         // Save before edit copy
         let entry = this.makeCopy(action.entry);
         this.newEntry = entry;
