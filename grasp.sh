@@ -1,4 +1,4 @@
-B#!/bin/bash
+#!/bin/bash
 
 CMD=$1
 
