@@ -2,12 +2,16 @@
 Main module that starts flask web server
 """
 import os
+import sys
 import logging
+import logging.handlers
 import argparse
+import os.path
 from flask_restful import Api
 from flask_cors import CORS
 from flask import Flask, render_template
 from jinja2.exceptions import TemplateNotFound
+from utils.username_filter import UsernameFilter
 from api.future_plan_api import (CreateFutureCampaignAPI,
                                  GetFutureCampaignAPI,
                                  UpdateFutureCampaignAPI,
@@ -39,6 +43,8 @@ app = Flask(__name__,
             template_folder='./frontend/dist')
 # Set flask logging to warning
 logging.getLogger('werkzeug').setLevel(logging.WARNING)
+# Set paramiko logging to warning
+logging.getLogger('paramiko').setLevel(logging.WARNING)
 
 app.url_map.strict_slashes = False
 api = Api(app)
@@ -132,6 +138,25 @@ api.add_resource(UpdateUserTagAPI, '/api/user_tag/update')
 api.add_resource(DeleteUserTagAPI, '/api/user_tag/delete')
 api.add_resource(GetAllUserTagsAPI, '/api/user_tag/get_all')
 
+def setup_logging(config, debug):
+    logger = logging.getLogger()
+    logger.propagate = False
+    if debug:
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setLevel(logging.DEBUG)
+    else:
+        if not os.path.isdir('logs'):
+            os.mkdir('logs')
+
+        handler = logging.handlers.RotatingFileHandler('logs/rereco.log', 'a', 8*1024*1024, 50)
+        handler.setLevel(logging.INFO)
+
+    formatter = logging.Formatter(fmt='[%(asctime)s][%(user)s][%(levelname)s] %(message)s')
+    handler.setFormatter(formatter)
+    handler.addFilter(UsernameFilter())
+    logger.handlers.clear()
+    logger.addHandler(handler)
+    return logger
 
 def main():
     """
