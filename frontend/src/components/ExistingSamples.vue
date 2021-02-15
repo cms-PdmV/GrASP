@@ -10,6 +10,10 @@
       <img :src="'static/loading' + getRandomInt(3) + '.gif'" style="width: 120px; height: 120px;"/>
       <h3>Loading table...</h3>
     </div>
+    <div class="align-center mb-4" v-if="undoStack.length || redoStack.length">
+    <v-btn class="normal ma-1" small :disabled="!undoStack.length" @click="undoEvent">Undo</v-btn>
+    <v-btn class="normal ma-1" small :disabled="!redoStack.length" @click="redoEvent">Redo</v-btn>
+    </div>
     <div v-if="campaign.entries" class="align-center">
       <div class="ml-1 mr-1" style="display: inline-block">
         Events Filter:
@@ -130,8 +134,8 @@
           {{entry.interested_pwgs}}
           <template v-if="selectedPWG && role('user')">
             <br>
-            <span class="add-pwg-link" v-if="!entry.interested_pwgs.includes(selectedPWG)" @click="addPWGToEntry(selectedPWG, entry)">Add {{selectedPWG}}</span>
-            <span class="remove-pwg-link" v-if="entry.interested_pwgs.includes(selectedPWG)" @click="removePWGFromEntry(selectedPWG, entry)">Remove {{selectedPWG}}</span>
+            <span class="add-pwg-link" v-if="!entry.interested_pwgs.includes(selectedPWG)" @click="addPWGToEntryAction(selectedPWG, entry)">Add {{selectedPWG}}</span>
+            <span class="remove-pwg-link" v-if="entry.interested_pwgs.includes(selectedPWG)" @click="removePWGFromEntryAction(selectedPWG, entry)">Remove {{selectedPWG}}</span>
           </template>
         </td>
       </tr>
@@ -171,7 +175,9 @@ export default {
         miniaod: undefined,
         nanoaod: undefined,
         chained_request: undefined,
-      }
+      },
+      undoStack: [],
+      redoStack: [],
     }
   },
   created () {
@@ -267,13 +273,33 @@ export default {
         alert(error.response.data.message);
       });
     },
-    addPWGToEntry: function(pwg, entry) {
-      entry.interested_pwgs = (this.cleanSplit(entry.interested_pwgs, ',').concat([pwg])).sort().join(',');
-      this.updateEntry(entry);
+    addPWGToEntryAction: function(pwg, entry) {
+      const component = this;
+      component.addPWGToEntry(pwg, entry, function(deletedEntry) {
+        component.undoStack.push({'action': 'add', 'entry': entry, 'pwg': pwg});
+      });
     },
-    removePWGFromEntry: function(pwg, entry) {
+    addPWGToEntry: function(pwg, entry, onSuccess) {
+      const component = this;
+      entry.interested_pwgs = (this.cleanSplit(entry.interested_pwgs, ',').concat([pwg])).sort().join(',');
+      component.updateEntry(entry);
+      if (onSuccess) {
+        onSuccess(entry);
+      }  
+    },
+    removePWGFromEntryAction: function(pwg, entry) {
+      const component = this;
+      component.removePWGFromEntry(pwg, entry, function(deletedEntry) {
+        component.undoStack.push({'action': 'remove', 'entry': entry, 'pwg': pwg});
+      });
+    },
+    removePWGFromEntry: function(pwg, entry, onSuccess) {
+      const component = this;
       entry.interested_pwgs = (this.cleanSplit(entry.interested_pwgs, ',').filter(function(p) { return p !== pwg})).join(',');
-      this.updateEntry(entry);
+      component.updateEntry(entry);
+      if (onSuccess) {
+        onSuccess(entry);
+      }
     },
     mergeCells: function(list, attributes) {
       list.forEach(element => {
@@ -402,6 +428,50 @@ export default {
         });
       }
     },
+    undoEvent: function() {
+      if (!this.undoStack.length){
+        return;
+      }
+      const component = this;
+      let action = this.undoStack.pop()
+      if (action.action == 'add') {
+        // Save before edit copy
+        let entryCopy = Object.assign(action.entry, action.entry);
+        let pwgCopy = action.pwg;
+        component.removePWGFromEntry(pwgCopy, entryCopy, function(updatedEntry) {
+          component.redoStack.push({'action': 'remove', 'entry': entryCopy, 'pwg': pwgCopy});
+        });
+      } else if (action.action == 'remove') {
+        // Save before edit copy
+        let entryCopy = Object.assign(action.entry, action.entry);
+        let pwgCopy = action.pwg;
+        component.addPWGToEntry(pwgCopy, entryCopy, function(updatedEntry) {
+          component.redoStack.push({'action': 'add', 'entry': entryCopy, 'pwg': pwgCopy});
+        });
+      }
+    },
+    redoEvent: function() {
+      if (!this.redoStack.length){
+        return;
+      }
+      const component = this;
+      let action = this.redoStack.pop()
+      if (action.action == 'remove') {
+        // Save before edit copy
+        let entryCopy = Object.assign(action.entry, action.entry);
+        let pwgCopy = action.pwg;
+        component.addPWGToEntry(pwgCopy, entryCopy, function(updatedEntry) {
+          component.undoStack.push({'action': 'add', 'entry': entryCopy, 'pwg': pwgCopy});
+        });
+      } else if (action.action == 'add') {
+        // Save before edit copy
+        let entryCopy = Object.assign(action.entry, action.entry);
+        let pwgCopy = action.pwg;
+        component.removePWGFromEntry(pwgCopy, entryCopy, function(updatedEntry) {
+          component.undoStack.push({'action': 'remove', 'entry': entryCopy, 'pwg': pwgCopy});
+        });
+      } 
+    }
   }
 }
 </script>
