@@ -20,9 +20,20 @@
         <template v-for="eventsPair in eventFilterOptions">
           <a :key="eventsPair[0]"
              class="ml-1 mr-1"
-             :title="'Shov samples with > ' + eventsPair[0] + ' events'"
+             :title="'Show samples with > ' + eventsPair[0] + ' events'"
              @click="onEventFilterUpdate(eventsPair[0])"
              :class="eventsPair[0] == eventsFilter ? 'bold-text' : ''">{{eventsPair[1]}}</a>
+        </template>
+      </div>
+      |
+      <div class="ml-1 mr-1" style="display: inline-block">
+        MiniAOD Filter:
+        <template v-for="miniaodPair in miniaodVersionFilterOptions">
+          <a :key="miniaodPair[0]"
+             class="ml-1 mr-1"
+             :title="'Show samples with ' + miniaodPair[0]"
+             @click="onMiniAODFilterUpdate(miniaodPair[0])"
+             :class="miniaodPair[0] == miniaodVersionFilter ? 'bold-text' : ''">{{miniaodPair[1]}}</a>
         </template>
       </div>
       |
@@ -91,6 +102,7 @@
               <template v-if="entry.miniaod_output">
                 <a :href="makeDASLink(entry.miniaod_output)" target="_blank" class="ml-1">DAS</a>
               </template>
+              <div class="mini-nano-version">{{entry.miniaod_version}}</div>
               <br>
               <small>Events: {{entry.miniaodEventsNice}}</small>
               <template v-if="entry.miniaod_status === 'submitted'">
@@ -113,6 +125,7 @@
               <template v-if="entry.nanoaod_output">
                 <a :href="makeDASLink(entry.nanoaod_output)" target="_blank" class="ml-1">DAS</a>
               </template>
+              <div class="mini-nano-version">{{entry.nanoaod_version}}</div>
               <br>
               <small>Events: {{entry.nanoaodEventsNice}}</small>
               <template v-if="entry.nanoaod_status === 'submitted'">
@@ -167,6 +180,8 @@ export default {
       newEntry: {},
       eventFilterOptions: [[0, 'All'], [5e6, '5M+'], [10e6, '10M+'], [20e6, '20M+'], [50e6, '50M+']],
       eventsFilter: 0,
+      miniaodVersionFilterOptions: [['', 'All'], ['MiniAODv1', 'MiniAODv1'], ['MiniAODv2', 'MiniAODv2']],
+      miniaodVersionFilter: '',
       entries: [], // Filtered entries,
       search: {
         short_name: undefined,
@@ -206,6 +221,9 @@ export default {
     }
     if (query.events && query.events.length) {
       this.eventsFilter = parseInt(query.events);
+    }
+    if (query.miniaod_version && query.miniaod_version.length) {
+      this.miniaodVersionFilter = query.miniaod_version;
     }
     this.fetchCampaign(campaignName);
   },
@@ -324,6 +342,10 @@ export default {
       this.eventsFilter = events;
       this.applyFilters();
     },
+    onMiniAODFilterUpdate: function(miniaod) {
+      this.miniaodVersionFilter = miniaod;
+      this.applyFilters();
+    },
     applyFilters: function() {
       let query = Object.assign({}, this.$route.query);
       let filteredEntries = this.campaign.entries;
@@ -333,6 +355,14 @@ export default {
       } else {
         if ('events' in query) {
           delete query['events'];
+        }
+      }
+      if (this.miniaodVersionFilter.length != 0) {
+        filteredEntries = filteredEntries.filter(entry => entry.miniaod_version == this.miniaodVersionFilter);
+        query['miniaod_version'] = this.miniaodVersionFilter;
+      } else {
+        if ('miniaod_version' in query) {
+          delete query['miniaod_version'];
         }
       }
       for (let attribute in this.search) {
@@ -556,6 +586,11 @@ select {
 
 .bold-text {
   font-weight: 900;
+}
+
+.mini-nano-version {
+  float: right;
+  margin-left: 8px;
 }
 
 </style>
