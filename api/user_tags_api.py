@@ -115,6 +115,25 @@ class GetUserTagAPI(APIBase):
         for entry in entries:
             entry['short_name'] = get_short_name(entry['dataset'])
             entry['chain_tag'] = get_chain_tag(entry['chained_request'])
+            miniaod = entry['miniaod']
+            nanoaod = entry['nanoaod']
+            entry['miniaod_version'] = ''
+            if miniaod:
+                version = miniaod.split('-')[1].split('MiniAOD')[-1].replace('APV', '')
+                if not version:
+                    version = 'v1'
+
+                entry['miniaod_version'] = 'MiniAOD%s' % (version)
+
+            entry['nanoaod_version'] = ''
+            if nanoaod:
+                version = nanoaod.split('-')[1].split('NanoAOD')[-1].replace('APV', '')
+                if not version:
+                    version = 'v7'
+                elif version == 'v2':
+                    version = 'v8'
+
+                entry['nanoaod_version'] = 'NanoAOD%s' % (version)
 
         multiarg_sort(entries, ['dataset', 'root_request', 'miniaod', 'nanoaod'])
         tag['entries'] = entries
