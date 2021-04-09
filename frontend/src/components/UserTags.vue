@@ -59,7 +59,7 @@
       <tr v-for="entry in entries" :key="entry.dataset + entry.uid">
         <td v-if="entry.rowspan.short_name > 0" :rowspan="entry.rowspan.short_name">{{entry.short_name}}</td>
         <td class="dataset-column" v-if="entry.rowspan.dataset > 0" :rowspan="entry.rowspan.dataset">
-          <a :href="'https://cms-pdmv.cern.ch/mcm/requests?dataset_name=' + entry.dataset + '&member_of_tag=' + tag.name" target="_blank">{{entry.dataset}}</a>
+          <a :href="'https://cms-pdmv.cern.ch/mcm/requests?dataset_name=' + entry.dataset + '&tags=' + tag.name" target="_blank">{{entry.dataset}}</a>
         </td>
         <td v-if="entry.rowspan.root_request > 0" :rowspan="entry.rowspan.root_request" class="progress-cell">
           <div>
