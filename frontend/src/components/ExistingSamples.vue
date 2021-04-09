@@ -10,15 +10,30 @@
       <img :src="'static/loading' + getRandomInt(3) + '.gif'" style="width: 120px; height: 120px;"/>
       <h3>Loading table...</h3>
     </div>
+    <div class="align-center mb-4" v-if="undoStack.length || redoStack.length">
+    <v-btn class="normal ma-1" small :disabled="!undoStack.length" @click="undoEvent">Undo</v-btn>
+    <v-btn class="normal ma-1" small :disabled="!redoStack.length" @click="redoEvent">Redo</v-btn>
+    </div>
     <div v-if="campaign.entries" class="align-center">
       <div class="ml-1 mr-1" style="display: inline-block">
         Events Filter:
         <template v-for="eventsPair in eventFilterOptions">
           <a :key="eventsPair[0]"
              class="ml-1 mr-1"
-             :title="'Shov samples with > ' + eventsPair[0] + ' events'"
+             :title="'Show samples with > ' + eventsPair[0] + ' events'"
              @click="onEventFilterUpdate(eventsPair[0])"
              :class="eventsPair[0] == eventsFilter ? 'bold-text' : ''">{{eventsPair[1]}}</a>
+        </template>
+      </div>
+      |
+      <div class="ml-1 mr-1" style="display: inline-block">
+        MiniAOD Filter:
+        <template v-for="miniaodPair in miniaodVersionFilterOptions">
+          <a :key="miniaodPair[0]"
+             class="ml-1 mr-1"
+             :title="'Show samples with ' + miniaodPair[0]"
+             @click="onMiniAODFilterUpdate(miniaodPair[0])"
+             :class="miniaodPair[0] == miniaodVersionFilter ? 'bold-text' : ''">{{miniaodPair[1]}}</a>
         </template>
       </div>
       |
@@ -87,6 +102,7 @@
               <template v-if="entry.miniaod_output">
                 <a :href="makeDASLink(entry.miniaod_output)" target="_blank" class="ml-1">DAS</a>
               </template>
+              <div class="mini-nano-version">{{entry.miniaod_version}}</div>
               <br>
               <small>Events: {{entry.miniaodEventsNice}}</small>
               <template v-if="entry.miniaod_status === 'submitted'">
@@ -109,6 +125,7 @@
               <template v-if="entry.nanoaod_output">
                 <a :href="makeDASLink(entry.nanoaod_output)" target="_blank" class="ml-1">DAS</a>
               </template>
+              <div class="mini-nano-version">{{entry.nanoaod_version}}</div>
               <br>
               <small>Events: {{entry.nanoaodEventsNice}}</small>
               <template v-if="entry.nanoaod_status === 'submitted'">
@@ -130,8 +147,8 @@
           {{entry.interested_pwgs}}
           <template v-if="selectedPWG && role('user')">
             <br>
-            <span class="add-pwg-link" v-if="!entry.interested_pwgs.includes(selectedPWG)" @click="addPWGToEntry(selectedPWG, entry)">Add {{selectedPWG}}</span>
-            <span class="remove-pwg-link" v-if="entry.interested_pwgs.includes(selectedPWG)" @click="removePWGFromEntry(selectedPWG, entry)">Remove {{selectedPWG}}</span>
+            <span class="add-pwg-link" v-if="!entry.interested_pwgs.includes(selectedPWG)" @click="addPWGToEntryAction(selectedPWG, entry)">Add {{selectedPWG}}</span>
+            <span class="remove-pwg-link" v-if="entry.interested_pwgs.includes(selectedPWG)" @click="removePWGFromEntryAction(selectedPWG, entry)">Remove {{selectedPWG}}</span>
           </template>
         </td>
       </tr>
@@ -163,6 +180,8 @@ export default {
       newEntry: {},
       eventFilterOptions: [[0, 'All'], [5e6, '5M+'], [10e6, '10M+'], [20e6, '20M+'], [50e6, '50M+']],
       eventsFilter: 0,
+      miniaodVersionFilterOptions: [['', 'All'], ['MiniAODv1', 'MiniAODv1'], ['MiniAODv2', 'MiniAODv2']],
+      miniaodVersionFilter: '',
       entries: [], // Filtered entries,
       search: {
         short_name: undefined,
@@ -171,7 +190,9 @@ export default {
         miniaod: undefined,
         nanoaod: undefined,
         chained_request: undefined,
-      }
+      },
+      undoStack: [],
+      redoStack: [],
     }
   },
   created () {
@@ -200,6 +221,9 @@ export default {
     }
     if (query.events && query.events.length) {
       this.eventsFilter = parseInt(query.events);
+    }
+    if (query.miniaod_version && query.miniaod_version.length) {
+      this.miniaodVersionFilter = query.miniaod_version;
     }
     this.fetchCampaign(campaignName);
   },
@@ -267,13 +291,33 @@ export default {
         alert(error.response.data.message);
       });
     },
-    addPWGToEntry: function(pwg, entry) {
-      entry.interested_pwgs = (this.cleanSplit(entry.interested_pwgs, ',').concat([pwg])).sort().join(',');
-      this.updateEntry(entry);
+    addPWGToEntryAction: function(pwg, entry) {
+      const component = this;
+      component.addPWGToEntry(pwg, entry, function(deletedEntry) {
+        component.undoStack.push({'action': 'add', 'entry': entry, 'pwg': pwg});
+      });
     },
-    removePWGFromEntry: function(pwg, entry) {
+    addPWGToEntry: function(pwg, entry, onSuccess) {
+      const component = this;
+      entry.interested_pwgs = (this.cleanSplit(entry.interested_pwgs, ',').concat([pwg])).sort().join(',');
+      component.updateEntry(entry);
+      if (onSuccess) {
+        onSuccess(entry);
+      }  
+    },
+    removePWGFromEntryAction: function(pwg, entry) {
+      const component = this;
+      component.removePWGFromEntry(pwg, entry, function(deletedEntry) {
+        component.undoStack.push({'action': 'remove', 'entry': entry, 'pwg': pwg});
+      });
+    },
+    removePWGFromEntry: function(pwg, entry, onSuccess) {
+      const component = this;
       entry.interested_pwgs = (this.cleanSplit(entry.interested_pwgs, ',').filter(function(p) { return p !== pwg})).join(',');
-      this.updateEntry(entry);
+      component.updateEntry(entry);
+      if (onSuccess) {
+        onSuccess(entry);
+      }
     },
     mergeCells: function(list, attributes) {
       list.forEach(element => {
@@ -298,6 +342,10 @@ export default {
       this.eventsFilter = events;
       this.applyFilters();
     },
+    onMiniAODFilterUpdate: function(miniaod) {
+      this.miniaodVersionFilter = miniaod;
+      this.applyFilters();
+    },
     applyFilters: function() {
       let query = Object.assign({}, this.$route.query);
       let filteredEntries = this.campaign.entries;
@@ -307,6 +355,14 @@ export default {
       } else {
         if ('events' in query) {
           delete query['events'];
+        }
+      }
+      if (this.miniaodVersionFilter.length != 0) {
+        filteredEntries = filteredEntries.filter(entry => entry.miniaod_version == this.miniaodVersionFilter);
+        query['miniaod_version'] = this.miniaodVersionFilter;
+      } else {
+        if ('miniaod_version' in query) {
+          delete query['miniaod_version'];
         }
       }
       for (let attribute in this.search) {
@@ -402,6 +458,50 @@ export default {
         });
       }
     },
+    undoEvent: function() {
+      if (!this.undoStack.length){
+        return;
+      }
+      const component = this;
+      let action = this.undoStack.pop()
+      if (action.action == 'add') {
+        // Save before edit copy
+        let entryCopy = Object.assign(action.entry, action.entry);
+        let pwgCopy = action.pwg;
+        component.removePWGFromEntry(pwgCopy, entryCopy, function(updatedEntry) {
+          component.redoStack.push({'action': 'remove', 'entry': entryCopy, 'pwg': pwgCopy});
+        });
+      } else if (action.action == 'remove') {
+        // Save before edit copy
+        let entryCopy = Object.assign(action.entry, action.entry);
+        let pwgCopy = action.pwg;
+        component.addPWGToEntry(pwgCopy, entryCopy, function(updatedEntry) {
+          component.redoStack.push({'action': 'add', 'entry': entryCopy, 'pwg': pwgCopy});
+        });
+      }
+    },
+    redoEvent: function() {
+      if (!this.redoStack.length){
+        return;
+      }
+      const component = this;
+      let action = this.redoStack.pop()
+      if (action.action == 'remove') {
+        // Save before edit copy
+        let entryCopy = Object.assign(action.entry, action.entry);
+        let pwgCopy = action.pwg;
+        component.addPWGToEntry(pwgCopy, entryCopy, function(updatedEntry) {
+          component.undoStack.push({'action': 'add', 'entry': entryCopy, 'pwg': pwgCopy});
+        });
+      } else if (action.action == 'add') {
+        // Save before edit copy
+        let entryCopy = Object.assign(action.entry, action.entry);
+        let pwgCopy = action.pwg;
+        component.removePWGFromEntry(pwgCopy, entryCopy, function(updatedEntry) {
+          component.undoStack.push({'action': 'remove', 'entry': entryCopy, 'pwg': pwgCopy});
+        });
+      } 
+    }
   }
 }
 </script>
@@ -486,6 +586,11 @@ select {
 
 .bold-text {
   font-weight: 900;
+}
+
+.mini-nano-version {
+  float: right;
+  margin-left: 8px;
 }
 
 </style>

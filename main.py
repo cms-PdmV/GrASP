@@ -1,12 +1,18 @@
 """
 Main module that starts flask web server
 """
+import os
+import sys
 import logging
+import logging.handlers
 import argparse
+import os.path
 from flask_restful import Api
 from flask_cors import CORS
 from flask import Flask, render_template
 from jinja2.exceptions import TemplateNotFound
+from utils.global_config import Config
+from utils.username_filter import UsernameFilter
 from api.future_plan_api import (CreateFutureCampaignAPI,
                                  GetFutureCampaignAPI,
                                  UpdateFutureCampaignAPI,
@@ -131,12 +137,38 @@ api.add_resource(UpdateUserTagAPI, '/api/user_tag/update')
 api.add_resource(DeleteUserTagAPI, '/api/user_tag/delete')
 api.add_resource(GetAllUserTagsAPI, '/api/user_tag/get_all')
 
+def setup_logging(config, debug):
+    logger = logging.getLogger()
+    logger.propagate = False
+    if debug:
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setLevel(logging.DEBUG)
+    else:
+        if not os.path.isdir('logs'):
+            os.mkdir('logs')
+
+        handler = logging.handlers.RotatingFileHandler('logs/grasp.log', 'a', 8*1024*1024, 50)
+        handler.setLevel(logging.INFO)
+
+    formatter = logging.Formatter(fmt='[%(asctime)s][%(user)s][%(levelname)s] %(message)s')
+    handler.setFormatter(formatter)
+    handler.addFilter(UsernameFilter())
+    logger.handlers.clear()
+    logger.addHandler(handler)
+    return logger
 
 def main():
     """
     Main function: start Flask web server
     """
     parser = argparse.ArgumentParser(description='GrASP Webpage')
+    parser.add_argument('--mode',
+                        help='Use production (prod) or development (dev) section of config',
+                        choices=['prod', 'dev'],
+                        required=True)
+    parser.add_argument('--config',
+                        default='config.cfg',
+                        help='Specify non standard config file name')
     parser.add_argument('--debug',
                         help='Run Flask in debug mode',
                         action='store_true')
@@ -145,9 +177,18 @@ def main():
     parser.add_argument('--host',
                         help='Host IP, default is 127.0.0.1')
     args = vars(parser.parse_args())
+    config = Config.load(args.get('config'), args.get('mode'))
     debug = args.get('debug', False)
-    port = args.get('port', 8088)
-    host = args.get('host', '127.0.0.1')
+    port = int(config.get('port', 8002))
+    host = config.get('host', '0.0.0.0')
+    logger = setup_logging(config, debug)
+    logger.info('Starting... Debug: %s, Host: %s, Port: %s', debug, host, port)
+    if os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
+        # Do only once, before the reloader
+        pid = os.getpid()
+        with open('grasp.pid', 'w') as pid_file:
+            pid_file.write(str(pid))
+
     app.run(host=host,
             port=port,
             debug=debug,
