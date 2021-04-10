@@ -38,6 +38,17 @@
       </div>
       |
       <div class="ml-1 mr-1" style="display: inline-block">
+        NaonoAOD Filter:
+        <template v-for="nanoaodPair in nonoaodVersionFilterOptions">
+          <a :key="nanoaodPair[0]"
+             class="ml-1 mr-1"
+             :title="'Show samples with ' + nanoaodPair[0]"
+             @click="onNanoAODFilterUpdate(nanoaodPair[0])"
+             :class="nanoaodPair[0] == nanoaodVersionFilter ? 'bold-text' : ''">{{nanoaodPair[1]}}</a>
+        </template>
+      </div>
+      | 
+      <div class="ml-1 mr-1" style="display: inline-block">
         Download Table:
         <a title="Comma-separated values file" class="ml-1 mr-1" @click="downloadExcelFile('csv')">CSV</a>
         <a title="Microsoft Office Excel file" class="ml-1 mr-1" @click="downloadExcelFile('xls')">XLS</a>
@@ -182,6 +193,8 @@ export default {
       eventsFilter: 0,
       miniaodVersionFilterOptions: [['', 'All'], ['MiniAODv1', 'MiniAODv1'], ['MiniAODv2', 'MiniAODv2']],
       miniaodVersionFilter: '',
+      nonoaodVersionFilterOptions: [['', 'All'], ['NanoAODv7', 'NanoAODv7'], ['NanoAODv8', 'NanoAODv8']],
+      nanoaodVersionFilter: '',
       entries: [], // Filtered entries,
       search: {
         short_name: undefined,
@@ -224,6 +237,9 @@ export default {
     }
     if (query.miniaod_version && query.miniaod_version.length) {
       this.miniaodVersionFilter = query.miniaod_version;
+    }
+    if (query.nanoaod_version && query.nanoaod_version.length) {
+      this.nanoaodVersionFilter = query.nanoaod_version;
     }
     this.fetchCampaign(campaignName);
   },
@@ -346,6 +362,10 @@ export default {
       this.miniaodVersionFilter = miniaod;
       this.applyFilters();
     },
+    onNanoAODFilterUpdate: function(nanoaod) {
+      this.nanoaodVersionFilter = nanoaod;
+      this.applyFilters();
+    },
     applyFilters: function() {
       let query = Object.assign({}, this.$route.query);
       let filteredEntries = this.campaign.entries;
@@ -363,6 +383,14 @@ export default {
       } else {
         if ('miniaod_version' in query) {
           delete query['miniaod_version'];
+        }
+      }
+      if (this.nanoaodVersionFilter.length != 0) {
+        filteredEntries = filteredEntries.filter(entry => entry.nanoaod_version == this.nanoaodVersionFilter);
+        query['nanoaod_version'] = this.nanoaodVersionFilter;
+      } else {
+        if ('nanoaod_version' in query) {
+          delete query['nanoaod_version'];
         }
       }
       for (let attribute in this.search) {
