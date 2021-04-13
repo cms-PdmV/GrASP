@@ -142,7 +142,7 @@ class ExistingSamplesUpdater():
 
         for chained_request in chained_requests:
             chained_request_prepid = chained_request['prepid']
-            if chained_request_prepid in self.updated_chained_requests:
+            if chained_request_prepid and chained_request_prepid in self.updated_chained_requests:
                 continue
 
             root_request_prepid = chained_request['chain'][0]
