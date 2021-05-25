@@ -1,7 +1,7 @@
 <template>
   <div>
     <h1 v-if="campaign.entries" class="page-title">
-      <span class="font-weight-light">Samples in</span> {{campaign.name}}
+      <span class="font-weight-light">Samples in</span> {{campaingName}}
       <template v-if="interestedPWG">
         <span class="font-weight-light">where</span> {{interestedPWG}} <span class="font-weight-light">is interested</span>
       </template>
@@ -83,7 +83,7 @@
       <tr v-for="entry in entries" :key="entry.dataset + entry.uid">
         <td v-if="entry.rowspan.short_name > 0" :rowspan="entry.rowspan.short_name">{{entry.short_name}}</td>
         <td class="dataset-column" v-if="entry.rowspan.dataset > 0" :rowspan="entry.rowspan.dataset">
-          <a :href="'https://cms-pdmv.cern.ch/mcm/requests?dataset_name=' + entry.dataset + '&member_of_campaign=' + campaign.name" target="_blank">{{entry.dataset}}</a>
+          <a :href="'https://cms-pdmv.cern.ch/mcm/requests?dataset_name=' + entry.dataset + '&member_of_campaign=' + entry.campaign_name" target="_blank">{{entry.dataset}}</a>
         </td>
         <td v-if="entry.rowspan.root_request > 0" :rowspan="entry.rowspan.root_request" class="progress-cell">
           <div>
@@ -92,6 +92,8 @@
             <template v-if="entry.root_request_output">
               <a :href="makeDASLink(entry.root_request_output)" target="_blank" class="ml-1">DAS</a>
             </template>
+            <br>
+            <small>Campaign: {{entry.campaign_name}}</small>
             <br>
             <small>Events: {{entry.rootEventsNice}}</small>
             <template v-if="entry.root_request_status === 'submitted'">
@@ -188,6 +190,7 @@ export default {
                 'HGC', 'HIG', 'HIN', 'JME', 'L1T', 'LUM', 'MUO',
                 'PPS', 'SMP', 'SUS', 'TAU', 'TOP', 'TRK', 'TSG'],
       campaign: {},
+      campaingName: '',
       newEntry: {},
       eventFilterOptions: [[0, 'All'], [5e6, '5M+'], [10e6, '10M+'], [20e6, '20M+'], [50e6, '50M+']],
       eventsFilter: 0,
@@ -246,7 +249,7 @@ export default {
   methods: {
     updateEntry: function(entry) {
       let entryCopy = this.makeCopy(entry);
-      entryCopy['campaign_uid'] = this.campaign.uid;
+      entryCopy['campaign_uid'] = entry.campaign_uid;
       let httpRequest = axios.post('api/existing/update_entry', entryCopy);
       let component = this;
       httpRequest.then(response => {
@@ -301,6 +304,7 @@ export default {
           component.processEntry(element);
         });
         component.mergeCells(campaign.entries, ['short_name', 'dataset', 'root_request', 'miniaod'])
+        this.campaingName = campaignName
         component.$set(component, 'campaign', campaign);
         component.applyFilters();
       }).catch(error => {
@@ -309,7 +313,7 @@ export default {
     },
     addPWGToEntryAction: function(pwg, entry) {
       const component = this;
-      component.addPWGToEntry(pwg, entry, function(deletedEntry) {
+      component.addPWGToEntry(pwg, entry, function() {
         component.undoStack.push({'action': 'add', 'entry': entry, 'pwg': pwg});
       });
     },
@@ -323,7 +327,7 @@ export default {
     },
     removePWGFromEntryAction: function(pwg, entry) {
       const component = this;
-      component.removePWGFromEntry(pwg, entry, function(deletedEntry) {
+      component.removePWGFromEntry(pwg, entry, function() {
         component.undoStack.push({'action': 'remove', 'entry': entry, 'pwg': pwg});
       });
     },
@@ -496,14 +500,14 @@ export default {
         // Save before edit copy
         let entryCopy = Object.assign(action.entry, action.entry);
         let pwgCopy = action.pwg;
-        component.removePWGFromEntry(pwgCopy, entryCopy, function(updatedEntry) {
+        component.removePWGFromEntry(pwgCopy, entryCopy, function() {
           component.redoStack.push({'action': 'remove', 'entry': entryCopy, 'pwg': pwgCopy});
         });
       } else if (action.action == 'remove') {
         // Save before edit copy
         let entryCopy = Object.assign(action.entry, action.entry);
         let pwgCopy = action.pwg;
-        component.addPWGToEntry(pwgCopy, entryCopy, function(updatedEntry) {
+        component.addPWGToEntry(pwgCopy, entryCopy, function() {
           component.redoStack.push({'action': 'add', 'entry': entryCopy, 'pwg': pwgCopy});
         });
       }
@@ -518,14 +522,14 @@ export default {
         // Save before edit copy
         let entryCopy = Object.assign(action.entry, action.entry);
         let pwgCopy = action.pwg;
-        component.addPWGToEntry(pwgCopy, entryCopy, function(updatedEntry) {
+        component.addPWGToEntry(pwgCopy, entryCopy, function() {
           component.undoStack.push({'action': 'add', 'entry': entryCopy, 'pwg': pwgCopy});
         });
       } else if (action.action == 'add') {
         // Save before edit copy
         let entryCopy = Object.assign(action.entry, action.entry);
         let pwgCopy = action.pwg;
-        component.removePWGFromEntry(pwgCopy, entryCopy, function(updatedEntry) {
+        component.removePWGFromEntry(pwgCopy, entryCopy, function() {
           component.undoStack.push({'action': 'remove', 'entry': entryCopy, 'pwg': pwgCopy});
         });
       } 

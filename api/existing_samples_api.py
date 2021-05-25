@@ -67,80 +67,100 @@ class GetExistingCampaignAPI(APIBase):
         self.logger.info('Getting campaign %s', campaign_name)
         conn = sqlite3.connect(self.db_path)
         try:
+            #separate comma separated campaign names
+            campaign_names = clean_split(campaign_name)
+            query_where_campaign = 'WHERE name = ?'
+            query_args_campaign = []
+            i = 0
+            for campaign in campaign_names:
+                i += 1
+                query_args_campaign.append(campaign)
+                if  i > 1 and i <= len(campaign_names):
+                    query_where_campaign += ' OR name = ?'
             # Get the campaign itself
             campaigns = query(conn,
                               'existing_campaigns',
                               ['uid', 'name'],
-                              'WHERE name = ?',
-                              [campaign_name])
+                              query_where_campaign,
+                              query_args_campaign)
             if not campaigns:
                 raise Exception('Could not find given campaign')
 
-            campaign = campaigns[0]
-            query_where = 'WHERE campaign_uid = ?'
-            query_args = [campaign['uid']]
-            if interested_pwg:
-                interested_pwg = '%%%s%%' % (interested_pwg.strip().upper())
-                query_args.append(interested_pwg)
-                query_where += ' AND interested_pwgs LIKE ?'
 
-            query_where += ' ORDER BY dataset COLLATE NOCASE'
-            entries = query(conn,
-                            'existing_campaign_entries',
-                            ['uid',
-                             'chained_request',
-                             'dataset',
-                             'root_request',
-                             'root_request_priority',
-                             'root_request_total_events',
-                             'root_request_done_events',
-                             'root_request_status',
-                             'root_request_output',
-                             'miniaod',
-                             'miniaod_priority',
-                             'miniaod_total_events',
-                             'miniaod_done_events',
-                             'miniaod_status',
-                             'miniaod_output',
-                             'nanoaod',
-                             'nanoaod_priority',
-                             'nanoaod_total_events',
-                             'nanoaod_done_events',
-                             'nanoaod_status',
-                             'nanoaod_output',
-                             'interested_pwgs',
-                             'ref_interested_pwgs'],
-                            query_where,
-                            query_args)
+            for campaign in campaigns:
+                query_args = [campaign['uid']]
+                query_where = 'WHERE campaign_uid = ?'
+                if interested_pwg:
+                    interested_pwg = '%%%s%%' % (interested_pwg.strip().upper())
+                    query_args.append(interested_pwg)
+                    query_where += ' AND interested_pwgs LIKE ?'
+
+                query_where += ' ORDER BY dataset COLLATE NOCASE'
+                entries = query(conn,
+                                'existing_campaign_entries',
+                                ['uid',
+                                'chained_request',
+                                'dataset',
+                                'root_request',
+                                'root_request_priority',
+                                'root_request_total_events',
+                                'root_request_done_events',
+                                'root_request_status',
+                                'root_request_output',
+                                'miniaod',
+                                'miniaod_priority',
+                                'miniaod_total_events',
+                                'miniaod_done_events',
+                                'miniaod_status',
+                                'miniaod_output',
+                                'nanoaod',
+                                'nanoaod_priority',
+                                'nanoaod_total_events',
+                                'nanoaod_done_events',
+                                'nanoaod_status',
+                                'nanoaod_output',
+                                'interested_pwgs',
+                                'ref_interested_pwgs'],
+                                query_where,
+                                query_args)
+
+                for entry in entries:
+                    entry['campaign_name'] = campaign['name']
+                    entry['campaign_uid'] = campaign['uid']
+                    entry['short_name'] = get_short_name(entry['dataset'])
+                    entry['chain_tag'] = get_chain_tag(entry['chained_request'])
+                    miniaod = entry['miniaod']
+                    nanoaod = entry['nanoaod']
+                    entry['miniaod_version'] = ''
+                    if miniaod:
+                        version = miniaod.split('-')[1].split('MiniAOD')[-1].replace('APV', '')
+                        if not version:
+                            version = 'v1'
+
+                        entry['miniaod_version'] = 'MiniAOD%s' % (version)
+
+                    entry['nanoaod_version'] = ''
+                    if nanoaod:
+                        version = nanoaod.split('-')[1].split('NanoAOD')[-1].replace('APV', '')
+                        if not version:
+                            version = 'v7'
+                        elif version == 'v2':
+                            version = 'v8'
+
+                        entry['nanoaod_version'] = 'NanoAOD%s' % (version)
+
+                campaign['entries'] = entries
+
         finally:
             conn.close()
 
-        for entry in entries:
-            entry['short_name'] = get_short_name(entry['dataset'])
-            entry['chain_tag'] = get_chain_tag(entry['chained_request'])
-            miniaod = entry['miniaod']
-            nanoaod = entry['nanoaod']
-            entry['miniaod_version'] = ''
-            if miniaod:
-                version = miniaod.split('-')[1].split('MiniAOD')[-1].replace('APV', '')
-                if not version:
-                    version = 'v1'
-
-                entry['miniaod_version'] = 'MiniAOD%s' % (version)
-
-            entry['nanoaod_version'] = ''
-            if nanoaod:
-                version = nanoaod.split('-')[1].split('NanoAOD')[-1].replace('APV', '')
-                if not version:
-                    version = 'v7'
-                elif version == 'v2':
-                    version = 'v8'
-
-                entry['nanoaod_version'] = 'NanoAOD%s' % (version)
-
         multiarg_sort(entries, ['short_name', 'dataset', 'root_request', 'miniaod', 'nanoaod'])
-        campaign['entries'] = entries
-        return self.output_text({'response': campaign, 'success': True, 'message': ''})
+        out_campaign = {}
+        out_campaign['entries'] = []
+        for campaign in campaigns:
+            out_campaign['entries'].extend(campaign['entries'])
+
+        return self.output_text({'response': out_campaign, 'success': True, 'message': ''})
 
 
 class UpdateExistingCampaignAPI(APIBase):
