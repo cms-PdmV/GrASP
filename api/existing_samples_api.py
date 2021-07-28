@@ -79,7 +79,6 @@ class GetExistingCampaignAPI(APIBase):
                 query_where += ' AND interested_pwgs LIKE ?'
 
             query_where += ' ORDER BY dataset COLLATE NOCASE'
-            print(query_where, query_args)
             entries = query(conn,
                             'existing_campaign_entries',
                             ['existing_campaign_entries.uid',
