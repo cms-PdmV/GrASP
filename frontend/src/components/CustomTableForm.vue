@@ -58,11 +58,7 @@ export default {
         margin-right: 20px;
     }
     .form-class-text {
-        display: flex;
-        flex-flow: row wrap;
 
-        /* Then we define how is distributed the remaining space */
-        justify-content: space-around;
         background-color: lightgray;
         border-style: solid;
         border-width: thin;
