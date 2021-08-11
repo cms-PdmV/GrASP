@@ -25,13 +25,19 @@ export default {
     return {
     campaigns: [],
     datasetnames: '',
-    url: 'https://cms-pdmv.cern.ch/grasp/'
+    url: ''
     }
+  },
+  created () {
+    this.generateURL();
   },
   methods: {
       generateURL: function() {
-          const campaign_holder = this.campaigns
-          let url = 'https://cms-pdmv.cern.ch/grasp/existing?name=' + campaign_holder.join(',') + '&dataset=' + this.datasetnames 
+          const cmpgns = this.campaigns
+          let url = location.origin + location.pathname + cmpgns.join(',') 
+          if (this.datasetnames) {
+            url = location.origin + location.pathname + cmpgns.join(',') + '&dataset=' + this.datasetnames 
+          }
           this.url = url
       },
   }
@@ -55,6 +61,7 @@ export default {
         border: 1px #aaa solid;
         margin-left: 20px;
         margin-right: 20px;
+        margin-bottom: 40px;
     }
     .input-class {
         flex: 1 0 15%;
