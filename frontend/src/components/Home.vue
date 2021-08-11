@@ -1,6 +1,8 @@
 <template>
   <div>
     <h1 class="page-title">GrASP</h1>
+    <h3 style="text-align: center">Custom Table Generator</h3>
+    <CustomTable :existingCampaigns="existingCampaigns"/>
     <h3 style="text-align: center">Existing Samples</h3>
     <table>
       <tr>
@@ -70,6 +72,7 @@
 
 import axios from 'axios'
 import { roleMixin } from '../mixins/UserRoleMixin.js'
+import CustomTable from './CustomTableForm.vue'
 
 export default {
   name: 'home',
@@ -100,6 +103,9 @@ export default {
         component.userTags = response.data.response;
       });
     },
+  },
+  components: {
+    CustomTable
   }
 }
 </script>
