@@ -190,7 +190,6 @@
 import axios from 'axios'
 import { utilsMixin } from '../mixins/UtilsMixin.js'
 import { roleMixin } from '../mixins/UserRoleMixin.js'
-import ExcelJS from 'exceljs'
 
 export default {
   name: 'planning',
@@ -392,7 +391,7 @@ export default {
       let entryBeforeEdit = this.makeCopy(entry);
       const component = this;
       entry[attribute] = entry.temporary[attribute];
-      this.updateEntry(entry, function(editedEntry) {
+      this.updateEntry(entry, function() {
         component.undoStack.push({'action': 'edit', 'entry': entry, 'beforeEdit': entryBeforeEdit});
         component.redoStack = [];
       });
@@ -433,7 +432,7 @@ export default {
         // Copy all properties from source object to
         // a target object and return the target object
         let entry = Object.assign(action.entry, action.beforeEdit);
-        this.updateEntry(entry, function(updatedEntry) {
+        this.updateEntry(entry, function() {
           component.redoStack.push({'action': 'edit', 'entry': entry, 'beforeEdit': beforeEdit});
         });
       } else if (action.action == 'add') {
@@ -463,7 +462,7 @@ export default {
         // Copy all properties from source object to
         // a target object and return the target object
         let entry = Object.assign(action.entry, action.beforeEdit);
-        this.updateEntry(entry, function(updatedEntry) {
+        this.updateEntry(entry, function() {
           component.undoStack.push({'action': 'edit', 'entry': entry, 'beforeEdit': beforeEdit});
         });
       } else if (action.action == 'add') {
