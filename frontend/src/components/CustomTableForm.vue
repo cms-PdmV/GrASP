@@ -34,15 +34,13 @@ export default {
       const cmpgns = this.campaigns
       let url = location.origin + location.pathname 
       if (cmpgns.length) {
-        if (url.endsWith("grasp")) {
-          url += '/existing?name='+ cmpgns.join(',')
+        if (!url.endsWith("/")) {
+          url += '/';
         }
-        else {
-          url += 'existing?name='+ cmpgns.join(',')
+        url += 'existing?name='+ cmpgns.join(',');
+        if (this.datasetnames) {
+          url += '&dataset=' + this.datasetnames 
         }
-      }
-      if (this.datasetnames) {
-        url += '&dataset=' + this.datasetnames 
       }
       this.url = url
     },
