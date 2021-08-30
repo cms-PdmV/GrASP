@@ -34,7 +34,7 @@ export default {
       const cmpgns = this.campaigns
       let url = location.origin + location.pathname 
       if (cmpgns.length) {
-        url += 'existing?name='+ cmpgns.join(',')
+        url += '/existing?name='+ cmpgns.join(',')
       }
       if (this.datasetnames) {
         url += '&dataset=' + this.datasetnames 
