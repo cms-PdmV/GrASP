@@ -241,68 +241,76 @@ class GetAllExistingCampaignsAPI(APIBase):
         return self.output_text({'response': campaigns, 'success': True, 'message': ''})
 
 
-class UpdateEntryInExistingCampaignAPI(APIBase):
+class UpdateEntriesInExistingCampaignAPI(APIBase):
     """
-    Endpoint for editing entry in an existing samples
+    Endpoint for editing entries in an existing samples
     """
     @APIBase.ensure_request_data
     @APIBase.exceptions_to_errors
     @APIBase.ensure_role('user')
     def post(self):
         """
-        Update entry in existing samples table based on entry UID
+        Update entries in existing samples table based on entry UID
+        Accepts list of entries with UID and interested PWGs
         """
-        data = flask.request.data
-        data = json.loads(data.decode('utf-8'))
-        self.logger.info('Editing entry in existing samples %s', data)
-        # Prepare user info for history
-        entry_uid = int(data['uid'])
-        # Interested pwgs
-        interested_pwgs = clean_split(data['interested_pwgs'].upper())
-        for pwg in interested_pwgs:
-            if not valid_pwg(pwg):
-                raise Exception('"%s" is not a valid PWG' % pwg)
+        entries = json.loads(flask.request.data.decode('utf-8'))
+        if not isinstance(entries, list):
+            entries = [entries]
 
-        interested_pwgs = sorted_join(interested_pwgs)
+        self.logger.info('Editing entry in existing samples %s', entries)
         conn = sqlite3.connect(self.db_path)
+        updated_entries = []
         try:
-            # Existing entry
-            existing_entry = query(conn,
-                                   'existing_campaign_entries',
-                                   ['root_request',
-                                    'miniaod',
-                                    'nanoaod',
-                                    'interested_pwgs'],
-                                   'WHERE uid = ?',
-                                   [entry_uid])
-            if not existing_entry:
-                raise Exception('Could not find entry with %s uid' % (entry_uid))
+            for entry in entries:
+                # Prepare user info for history
+                entry_uid = int(entry['uid'])
+                # Interested pwgs
+                interested_pwgs = clean_split(entry['interested_pwgs'].upper())
+                for pwg in interested_pwgs:
+                    if not valid_pwg(pwg):
+                        raise Exception('"%s" is not a valid PWG' % pwg)
 
-            existing_entry = existing_entry[0]
-            old_interested_pwgs = existing_entry['interested_pwgs']
-            if interested_pwgs == old_interested_pwgs:
-                return self.output_text({'response': {},
-                                         'success': True,
-                                         'message': 'Nothing changed'})
+                interested_pwgs = sorted_join(interested_pwgs)
+                # Existing entry
+                existing_entry = query(conn,
+                                       'existing_campaign_entries',
+                                       ['root_request',
+                                        'miniaod',
+                                        'nanoaod',
+                                        'interested_pwgs'],
+                                       'WHERE uid = ?',
+                                       [entry_uid])
+                if not existing_entry:
+                    raise Exception('Could not find entry with %s UID' % (entry_uid))
 
-            # Create an entry
-            entry = {'uid': entry_uid,
-                     'interested_pwgs': interested_pwgs}
-            # Update entry in DB
-            update_entry(conn, 'existing_campaign_entries', entry)
-            # Update history
-            if existing_entry['nanoaod']:
-                updated_request = existing_entry['nanoaod']
-            elif existing_entry['miniaod']:
-                updated_request = existing_entry['miniaod']
-            else:
-                updated_request = existing_entry['root_request']
+                existing_entry = existing_entry[0]
+                old_interested_pwgs = existing_entry['interested_pwgs']
+                if interested_pwgs == old_interested_pwgs:
+                    continue
 
-            add_history(conn, 'existing_campaigns', 'update', '%s: %s -> %s' % (updated_request,
-                                                                                old_interested_pwgs,
-                                                                                interested_pwgs))
-            conn.commit()
+                # Create an entry
+                new_entry = {'uid': entry_uid,
+                             'interested_pwgs': interested_pwgs}
+                # Update entry in DB
+                update_entry(conn, 'existing_campaign_entries', new_entry)
+                # Update history
+                if existing_entry['nanoaod']:
+                    updated_request = existing_entry['nanoaod']
+                elif existing_entry['miniaod']:
+                    updated_request = existing_entry['miniaod']
+                else:
+                    updated_request = existing_entry['root_request']
+
+                add_history(conn,
+                            'existing_campaigns',
+                            'update',
+                            '%s: %s -> %s' % (updated_request,
+                                              old_interested_pwgs,
+                                              interested_pwgs))
+                updated_entries.append(new_entry)
+
         finally:
+            conn.commit()
             conn.close()
 
-        return self.output_text({'response': entry, 'success': True, 'message': ''})
+        return self.output_text({'response': updated_entries, 'success': True, 'message': ''})

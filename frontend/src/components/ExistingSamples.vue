@@ -64,7 +64,7 @@
     <div v-if="campaign.entries" class="align-center ma-2">
       <b>I am going to add or remove</b>
       <select v-model="selectedPWG" class="ml-2 mr-2">
-        <option disabled selected value=''></option>
+        <option selected value=''></option>
         <option v-for="pwg in allPWGs" :key="pwg" :value="pwg">{{pwg}}</option>
       </select>
       <b>physics working group as interested PWG in samples</b>
@@ -78,7 +78,9 @@
         <th>NanoAOD Request<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.nanoaod" @input="applyFilters()"></th>
         <th>Chained Request<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.chained_request" @input="applyFilters()"></th>
         <th>Interested PWGs</th>
-        <!-- <th>Notes</th> -->
+        <th>
+          <input type="checkbox" :checked="selectAllChecked" v-on:change="toggleAllCheckboxes" v-model="selectAllChecked" :indeterminate.prop="selectAllIndeterminate">
+        </th>
       </tr>
       <tr v-for="entry in entries" :key="entry.dataset + entry.uid">
         <td v-if="entry.rowspan.short_name > 0" :rowspan="entry.rowspan.short_name">{{entry.short_name}}</td>
@@ -160,12 +162,22 @@
           {{entry.interested_pwgs}}
           <template v-if="selectedPWG && role('user')">
             <br>
-            <span class="add-pwg-link" v-if="!entry.interested_pwgs.includes(selectedPWG)" @click="addPWGToEntryAction(selectedPWG, entry)">Add {{selectedPWG}}</span>
-            <span class="remove-pwg-link" v-if="entry.interested_pwgs.includes(selectedPWG)" @click="removePWGFromEntryAction(selectedPWG, entry)">Remove {{selectedPWG}}</span>
+            <span class="add-pwg-link" v-if="!entry.interested_pwgs.includes(selectedPWG)" @click="addPWGToEntriesAction(selectedPWG, [entry])">Add {{selectedPWG}}</span>
+            <span class="remove-pwg-link" v-if="entry.interested_pwgs.includes(selectedPWG)" @click="removePWGFromEntriesAction(selectedPWG, [entry])">Remove {{selectedPWG}}</span>
           </template>
+        </td>
+        <td style="min-width: 30px;">
+          <input type="checkbox" :checked="entry.checked" v-on:change="toggleOneCheckbox" v-model="entry.checked">
         </td>
       </tr>
     </table>
+
+    <footer v-if="selectedPWG && (selectAllChecked || selectAllIndeterminate) && role('user')">
+      Selected items ({{selectedCount}}) actions:
+      <span class="add-pwg-link" @click="addPWGToSelectedEntriesAction(selectedPWG)">Add {{selectedPWG}}</span>
+      <span class="remove-pwg-link" @click="removePWGFromSelectedEntriesAction(selectedPWG)">Remove {{selectedPWG}}</span>
+    </footer>
+
   </div>
 </template>
 
@@ -209,6 +221,9 @@ export default {
       },
       undoStack: [],
       redoStack: [],
+      selectAllChecked: false,
+      selectAllIndeterminate: false,
+      selectedCount: 0,
     }
   },
   created () {
@@ -247,14 +262,26 @@ export default {
     this.fetchCampaign(campaignName);
   },
   methods: {
-    updateEntry: function(entry) {
-      let entryCopy = this.makeCopy(entry);
-      entryCopy['campaign_uid'] = entry.campaign_uid;
-      let httpRequest = axios.post('api/existing/update_entry', entryCopy);
+    updateEntries: function(entries) {
+      let entriesToUpdate = [];
+      for (let entry of entries) {
+        entriesToUpdate.push({'campaign_uid': entry.campaign_uid,
+                              'uid': entry.uid,
+                              'interested_pwgs': entry.interested_pwgs});
+      }
+      entriesToUpdate = this.makeCopy(entriesToUpdate);
+      let httpRequest = axios.post('api/existing/update_entries', entriesToUpdate);
       let component = this;
       httpRequest.then(response => {
-        Object.assign(entry, response.data.response);
-        component.processEntry(entry);
+        for (let updatedEntry of response.data.response) {
+          for (let existingEntry of this.entries) {
+            if (updatedEntry.uid == existingEntry.uid) {
+              // Update existing entry
+              Object.assign(existingEntry, updatedEntry);
+              break
+            }
+          }
+        }
       }).catch(error => {
         alert(error.response.data.message);
       });
@@ -291,6 +318,7 @@ export default {
         entry.nanoaodPercentage = 100;
         entry.nanoaodEventsNice = entry.nanoaodTotalEventsNice;
       }
+      entry.checked = entry.checked == undefined ? false : entry.checked;
     },
     fetchCampaign: function(campaignName) {
       let component = this;
@@ -313,33 +341,59 @@ export default {
         alert(error.response.data.message);
       });
     },
-    addPWGToEntryAction: function(pwg, entry) {
+    addPWGToEntriesAction: function(pwg, entries) {
       const component = this;
-      component.addPWGToEntry(pwg, entry, function() {
-        component.undoStack.push({'action': 'add', 'entry': entry, 'pwg': pwg});
+      component.addPWGToEntries(pwg, entries, function() {
+        component.undoStack.push({'action': 'add', 'entries': entries, 'pwg': pwg});
       });
     },
-    addPWGToEntry: function(pwg, entry, onSuccess) {
+    addPWGToEntries: function(pwg, entries, onSuccess) {
       const component = this;
-      entry.interested_pwgs = (this.cleanSplit(entry.interested_pwgs, ',').concat([pwg])).sort().join(',');
-      component.updateEntry(entry);
+      let entriesToUpdate = [];
+      for (let entry of entries) {
+        if (this.cleanSplit(entry.interested_pwgs, ',').includes(pwg)) {
+          continue
+        }
+        entry.interested_pwgs = (this.cleanSplit(entry.interested_pwgs, ',').concat([pwg])).sort().join(',');
+        entriesToUpdate.push(entry);
+      }
+      if (!entriesToUpdate.length) {
+        return;
+      }
+      component.updateEntries(entriesToUpdate);
       if (onSuccess) {
-        onSuccess(entry);
+        onSuccess(entriesToUpdate);
       }  
     },
-    removePWGFromEntryAction: function(pwg, entry) {
+    removePWGFromEntriesAction: function(pwg, entries) {
       const component = this;
-      component.removePWGFromEntry(pwg, entry, function() {
-        component.undoStack.push({'action': 'remove', 'entry': entry, 'pwg': pwg});
+      component.removePWGFromEntries(pwg, entries, function() {
+        component.undoStack.push({'action': 'remove', 'entries': entries, 'pwg': pwg});
       });
     },
-    removePWGFromEntry: function(pwg, entry, onSuccess) {
+    removePWGFromEntries: function(pwg, entries, onSuccess) {
       const component = this;
-      entry.interested_pwgs = (this.cleanSplit(entry.interested_pwgs, ',').filter(function(p) { return p !== pwg})).join(',');
-      component.updateEntry(entry);
-      if (onSuccess) {
-        onSuccess(entry);
+      let entriesToUpdate = [];
+      for (let entry of entries) {
+        if (!this.cleanSplit(entry.interested_pwgs, ',').includes(pwg)) {
+          continue
+        }
+        entry.interested_pwgs = (this.cleanSplit(entry.interested_pwgs, ',').filter(function(p) { return p !== pwg})).join(',');
+        entriesToUpdate.push(entry);
       }
+      if (!entriesToUpdate.length) {
+        return;
+      }
+      component.updateEntries(entriesToUpdate);
+      if (onSuccess) {
+        onSuccess(entriesToUpdate);
+      }
+    },
+    addPWGToSelectedEntriesAction: function(pwg) {
+      this.addPWGToEntriesAction(pwg, this.entries.filter(x => x.checked));
+    },
+    removePWGFromSelectedEntriesAction: function(pwg) {
+      this.removePWGFromEntriesAction(pwg, this.entries.filter(x => x.checked));
     },
     mergeCells: function(list, attributes) {
       list.forEach(element => {
@@ -413,6 +467,7 @@ export default {
         }
       }
       this.entries = filteredEntries;
+      this.toggleOneCheckbox();
       this.mergeCells(this.entries, ['short_name', 'dataset', 'root_request', 'miniaod']);
       this.$router.replace({query: query}).catch(() => {});
     },
@@ -499,18 +554,12 @@ export default {
       const component = this;
       let action = this.undoStack.pop()
       if (action.action == 'add') {
-        // Save before edit copy
-        let entryCopy = Object.assign(action.entry, action.entry);
-        let pwgCopy = action.pwg;
-        component.removePWGFromEntry(pwgCopy, entryCopy, function() {
-          component.redoStack.push({'action': 'remove', 'entry': entryCopy, 'pwg': pwgCopy});
+        component.removePWGFromEntries(action.pwg, action.entries, function() {
+          component.redoStack.push({'action': 'remove', 'entries': action.entries, 'pwg': action.pwg});
         });
       } else if (action.action == 'remove') {
-        // Save before edit copy
-        let entryCopy = Object.assign(action.entry, action.entry);
-        let pwgCopy = action.pwg;
-        component.addPWGToEntry(pwgCopy, entryCopy, function() {
-          component.redoStack.push({'action': 'add', 'entry': entryCopy, 'pwg': pwgCopy});
+        component.addPWGToEntries(action.pwg, action.entries, function() {
+          component.redoStack.push({'action': 'add', 'entries': action.entries, 'pwg': action.pwg});
         });
       }
     },
@@ -521,26 +570,52 @@ export default {
       const component = this;
       let action = this.redoStack.pop()
       if (action.action == 'remove') {
-        // Save before edit copy
-        let entryCopy = Object.assign(action.entry, action.entry);
-        let pwgCopy = action.pwg;
-        component.addPWGToEntry(pwgCopy, entryCopy, function() {
-          component.undoStack.push({'action': 'add', 'entry': entryCopy, 'pwg': pwgCopy});
+        component.addPWGToEntries(action.pwg, action.entries, function() {
+          component.undoStack.push({'action': 'add', 'entries': action.entries, 'pwg': action.pwg});
         });
       } else if (action.action == 'add') {
-        // Save before edit copy
-        let entryCopy = Object.assign(action.entry, action.entry);
-        let pwgCopy = action.pwg;
-        component.removePWGFromEntry(pwgCopy, entryCopy, function() {
-          component.undoStack.push({'action': 'remove', 'entry': entryCopy, 'pwg': pwgCopy});
+        component.removePWGFromEntries(action.pwg, action.entries, function() {
+          component.undoStack.push({'action': 'remove', 'entries': action.entries, 'pwg': action.pwg});
         });
       } 
+    },
+    toggleAllCheckboxes: function() {
+      this.selectAllIndeterminate = false;
+      if (this.selectAllChecked) {
+        this.entries.forEach(x => x.checked = true);
+        this.selectedCount = this.entries.length;
+      } else {
+        this.entries.forEach(x => x.checked = false);
+        this.selectedCount = 0;
+      }
+    },
+    toggleOneCheckbox: function() {
+      if (this.entries.every(x => x.checked)) {
+        // If all selected
+        this.selectedCount = this.entries.length;
+        this.selectAllChecked = true;
+        this.selectAllIndeterminate = false;
+      } else if (this.entries.some(x => x.checked)) {
+        // If some are selected
+        this.selectedCount = this.entries.filter(x => x.checked).length;
+        this.selectAllChecked = false;
+        this.selectAllIndeterminate = true;
+      } else {
+        // If none are selected
+        this.selectedCount = 0;
+        this.selectAllChecked = false;
+        this.selectAllIndeterminate = false;
+      }
     }
   }
 }
 </script>
 
 <style scoped>
+
+table {
+  margin-bottom: 64px;
+}
 
 td {
   white-space: nowrap;
@@ -602,6 +677,7 @@ select {
 .add-pwg-link, .remove-pwg-link {
   text-decoration: underline;
   cursor: pointer;
+  font-weight: normal;
 }
 
 .add-pwg-link {
@@ -629,4 +705,3 @@ select {
 }
 
 </style>
-

@@ -26,7 +26,7 @@ from api.existing_samples_api import (CreateExistingCampaignAPI,
                                       UpdateExistingCampaignAPI,
                                       DeleteExistingCampaignAPI,
                                       GetAllExistingCampaignsAPI,
-                                      UpdateEntryInExistingCampaignAPI)
+                                      UpdateEntriesInExistingCampaignAPI)
 from api.user_tags_api import (CreateUserTagAPI,
                                GetUserTagAPI,
                                UpdateUserTagAPI,
@@ -85,6 +85,11 @@ def api_documentation(_path):
         #pylint: disable=protected-access
         urls = sorted([r.rule for r in app.url_map._rules_by_endpoint[endpoint]])
         #pylint: enable=protected-access
+        if _path:
+            urls = [u for u in urls if u.startswith(f'/api/{_path}')]
+            if not urls:
+                continue
+
         category = [x for x in urls[0].split('/') if x][1]
         if category not in docs:
             docs[category] = {}
@@ -126,7 +131,9 @@ api.add_resource(GetExistingCampaignAPI,
 api.add_resource(UpdateExistingCampaignAPI, '/api/existing/update')
 api.add_resource(DeleteExistingCampaignAPI, '/api/existing/delete')
 api.add_resource(GetAllExistingCampaignsAPI, '/api/existing/get_all')
-api.add_resource(UpdateEntryInExistingCampaignAPI, '/api/existing/update_entry')
+api.add_resource(UpdateEntriesInExistingCampaignAPI,
+                 '/api/existing/update_entry',
+                 '/api/existing/update_entries')
 
 # User tags
 api.add_resource(CreateUserTagAPI, '/api/user_tag/create')

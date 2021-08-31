@@ -157,16 +157,31 @@ td.hidden-cell {
   margin-right: -4px;
 }
 
-</style>
-
-<style>
-
 .v-app-bar--is-scrolled {
   height: 38px !important;
 }
 
 .v-app-bar--is-scrolled > div {
   height: 100% !important;
+}
+
+footer {
+  padding: 0 12px;
+  height: 52px;
+  left: 0px;
+  right: 0px;
+  bottom: 0px;
+  position: fixed;
+  background: var(--v-background-base) !important;
+  box-shadow: 0px -2px 4px -1px rgba(0, 0, 0, 0.2), 0px -4px 5px 0px rgba(0, 0, 0, 0.14), 0px -1px 10px 0px rgba(0, 0, 0, 0.12);
+  z-index: 100;
+}
+
+footer > a,
+footer > span {
+  margin-left: 4px;
+  line-height: 52px;
+  text-decoration: underline;
 }
 
 </style>
