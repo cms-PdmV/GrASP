@@ -1,8 +1,6 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
 import Home from '@/components/Home'
-import CampaignPlanning from '@/components/CampaignPlanning'
-import CampaignPlanningEdit from '@/components/CampaignPlanningEdit'
 import ExistingSamples from '@/components/ExistingSamples'
 import ExistingSamplesEdit from '@/components/ExistingSamplesEdit'
 import UserTags from '@/components/UserTags'
@@ -18,16 +16,6 @@ const routes = [
     path: '/',
     name: 'home',
     component: Home
-  },
-  {
-    path: '/planning',
-    name: 'planning',
-    component: CampaignPlanning
-  },
-  {
-    path: '/planning_edit',
-    name: 'planning_edit',
-    component: CampaignPlanningEdit
   },
   {
     path: '/existing',
