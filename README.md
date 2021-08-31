@@ -53,35 +53,3 @@ Copy of McM users and their roles list.
 1. `username` <text> (PRIMARY KEY NOT NULL) - username (CERN login)
 2. `name` <text> - user name and last name
 3. `role` <text> - role in McM
-
-## Table: `future_campaigns`
-
-#### Description:
-List of campaigns for campaign planning, actual entries are in `future_campaign_entries`
-
-#### Columns:
-1. `uid` <integer> (PRIMARY KEY AUTOINCREMENT) - unique identifier
-2. `name` <text> - future campaign name, might include wildcards
-3. `reference` <text> - list of comma separated reference campaigns, might include wildcards
-4. `prefilled` <short> - whether this campaign was already prefilled once
-
-## Table: `future_campaign_entries`
-
-#### Description:
-Entries for campaign planning.
-
-#### Columns:
-1. `uid` <integer> (PRIMARY KEY AUTOINCREMENT) - unique identifier
-2. `campaign_uid` <integer> - uid of campaign (FOREIGN KEY to `uid` in `future_campaigns`)
-3. `short_name` <text> - short name of dataset
-4. `dataset` <text> - dataset name
-5. `chain_tag` <text> - short name of chained request if it exists
-6. `events` <integer> - number of events of reference request or target request if it exists
-7. `interested_pwgs` <text> - interested PWGs of reference request or target request if it exists
-8. `ref_interested_pwgs` <text> - reference interested PWGs for synchronization with McM
-9. `comment` <text> - freeform comment
-10. `fragment` <text> - freeform field for fragment
-11. `in_reference` <text> - prepid of request in reference campaign if it exists
-12. `in_target` <text> - prepid of request in planned campaign if it exists
-13. `cross_section` <real> - cross section value of dataset fetched from XSDB
-14. `negative_weight` <real> - negative weight value of dataset fetched from XSDB
