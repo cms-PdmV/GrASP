@@ -9,9 +9,9 @@
 
       <h4 style="padding-left: 30px"><label for="datasetnames">Please enter the dataset names you want to follow in your table separated by a | below with no spaces: </label></h4>
       <input style="text-align: center; border: 1px solid black; width: 60%;background-color: white;" v-model="datasetnames" v-on:input="generateURL" id="datasetnames" placeholder="TTToHadronic_|ST_t-channel_top_4f_">
-      <p style="padding-left: 30px">Your custom table is here: <a v-bind:href=url> {{url}}</a> </p>    
+      <p style="padding-left: 30px">Your custom table is here: <a v-bind:href=url> {{url}}</a> </p>
     </div>
-  
+
   </div>
 </template>
 
@@ -32,14 +32,14 @@ export default {
   methods: {
     generateURL: function() {
       const cmpgns = this.campaigns
-      let url = location.origin + location.pathname 
+      let url = location.origin + location.pathname
       if (cmpgns.length) {
         if (!url.endsWith("/")) {
           url += '/';
         }
         url += 'existing?name='+ cmpgns.join(',');
         if (this.datasetnames) {
-          url += '&dataset=' + this.datasetnames 
+          url += '&dataset=' + this.datasetnames
         }
       }
       this.url = url

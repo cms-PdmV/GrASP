@@ -15,6 +15,7 @@ from utils.global_config import Config
 from utils.username_filter import UsernameFilter
 from api.existing_samples_api import (CreateExistingCampaignAPI,
                                       GetExistingCampaignAPI,
+                                      GetExistingCampaignEntriesAPI,
                                       UpdateExistingCampaignAPI,
                                       DeleteExistingCampaignAPI,
                                       GetAllExistingCampaignsAPI,
@@ -105,9 +106,10 @@ api.add_resource(UserActionHistory,
 
 # Existing samples
 api.add_resource(CreateExistingCampaignAPI, '/api/existing/create')
-api.add_resource(GetExistingCampaignAPI,
-                 '/api/existing/get/<string:campaign_name>',
-                 '/api/existing/get/<string:campaign_name>/<string:interested_pwg>')
+api.add_resource(GetExistingCampaignAPI, '/api/existing/get/<string:campaign_name>')
+api.add_resource(GetExistingCampaignEntriesAPI,
+                 '/api/existing/get_entries/<string:campaign_name>',
+                 '/api/existing/get_entries/<string:campaign_name>/<string:interested_pwg>')
 api.add_resource(UpdateExistingCampaignAPI, '/api/existing/update')
 api.add_resource(DeleteExistingCampaignAPI, '/api/existing/delete')
 api.add_resource(GetAllExistingCampaignsAPI, '/api/existing/get_all')

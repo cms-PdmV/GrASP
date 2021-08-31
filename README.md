@@ -43,7 +43,7 @@ Entries for existing campaigns.
 23. `nanoaod_output` <text> - NanoAOD request name of output dataset
 24. `interested_pwgs` <text> - comma separated list of interested PWGs of MiniAOD request if it exists, root request otherwise. This list is edited from Samples page
 25. `ref_interested_pwgs` <text> - comma separated list of interested PWGs of MiniAOD request if it exists, root request otherwise. This list is updated from McM during each update and not touched until next update. It is used to know which PWGs were added and which ones were removed in Samples page and McM
- 
+
 ## Table: `mcm_users`
 
 #### Description:

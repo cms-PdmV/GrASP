@@ -129,6 +129,10 @@ class ExistingSamplesUpdater():
         """
         Process request into all it's chained requests and insert or update them
         """
+        if not request['dataset_name']:
+            # Skip empty dataset requests
+            return
+
         request_prepid = request['prepid']
         # Check request membership in chains
         if not request['member_of_chain']:

@@ -57,7 +57,33 @@ class CreateExistingCampaignAPI(APIBase):
 
 class GetExistingCampaignAPI(APIBase):
     """
-    Endpoint for getting an existing campaign or campaign group
+    Endpoint for getting an existing campaign
+    """
+    @APIBase.exceptions_to_errors
+    def get(self, campaign_name):
+        """
+        Get a single existing campaign with all entries inside
+        """
+        self.logger.info('Getting campaign %s', campaign_name)
+        conn = sqlite3.connect(self.db_path)
+        campaign = None
+        try:
+            campaign = query(conn,
+                             'existing_campaigns',
+                             ['uid', 'name'],
+                             'WHERE name = ?',
+                             [campaign_name])
+            if campaign:
+                campaign = campaign[0]
+        finally:
+            conn.close()
+
+        return self.output_text({'response': campaign, 'success': True, 'message': ''})
+
+
+class GetExistingCampaignEntriesAPI(APIBase):
+    """
+    Endpoint for getting an existing campaign(s) entries
     """
     @APIBase.exceptions_to_errors
     def get(self, campaign_name, interested_pwg=None):
@@ -67,11 +93,11 @@ class GetExistingCampaignAPI(APIBase):
         self.logger.info('Getting campaign %s', campaign_name)
         conn = sqlite3.connect(self.db_path)
         try:
-            #separate comma separated campaign names
+            # Split comma separated campaign names
             campaign_names = clean_split(campaign_name)
             query_args = []
             query_where = 'LEFT OUTER JOIN existing_campaigns ON existing_campaigns.uid = existing_campaign_entries.campaign_uid'
-            query_args.extend(campaign_names) 
+            query_args.extend(campaign_names)
             query_where += ' WHERE existing_campaigns.name IN (%s)' % (','.join(len(campaign_names) * '?'))
             if interested_pwg:
                 interested_pwg = '%%%s%%' % (interested_pwg.strip().upper())
@@ -82,30 +108,30 @@ class GetExistingCampaignAPI(APIBase):
             entries = query(conn,
                             'existing_campaign_entries',
                             ['existing_campaign_entries.uid',
-                            'chained_request',
-                            'dataset',
-                            'root_request',
-                            'root_request_priority',
-                            'root_request_total_events',
-                            'root_request_done_events',
-                            'root_request_status',
-                            'root_request_output',
-                            'miniaod',
-                            'miniaod_priority',
-                            'miniaod_total_events',
-                            'miniaod_done_events',
-                            'miniaod_status',
-                            'miniaod_output',
-                            'nanoaod',
-                            'nanoaod_priority',
-                            'nanoaod_total_events',
-                            'nanoaod_done_events',
-                            'nanoaod_status',
-                            'nanoaod_output',
-                            'interested_pwgs',
-                            'ref_interested_pwgs',
-                            'existing_campaigns.name',
-                            'existing_campaigns.uid'],
+                             'chained_request',
+                             'dataset',
+                             'root_request',
+                             'root_request_priority',
+                             'root_request_total_events',
+                             'root_request_done_events',
+                             'root_request_status',
+                             'root_request_output',
+                             'miniaod',
+                             'miniaod_priority',
+                             'miniaod_total_events',
+                             'miniaod_done_events',
+                             'miniaod_status',
+                             'miniaod_output',
+                             'nanoaod',
+                             'nanoaod_priority',
+                             'nanoaod_total_events',
+                             'nanoaod_done_events',
+                             'nanoaod_status',
+                             'nanoaod_output',
+                             'interested_pwgs',
+                             'ref_interested_pwgs',
+                             'existing_campaigns.name',
+                             'existing_campaigns.uid'],
                             query_where,
                             query_args)
 
@@ -134,9 +160,6 @@ class GetExistingCampaignAPI(APIBase):
                         version = 'v8'
 
                     entry['nanoaod_version'] = 'NanoAOD%s' % (version)
-
-            if not entries:
-                raise Exception('Could not find given campaign')
 
         finally:
             conn.close()
