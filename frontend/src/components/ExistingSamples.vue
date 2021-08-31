@@ -172,10 +172,13 @@
       </tr>
     </table>
 
-    <footer v-if="selectedPWG && (selectAllChecked || selectAllIndeterminate) && role('user')">
+    <footer v-if="selectAllChecked || selectAllIndeterminate">
       Selected items ({{selectedCount}}) actions:
-      <span class="add-pwg-link" @click="addPWGToSelectedEntriesAction(selectedPWG)">Add {{selectedPWG}}</span>
-      <span class="remove-pwg-link" @click="removePWGFromSelectedEntriesAction(selectedPWG)">Remove {{selectedPWG}}</span>
+      <template v-if="selectedPWG && role('user')">
+        <span class="add-pwg-link" @click="addPWGToSelectedEntriesAction(selectedPWG)">Add {{selectedPWG}}</span>
+        <span class="remove-pwg-link" @click="removePWGFromSelectedEntriesAction(selectedPWG)">Remove {{selectedPWG}}</span>
+      </template>
+      <span style="color: var(--v-anchor-base); cursor: pointer" @click="openPmpSelectedEntries()">pMp Historical</span>
     </footer>
 
   </div>
@@ -604,6 +607,30 @@ export default {
         this.selectedCount = 0;
         this.selectAllChecked = false;
         this.selectAllIndeterminate = false;
+      }
+    },
+    openPmpSelectedEntries: function() {
+      let prepids = [];
+      for (let entry of this.entries.filter(x => x.checked)) {
+        let prepid = undefined;
+        let status = undefined;
+        if (entry.nanoaod) {
+          prepid = entry.nanoaod;
+          status = entry.nanoaod_status;
+        } else if (entry.miniaod) {
+          prepid = entry.miniaod;
+          status = entry.miniaod_status;
+        } else if (entry.root_request) {
+          prepid = entry.root_request;
+          status = entry.root_request_status;
+        }
+        if (status == 'submitted' || status == 'done') {
+          prepids.push(prepid);
+        }
+      }
+      if (prepids.length) {
+        let url = window.location.origin + '/pmp/historical?r=' + prepids.join(',');
+        window.open(url, '_blank');
       }
     }
   }
