@@ -38,8 +38,8 @@
       </div>
       |
       <div class="ml-1 mr-1" style="display: inline-block">
-        NaonoAOD Filter:
-        <template v-for="nanoaodPair in nonoaodVersionFilterOptions">
+        NanoAOD Filter:
+        <template v-for="nanoaodPair in nanoaodVersionFilterOptions">
           <a :key="nanoaodPair[0]"
              class="ml-1 mr-1"
              :title="'Show samples with ' + nanoaodPair[0]"
@@ -47,7 +47,7 @@
              :class="nanoaodPair[0] == nanoaodVersionFilter ? 'bold-text' : ''">{{nanoaodPair[1]}}</a>
         </template>
       </div>
-      | 
+      |
       <div class="ml-1 mr-1" style="display: inline-block">
         Download Table:
         <a title="Comma-separated values file" class="ml-1 mr-1" @click="downloadExcelFile('csv')">CSV</a>
@@ -194,9 +194,9 @@ export default {
       newEntry: {},
       eventFilterOptions: [[0, 'All'], [5e6, '5M+'], [10e6, '10M+'], [20e6, '20M+'], [50e6, '50M+']],
       eventsFilter: 0,
-      miniaodVersionFilterOptions: [['', 'All'], ['MiniAODv1', 'MiniAODv1'], ['MiniAODv2', 'MiniAODv2']],
+      miniaodVersionFilterOptions: [],
       miniaodVersionFilter: '',
-      nonoaodVersionFilterOptions: [['', 'All'], ['NanoAODv7', 'NanoAODv7'], ['NanoAODv8', 'NanoAODv8']],
+      nanoaodVersionFilterOptions: [],
       nanoaodVersionFilter: '',
       entries: [], // Filtered entries,
       search: {
@@ -303,6 +303,8 @@ export default {
         campaign.entries.forEach(element => {
           component.processEntry(element);
         });
+        component.miniaodVersionFilterOptions = Array.from(new Set(['', ...campaign.entries.map(x => x.miniaod_version).sort()]), x => [x, x == '' ? 'All' : x]);
+        component.nanoaodVersionFilterOptions = Array.from(new Set(['', ...campaign.entries.map(x => x.nanoaod_version).sort()]), x => [x, x == '' ? 'All' : x]);
         component.mergeCells(campaign.entries, ['short_name', 'dataset', 'root_request', 'miniaod'])
         this.campaingName = campaignName
         component.$set(component, 'campaign', campaign);
@@ -623,6 +625,7 @@ select {
 .mini-nano-version {
   float: right;
   margin-left: 8px;
+  font-size: 0.8em;
 }
 
 </style>
