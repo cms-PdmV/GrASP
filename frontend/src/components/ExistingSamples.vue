@@ -271,7 +271,6 @@ export default {
       }
       entriesToUpdate = this.makeCopy(entriesToUpdate);
       let httpRequest = axios.post('api/existing/update_entries', entriesToUpdate);
-      let component = this;
       httpRequest.then(response => {
         for (let updatedEntry of response.data.response) {
           for (let existingEntry of this.entries) {
