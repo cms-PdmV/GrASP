@@ -322,7 +322,7 @@ export default {
     },
     fetchCampaign: function(campaignName) {
       let component = this;
-      let url = 'api/existing/get/' + campaignName; 
+      let url = 'api/existing/get_entries/' + campaignName;
       if (this.interestedPWG) {
         url += '/' + this.interestedPWG;
       }
@@ -363,7 +363,7 @@ export default {
       component.updateEntries(entriesToUpdate);
       if (onSuccess) {
         onSuccess(entriesToUpdate);
-      }  
+      }
     },
     removePWGFromEntriesAction: function(pwg, entries) {
       const component = this;
@@ -577,7 +577,7 @@ export default {
         component.removePWGFromEntries(action.pwg, action.entries, function() {
           component.undoStack.push({'action': 'remove', 'entries': action.entries, 'pwg': action.pwg});
         });
-      } 
+      }
     },
     toggleAllCheckboxes: function() {
       this.selectAllIndeterminate = false;

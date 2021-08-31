@@ -266,7 +266,7 @@ export default {
     },
     fetchTag: function(tagName) {
       let component = this;
-      let url = 'api/user_tag/get/' + tagName; 
+      let url = 'api/user_tag/get/' + tagName;
       if (this.interestedPWG) {
         url += '/' + this.interestedPWG;
       }
