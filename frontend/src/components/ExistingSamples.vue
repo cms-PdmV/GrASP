@@ -78,8 +78,8 @@
         <th>NanoAOD Request<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.nanoaod" @input="applyFilters()"></th>
         <th>Chained Request<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.chained_request" @input="applyFilters()"></th>
         <th>Interested PWGs</th>
-        <th>
-          <input type="checkbox" :checked="selectAllChecked" v-on:change="toggleAllCheckboxes" v-model="selectAllChecked" :indeterminate.prop="selectAllIndeterminate">
+        <th style="text-align: center">
+          <input type="checkbox" style="width: auto" :checked="selectAllChecked" v-on:change="toggleAllCheckboxes" v-model="selectAllChecked" :indeterminate.prop="selectAllIndeterminate">
         </th>
       </tr>
       <tr v-for="entry in entries" :key="entry.dataset + entry.uid">
@@ -166,7 +166,7 @@
             <span class="remove-pwg-link" v-if="entry.interested_pwgs.includes(selectedPWG)" @click="removePWGFromEntriesAction(selectedPWG, [entry])">Remove {{selectedPWG}}</span>
           </template>
         </td>
-        <td style="min-width: 30px;">
+        <td style="min-width: 30px; text-align: center">
           <input type="checkbox" :checked="entry.checked" v-on:change="toggleOneCheckbox" v-model="entry.checked">
         </td>
       </tr>
