@@ -121,6 +121,11 @@ td > input {
   width: calc(100% + 18px);
 }
 
+td > input[type="checkbox"] {
+  margin: auto;
+  width: auto;
+}
+
 td.hidden-cell {
   visibility: hidden;
   border: 0;
