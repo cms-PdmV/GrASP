@@ -131,7 +131,8 @@ class GetExistingCampaignEntriesAPI(APIBase):
                              'interested_pwgs',
                              'ref_interested_pwgs',
                              'existing_campaigns.name',
-                             'existing_campaigns.uid'],
+                             'existing_campaigns.uid',
+                             'tags'],
                             query_where,
                             query_args)
 

@@ -165,10 +165,11 @@ class ExistingSamplesUpdater():
             root_request = self.get_request_if_exists(root_request_prepid)
             miniaod_request = self.get_request_if_exists(miniaod_prepid)
             nanoaod_request = self.get_request_if_exists(nanoaod_prepid)
-
+            other_tags = sorted_join(request['tags'])
             # Take interested PWGs from NanoAOD if it exists
             # If not, then MiniAOD request if it exists
             # If it does not exist, use root request
+
             if nanoaod_request.get('status'):
                 # If NanoAOD exists, use NanoAOD interested PWGs
                 interested_pwgs = sorted_join(nanoaod_request['interested_pwg'])
@@ -202,6 +203,7 @@ class ExistingSamplesUpdater():
                      'nanoaod_output': nanoaod_request['output_dataset'],
                      'interested_pwgs': interested_pwgs,
                      'ref_interested_pwgs': interested_pwgs,
+                     'tags': other_tags,
                      'updated': 1}
 
             if existing_sample:
@@ -290,6 +292,7 @@ class ExistingSamplesUpdater():
                              nanoaod_output text,
                              interested_pwgs text,
                              ref_interested_pwgs text,
+                             tags text,
                              FOREIGN KEY(campaign_uid) REFERENCES %s(uid))''' % (entries_table,
                                                                                  table))
         self.conn.commit()

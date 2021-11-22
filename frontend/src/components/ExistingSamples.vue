@@ -69,6 +69,14 @@
       </select>
       <b>physics working group as interested PWG in samples</b>
     </div>
+    <div v-if="campaign.entries" class="align-center ma-2">
+      <b>I am going to add or remove</b>
+      <select v-model="selectedGrASPTag" class="ml-2 mr-2">
+        <option selected value=''></option>
+        <option v-for="tag in customGrASPTags" :key="tag" :value="tag">{{tag}}</option>
+      </select>
+      <b>GrASP Custom Tag in samples</b>
+    </div>
     <table v-if="campaign.entries">
       <tr>
         <th>Short Name<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.short_name" @input="applyFilters()"></th>
@@ -181,6 +189,14 @@
       <span style="color: var(--v-anchor-base); cursor: pointer" @click="openPmpSelectedEntries()">pMp Historical</span>
     </footer>
 
+    <footer v-if="selectAllChecked || selectAllIndeterminate">
+      Selected items ({{selectedCount}}) actions:
+      <template v-if="selectedGrASPTag && role('user')">
+        <span class="add-pwg-link" @click="addGrASPTagToSelectedEntriesAction(selectedPWG)">Add {{selectedPWG}}</span>
+        <span class="remove-pwg-link" @click="removeGrASPTagFromSelectedEntriesAction(selectedPWG)">Remove {{selectedPWG}}</span>
+      </template>
+      <span style="color: var(--v-anchor-base); cursor: pointer" @click="openPmpSelectedEntries()">pMp Historical</span>
+    </footer>
   </div>
 </template>
 
@@ -197,6 +213,7 @@ export default {
     utilsMixin,
     roleMixin
   ],
+  props:['customGrASPTags'],
   data () {
     return {
       interestedPWG: undefined,
@@ -274,6 +291,29 @@ export default {
       }
       entriesToUpdate = this.makeCopy(entriesToUpdate);
       let httpRequest = axios.post('api/existing/update_entries', entriesToUpdate);
+      httpRequest.then(response => {
+        for (let updatedEntry of response.data.response) {
+          for (let existingEntry of this.entries) {
+            if (updatedEntry.uid == existingEntry.uid) {
+              // Update existing entry
+              Object.assign(existingEntry, updatedEntry);
+              break
+            }
+          }
+        }
+      }).catch(error => {
+        alert(error.response.data.message);
+      });
+    },
+    updateGrASPTagEntries: function(entries) {
+      let entriesToUpdate = [];
+      for (let entry of entries) {
+        entriesToUpdate.push({'campaign_uid': entry.campaign_uid,
+                              'uid': entry.uid,
+                              'tags': entry.interested_pwgs});
+      }
+      entriesToUpdate = this.makeCopy(entriesToUpdate);
+      let httpRequest = axios.post('api/existing/update_grasptag_entries', entriesToUpdate);
       httpRequest.then(response => {
         for (let updatedEntry of response.data.response) {
           for (let existingEntry of this.entries) {
