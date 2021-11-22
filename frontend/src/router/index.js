@@ -20,7 +20,11 @@ const routes = [
   {
     path: '/existing',
     name: 'existing',
-    component: ExistingSamples
+    component: ExistingSamples,
+    props: {
+      default: 'None',
+      customGrASPTags: ['BCG', 'HIG']
+    }
   },
   {
     path: '/existing_edit',
