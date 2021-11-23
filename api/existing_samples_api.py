@@ -295,13 +295,17 @@ class UpdateEntriesInExistingCampaignAPI(APIBase):
                         raise Exception('"%s" is not a valid PWG' % pwg)
 
                 interested_pwgs = sorted_join(interested_pwgs)
+                other_tags = clean_split(entry['tags'])
+                other_tags = sorted_join(other_tags)
+
                 # Existing entry
                 existing_entry = query(conn,
                                        'existing_campaign_entries',
                                        ['root_request',
                                         'miniaod',
                                         'nanoaod',
-                                        'interested_pwgs'],
+                                        'interested_pwgs',
+                                        'tags'],
                                        'WHERE uid = ?',
                                        [entry_uid])
                 if not existing_entry:
@@ -309,12 +313,15 @@ class UpdateEntriesInExistingCampaignAPI(APIBase):
 
                 existing_entry = existing_entry[0]
                 old_interested_pwgs = existing_entry['interested_pwgs']
-                if interested_pwgs == old_interested_pwgs:
+                old_other_tags = existing_entry['tags']
+                self.logger.info(old_other_tags)
+                if interested_pwgs == old_interested_pwgs and other_tags == old_other_tags:
                     continue
 
                 # Create an entry
                 new_entry = {'uid': entry_uid,
-                             'interested_pwgs': interested_pwgs}
+                             'interested_pwgs': interested_pwgs,
+                             'tags': other_tags}
                 # Update entry in DB
                 update_entry(conn, 'existing_campaign_entries', new_entry)
                 # Update history

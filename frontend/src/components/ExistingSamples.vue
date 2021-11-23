@@ -86,6 +86,7 @@
         <th>NanoAOD Request<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.nanoaod" @input="applyFilters()"></th>
         <th>Chained Request<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.chained_request" @input="applyFilters()"></th>
         <th>Interested PWGs</th>
+        <th>Tags</th>
         <th style="text-align: center">
           <input type="checkbox" style="width: auto" :checked="selectAllChecked" v-on:change="toggleAllCheckboxes" v-model="selectAllChecked" :indeterminate.prop="selectAllIndeterminate">
         </th>
@@ -174,6 +175,14 @@
             <span class="remove-pwg-link" v-if="entry.interested_pwgs.includes(selectedPWG)" @click="removePWGFromEntriesAction(selectedPWG, [entry])">Remove {{selectedPWG}}</span>
           </template>
         </td>
+        <td class="align-center">
+          {{entry.tags}}
+          <template v-if="selectedGrASPTag && role('user')">
+            <br>
+            <span class="add-pwg-link" @click="addGrASPTagToSelectedEntriesAction(selectedGrASPTag)">Add {{selectedGrASPTag}}</span>
+            <span class="remove-pwg-link" @click="removeGrASPTagFromSelectedEntriesAction(selectedGrASPTag)">Remove {{selectedGrASPTag}}</span>
+          </template>
+        </td>
         <td style="min-width: 30px; text-align: center">
           <input type="checkbox" :checked="entry.checked" v-on:change="toggleOneCheckbox" v-model="entry.checked">
         </td>
@@ -192,8 +201,8 @@
     <footer v-if="selectAllChecked || selectAllIndeterminate">
       Selected items ({{selectedCount}}) actions:
       <template v-if="selectedGrASPTag && role('user')">
-        <span class="add-pwg-link" @click="addGrASPTagToSelectedEntriesAction(selectedPWG)">Add {{selectedPWG}}</span>
-        <span class="remove-pwg-link" @click="removeGrASPTagFromSelectedEntriesAction(selectedPWG)">Remove {{selectedPWG}}</span>
+        <span class="add-pwg-link" @click="addGrASPTagToSelectedEntriesAction(selectedGrASPTag)">Add {{selectedGrASPTag}}</span>
+        <span class="remove-pwg-link" @click="removeGrASPTagFromSelectedEntriesAction(selectedGrASPTag)">Remove {{selectedGrASPTag}}</span>
       </template>
       <span style="color: var(--v-anchor-base); cursor: pointer" @click="openPmpSelectedEntries()">pMp Historical</span>
     </footer>
@@ -289,33 +298,11 @@ export default {
       for (let entry of entries) {
         entriesToUpdate.push({'campaign_uid': entry.campaign_uid,
                               'uid': entry.uid,
-                              'interested_pwgs': entry.interested_pwgs});
+                              'interested_pwgs': entry.interested_pwgs,
+                              'tags': entry.tags});
       }
       entriesToUpdate = this.makeCopy(entriesToUpdate);
       let httpRequest = axios.post('api/existing/update_entries', entriesToUpdate);
-      httpRequest.then(response => {
-        for (let updatedEntry of response.data.response) {
-          for (let existingEntry of this.entries) {
-            if (updatedEntry.uid == existingEntry.uid) {
-              // Update existing entry
-              Object.assign(existingEntry, updatedEntry);
-              break
-            }
-          }
-        }
-      }).catch(error => {
-        alert(error.response.data.message);
-      });
-    },
-    updateGrASPTagEntries: function(entries) {
-      let entriesToUpdate = [];
-      for (let entry of entries) {
-        entriesToUpdate.push({'campaign_uid': entry.campaign_uid,
-                              'uid': entry.uid,
-                              'tags': entry.interested_pwgs});
-      }
-      entriesToUpdate = this.makeCopy(entriesToUpdate);
-      let httpRequest = axios.post('api/existing/update_grasptag_entries', entriesToUpdate);
       httpRequest.then(response => {
         for (let updatedEntry of response.data.response) {
           for (let existingEntry of this.entries) {
@@ -438,6 +425,60 @@ export default {
     },
     removePWGFromSelectedEntriesAction: function(pwg) {
       this.removePWGFromEntriesAction(pwg, this.entries.filter(x => x.checked));
+    },
+    addGrASPTagToEntriesAction: function(grasptag, entries) {
+      const component = this;
+      component.addGrASPTagToEntries(grasptag, entries, function() {
+        component.undoStack.push({'action': 'add', 'entries': entries, 'grasptag': grasptag});
+      });
+    },
+    addGrASPTagToEntries: function(grasptag, entries, onSuccess) {
+      const component = this;
+      let entriesToUpdate = [];
+      for (let entry of entries) {
+        if (this.cleanSplit(entry.tags, ',').includes(grasptag)) {
+          continue
+        }
+        entry.tags = (this.cleanSplit(entry.tags, ',').concat([grasptag])).sort().join(',');
+        entriesToUpdate.push(entry);
+      }
+      if (!entriesToUpdate.length) {
+        return;
+      }
+      component.updateEntries(entriesToUpdate);
+      if (onSuccess) {
+        onSuccess(entriesToUpdate);
+      }
+    },
+    removeGrASPTagFromEntriesAction: function(grasptag, entries) {
+      const component = this;
+      component.removeGrASPTagFromEntries(grasptag, entries, function() {
+        component.undoStack.push({'action': 'remove', 'entries': entries, 'grasptag': grasptag});
+      });
+    },
+    removeGrASPTagFromEntries: function(grasptag, entries, onSuccess) {
+      const component = this;
+      let entriesToUpdate = [];
+      for (let entry of entries) {
+        if (!this.cleanSplit(entry.tags, ',').includes(grasptag)) {
+          continue
+        }
+        entry.tags = (this.cleanSplit(entry.tags, ',').filter(function(p) { return p !== grasptag})).join(',');
+        entriesToUpdate.push(entry);
+      }
+      if (!entriesToUpdate.length) {
+        return;
+      }
+      component.updateEntries(entriesToUpdate);
+      if (onSuccess) {
+        onSuccess(entriesToUpdate);
+      }
+    },
+    addGrASPTagToSelectedEntriesAction: function(grasptag) {
+      this.addGrASPTagToEntriesAction(grasptag, this.entries.filter(x => x.checked));
+    },
+    removeGrASPTagFromSelectedEntriesAction: function(grasptag) {
+      this.removeGrASPTagFromEntriesAction(grasptag, this.entries.filter(x => x.checked));
     },
     mergeCells: function(list, attributes) {
       list.forEach(element => {
