@@ -177,6 +177,11 @@
         </td>
         <td style="max-width: 100px; min-height: 50px; min-width: 50px; overflow: auto">
           {{entry.tags}}
+          <template v-if="selectedGrASPTag && role('user')">
+            <br>
+            <span class="add-pwg-link" v-if="!entry.tags.includes(selectedGrASPTag)" @click="addGrASPTagToEntriesAction(selectedGrASPTag, [entry])">Add {{selectedGrASPTag}}</span>
+            <span class="remove-pwg-link" v-if="entry.tags.includes(selectedGrASPTag)" @click="removeGrASPTagFromEntriesAction(selectedGrASPTag, [entry])">Remove {{selectedGrASPTag}}</span>
+          </template>
         </td>
         <td style="min-width: 30px; text-align: center">
           <input type="checkbox" :checked="entry.checked" v-on:change="toggleOneCheckbox" v-model="entry.checked">
@@ -630,9 +635,17 @@ export default {
         component.removePWGFromEntries(action.pwg, action.entries, function() {
           component.redoStack.push({'action': 'remove', 'entries': action.entries, 'pwg': action.pwg});
         });
-      } else if (action.action == 'remove') {
+      } if (action.action == 'remove') {
         component.addPWGToEntries(action.pwg, action.entries, function() {
           component.redoStack.push({'action': 'add', 'entries': action.entries, 'pwg': action.pwg});
+        });
+      } if (action.action == 'addTag') {
+        component.removeGrASPTagFromEntries(action.grasptag, action.entries, function() {
+          component.redoStack.push({'action': 'removeTag', 'entries': action.entries, 'grasptag': action.grasptag});
+        });
+      } else if (action.action == 'removeTag') {
+        component.addGrASPTagToEntries(action.grasptag, action.entries, function() {
+          component.redoStack.push({'action': 'addTag', 'entries': action.entries, 'grasptag': action.grasptag});
         });
       }
     },
@@ -646,9 +659,17 @@ export default {
         component.addPWGToEntries(action.pwg, action.entries, function() {
           component.undoStack.push({'action': 'add', 'entries': action.entries, 'pwg': action.pwg});
         });
-      } else if (action.action == 'add') {
+      } if (action.action == 'add') {
         component.removePWGFromEntries(action.pwg, action.entries, function() {
           component.undoStack.push({'action': 'remove', 'entries': action.entries, 'pwg': action.pwg});
+        });
+      } if (action.action == 'removeTag') {
+        component.addGrASPTagToEntries(action.grasptag, action.entries, function() {
+          component.undoStack.push({'action': 'addTag', 'entries': action.entries, 'grasptag': action.grasptag});
+        });
+      } else if (action.action == 'addTag') {
+        component.removeGrASPFromEntries(action.grasptag, action.entries, function() {
+          component.undoStack.push({'action': 'removeTag', 'entries': action.entries, 'grasptag': action.grasptag});
         });
       }
     },
