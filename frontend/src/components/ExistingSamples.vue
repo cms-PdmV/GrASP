@@ -186,18 +186,11 @@
 
     <footer v-if="selectAllChecked || selectAllIndeterminate">
       Selected items ({{selectedCount}}) actions:
-      <template v-if="selectedPWG && role('user')">
-        <span class="add-pwg-link" @click="addPWGToSelectedEntriesAction(selectedPWG)">Add {{selectedPWG}}</span>
-        <span class="remove-pwg-link" @click="removePWGFromSelectedEntriesAction(selectedPWG)">Remove {{selectedPWG}}</span>
-      </template>
-      <span style="color: var(--v-anchor-base); cursor: pointer" @click="openPmpSelectedEntries()">pMp Historical</span>
-    </footer>
-
-    <footer v-if="selectAllChecked || selectAllIndeterminate">
-      Selected items ({{selectedCount}}) actions:
-      <template v-if="selectedGrASPTag && role('user')">
-        <span class="add-pwg-link" @click="addGrASPTagToSelectedEntriesAction(selectedGrASPTag)">Add {{selectedGrASPTag}}</span>
-        <span class="remove-pwg-link" @click="removeGrASPTagFromSelectedEntriesAction(selectedGrASPTag)">Remove {{selectedGrASPTag}}</span>
+      <template v-if="role('user')">
+        <span v-if="selectedGrASPTag" class="add-pwg-link" @click="addGrASPTagToSelectedEntriesAction(selectedGrASPTag)">Add {{selectedGrASPTag}}</span>
+        <span v-if="selectedGrASPTag"  class="remove-pwg-link" @click="removeGrASPTagFromSelectedEntriesAction(selectedGrASPTag)">Remove {{selectedGrASPTag}}</span>
+        <span v-if="selectedPWG"  class="add-pwg-link" @click="addPWGToSelectedEntriesAction(selectedPWG)">Add {{selectedPWG}}</span>
+        <span v-if="selectedPWG"  class="remove-pwg-link" @click="removePWGFromSelectedEntriesAction(selectedPWG)">Remove {{selectedPWG}}</span>
       </template>
       <span style="color: var(--v-anchor-base); cursor: pointer" @click="openPmpSelectedEntries()">pMp Historical</span>
     </footer>
