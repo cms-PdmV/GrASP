@@ -45,7 +45,9 @@ class ExistingSamplesUpdater():
                       'ref_interested_pwgs',
                       'root_request',
                       'miniaod',
-                      'nanoaod'],
+                      'nanoaod',
+                      'tags',
+                      'ref_tags'],
                      'WHERE campaign_uid = ? AND root_request = ? AND chained_request = ?',
                      [campaign_uid, root_request, chained_request])
         if not rows:
@@ -87,12 +89,13 @@ class ExistingSamplesUpdater():
                 'done_events': max(0, req.get('completed_events', 0)),
                 'status': req.get('status', ''),
                 'output_dataset': req['output_dataset'][-1] if req.get('output_dataset') else '',
-                'interested_pwg': req.get('interested_pwg', [])}
+                'interested_pwg': req.get('interested_pwg', []),
+                'tags': req.get('tags', [])}
 
 
-    def process_interested_pwgs_update(self, local_sample):
+    def process_pwgs_tags_update(self, local_sample, param):
         """
-        Compare local and McM interested PWGs and update McM if needed
+        Compare local and McM interested PWGs or Tags and update McM if needed
         """
         root_prepid = local_sample['root_request']
         miniaod_prepid = local_sample['miniaod']
@@ -110,9 +113,9 @@ class ExistingSamplesUpdater():
             self.logger.warning('%s no longer exists?', selected_prepid)
             return
 
-        reference = clean_split(local_sample['ref_interested_pwgs'])
-        local = clean_split(local_sample['interested_pwgs'])
-        remote = clean_split(sorted_join(mcm_request.get('interested_pwg', [])))
+        reference = clean_split(local_sample['ref_%s' %(param)])
+        local = clean_split(local_sample[param])
+        remote = clean_split(sorted_join(mcm_request.get(param, [])))
         merged_pwgs = sorted_join(merge_sets(reference, local, remote))
         if merged_pwgs != sorted_join(reference):
             self.logger.info('Updating %s: %s -> (McM) %s + (GrASP) %s -> %s',
@@ -121,7 +124,7 @@ class ExistingSamplesUpdater():
                              sorted_join(remote),
                              sorted_join(local),
                              merged_pwgs)
-            mcm_request['interested_pwg'] = clean_split(merged_pwgs)
+            mcm_request[param] = clean_split(merged_pwgs)
             response = self.mcm.update('requests', mcm_request)
             self.logger.info('Update: %s', response)
 
@@ -155,7 +158,8 @@ class ExistingSamplesUpdater():
                                                        root_request_prepid,
                                                        chained_request_prepid)
             if existing_sample:
-                self.process_interested_pwgs_update(existing_sample)
+                self.process_pwgs_tags_update(existing_sample, 'interested_pwgs')
+                self.process_pwgs_tags_update(existing_sample, 'tags')
 
             # Split chained request to steps
             steps = chained_request_to_steps(chained_request)
@@ -165,20 +169,21 @@ class ExistingSamplesUpdater():
             root_request = self.get_request_if_exists(root_request_prepid)
             miniaod_request = self.get_request_if_exists(miniaod_prepid)
             nanoaod_request = self.get_request_if_exists(nanoaod_prepid)
-            other_tags = sorted_join(request['tags'])
             # Take interested PWGs from NanoAOD if it exists
             # If not, then MiniAOD request if it exists
             # If it does not exist, use root request
-
             if nanoaod_request.get('status'):
                 # If NanoAOD exists, use NanoAOD interested PWGs
                 interested_pwgs = sorted_join(nanoaod_request['interested_pwg'])
+                tags = sorted_join(nanoaod_request['tags'])
             elif miniaod_request.get('status'):
                 # If MiniAOD exists, use MiniAOD interested PWGs
                 interested_pwgs = sorted_join(miniaod_request['interested_pwg'])
+                tags = sorted_join(miniaod_request['tags'])
             else:
                 # If MiniAOD does not exist, use root request PWGs
                 interested_pwgs = sorted_join(root_request['interested_pwg'])
+                tags = sorted_join(root_request['tags'])
 
             entry = {'campaign_uid': campaign_uid,
                      'chained_request': chained_request_prepid,
@@ -203,7 +208,8 @@ class ExistingSamplesUpdater():
                      'nanoaod_output': nanoaod_request['output_dataset'],
                      'interested_pwgs': interested_pwgs,
                      'ref_interested_pwgs': interested_pwgs,
-                     'tags': other_tags,
+                     'tags': tags,
+                     'ref_tags': tags,
                      'updated': 1}
 
             if existing_sample:
@@ -293,6 +299,7 @@ class ExistingSamplesUpdater():
                              interested_pwgs text,
                              ref_interested_pwgs text,
                              tags text,
+                             ref_tags text,
                              FOREIGN KEY(campaign_uid) REFERENCES %s(uid))''' % (entries_table,
                                                                                  table))
         self.conn.commit()
