@@ -175,13 +175,8 @@
             <span class="remove-pwg-link" v-if="entry.interested_pwgs.includes(selectedPWG)" @click="removePWGFromEntriesAction(selectedPWG, [entry])">Remove {{selectedPWG}}</span>
           </template>
         </td>
-        <td class="align-center">
+        <td style="max-width: 100px; min-height: 50px; min-width: 50px; overflow: auto">
           {{entry.tags}}
-          <template v-if="selectedGrASPTag && role('user')">
-            <br>
-            <span class="add-pwg-link" @click="addGrASPTagToSelectedEntriesAction(selectedGrASPTag)">Add {{selectedGrASPTag}}</span>
-            <span class="remove-pwg-link" @click="removeGrASPTagFromSelectedEntriesAction(selectedGrASPTag)">Remove {{selectedGrASPTag}}</span>
-          </template>
         </td>
         <td style="min-width: 30px; text-align: center">
           <input type="checkbox" :checked="entry.checked" v-on:change="toggleOneCheckbox" v-model="entry.checked">
@@ -429,7 +424,7 @@ export default {
     addGrASPTagToEntriesAction: function(grasptag, entries) {
       const component = this;
       component.addGrASPTagToEntries(grasptag, entries, function() {
-        component.undoStack.push({'action': 'add', 'entries': entries, 'grasptag': grasptag});
+        component.undoStack.push({'action': 'addTag', 'entries': entries, 'grasptag': grasptag});
       });
     },
     addGrASPTagToEntries: function(grasptag, entries, onSuccess) {
@@ -453,7 +448,7 @@ export default {
     removeGrASPTagFromEntriesAction: function(grasptag, entries) {
       const component = this;
       component.removeGrASPTagFromEntries(grasptag, entries, function() {
-        component.undoStack.push({'action': 'remove', 'entries': entries, 'grasptag': grasptag});
+        component.undoStack.push({'action': 'removeTag', 'entries': entries, 'grasptag': grasptag});
       });
     },
     removeGrASPTagFromEntries: function(grasptag, entries, onSuccess) {
