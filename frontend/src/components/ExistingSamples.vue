@@ -73,7 +73,7 @@
       <b>I am going to add or remove</b>
       <select v-model="selectedGrASPTag" class="ml-2 mr-2">
         <option selected value=''></option>
-        <option v-for="tag in customGrASPTags" :key="tag" :value="tag">{{tag}}</option>
+        <option v-for="tag in userTags" :key="tag.name" :value="tag.name">{{tag.name}}</option>
       </select>
       <b>GrASP Custom Tag in samples</b>
     </div>
@@ -205,19 +205,21 @@
 import axios from 'axios'
 import { utilsMixin } from '../mixins/UtilsMixin.js'
 import { roleMixin } from '../mixins/UserRoleMixin.js'
+import { userTagMixin } from '../mixins/UserTagMixin.js'
 import ExcelJS from 'exceljs'
 
 export default {
   name: 'existing',
   mixins: [
     utilsMixin,
-    roleMixin
+    roleMixin,
+    userTagMixin
   ],
-  props:['customGrASPTags'],
   data () {
     return {
       interestedPWG: undefined,
       selectedPWG: undefined,
+      selectedGrASPTag: undefined,
       allPWGs: ['B2G', 'BPH', 'BTV', 'EGM', 'EXO', 'FSQ', 'HCA',
                 'HGC', 'HIG', 'HIN', 'JME', 'L1T', 'LUM', 'MUO',
                 'PPS', 'SMP', 'SUS', 'TAU', 'TOP', 'TRK', 'TSG'],

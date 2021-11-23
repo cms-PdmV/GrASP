@@ -7,6 +7,7 @@ import UserTags from '@/components/UserTags'
 import UserTagsEdit from '@/components/UserTagsEdit'
 import History from '@/components/History'
 import qs from 'qs';
+import axios from 'axios'
 
 
 Vue.use(VueRouter)
@@ -15,16 +16,12 @@ const routes = [
   {
     path: '/',
     name: 'home',
-    component: Home
+    component: Home,
   },
   {
     path: '/existing',
     name: 'existing',
     component: ExistingSamples,
-    props: {
-      default: 'None',
-      customGrASPTags: ['BCG', 'HIG']
-    }
   },
   {
     path: '/existing_edit',
@@ -34,7 +31,7 @@ const routes = [
   {
     path: '/tags',
     name: 'tags',
-    component: UserTags
+    component: UserTags,
   },
   {
     path: '/tag_edit',
@@ -48,7 +45,7 @@ const routes = [
   },
 ]
 
-const router = new VueRouter({
+let router = new VueRouter({
   mode: 'history',
   base: process.env.BASE_URL,
   stringifyQuery: query => {
