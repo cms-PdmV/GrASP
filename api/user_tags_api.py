@@ -74,7 +74,7 @@ class GetUserTagAPI(APIBase):
                 raise Exception('Could not find given tag')
 
             tag = tags[0]
-            query_where = 'WHERE tags = ?'
+            query_where = 'WHERE tags LIKE ?'
             query_args = [tag['name']]
             if interested_pwg:
                 interested_pwg = '%%%s%%' % (interested_pwg.strip().upper())
