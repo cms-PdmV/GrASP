@@ -599,7 +599,7 @@ export default {
                           'interested_pwgs': entry.interested_pwgs,
                           });
       }
-      let fileName = this.campaign.name.replace(/\*/g, 'x');
+      let fileName = this.campaingName.replace(/\*/g, 'x');
       if (this.interestedPWG) {
         fileName += '_' + this.interestedPWG;
       }
