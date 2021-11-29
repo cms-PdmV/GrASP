@@ -14,8 +14,8 @@ class UserSamplesUpdater(ExistingSamplesUpdater):
         ExistingSamplesUpdater.__init__(self, db_connection, dev)
         self.updated_chained_requests = None
 
-    def get_table_names_(self):
-        return 'user_tags', 'existing_campaign_entries', 'existing_campaigns'
+    def get_table_names(self):
+        return 'user_tags', 'existing_campaign_entries'
 
     def process_interested_pwgs_update(self, local_sample):
         pass
@@ -26,7 +26,8 @@ class UserSamplesUpdater(ExistingSamplesUpdater):
         and process chained requests that these requests are members of
         """
         # Iterate through tags and add or update requests
-        table, entries_table, campaings_table = self.get_table_names_()
+        table, entries_table = self.get_table_names()
+        campaings_table = 'existing_campaigns'
         campaign_names = query(self.conn, campaings_table, ['name'])
         campaign_names = [v.split('*')[0] for d in campaign_names for k, v in d.items()]
         tags = query(self.conn, table, ['uid', 'name'])
