@@ -115,7 +115,8 @@ class ExistingSamplesUpdater():
 
         reference = clean_split(local_sample['ref_%s' %(param)])
         local = clean_split(local_sample[param])
-        remote = clean_split(sorted_join(mcm_request.get(param, [])))
+        remote_param = 'interested_pwg' if param == 'interested_pwgs' else 'tags'
+        remote = clean_split(sorted_join(mcm_request.get(remote_param, [])))
         merged_pwgs = sorted_join(merge_sets(reference, local, remote))
         if merged_pwgs != sorted_join(reference):
             self.logger.info('Updating %s: %s -> (McM) %s + (GrASP) %s -> %s',
@@ -124,7 +125,7 @@ class ExistingSamplesUpdater():
                              sorted_join(remote),
                              sorted_join(local),
                              merged_pwgs)
-            mcm_request[param] = clean_split(merged_pwgs)
+            mcm_request[remote_param] = clean_split(merged_pwgs)
             response = self.mcm.update('requests', mcm_request)
             self.logger.info('Update: %s', response)
 

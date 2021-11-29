@@ -2,7 +2,6 @@ import sys
 import time
 import sqlite3
 import logging
-import re
 from utils import query
 from update_existing_samples import ExistingSamplesUpdater
 

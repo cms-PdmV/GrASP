@@ -314,7 +314,6 @@ class UpdateEntriesInExistingCampaignAPI(APIBase):
                 existing_entry = existing_entry[0]
                 old_interested_pwgs = existing_entry['interested_pwgs']
                 old_tags = existing_entry['tags']
-                self.logger.info(old_tags)
                 if interested_pwgs == old_interested_pwgs and tags == old_tags:
                     continue
 
