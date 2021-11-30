@@ -15,7 +15,7 @@ class UserSamplesUpdater(ExistingSamplesUpdater):
         self.updated_chained_requests = None
 
     def get_table_names(self):
-        return 'user_tags', 'user_tag_entries'
+        return 'user_tags', 'existing_campaign_entries'
 
     def process_interested_pwgs_update(self, local_sample):
         pass
@@ -27,6 +27,9 @@ class UserSamplesUpdater(ExistingSamplesUpdater):
         """
         # Iterate through tags and add or update requests
         table, entries_table = self.get_table_names()
+        campaings_table = 'existing_campaigns'
+        campaign_names = query(self.conn, campaings_table, ['name'])
+        campaign_names = [v.split('*')[0] for d in campaign_names for k, v in d.items()]
         tags = query(self.conn, table, ['uid', 'name'])
         for tag in tags:
             try:
@@ -38,6 +41,7 @@ class UserSamplesUpdater(ExistingSamplesUpdater):
                                   [tag_uid])
                 requests_with_tag = self.mcm.get('requests',
                                                  query='tags=%s' % (tag_name))
+
                 if not requests_with_tag:
                     self.logger.warning('%s does not have any requests', tag_name)
                     continue
@@ -47,6 +51,13 @@ class UserSamplesUpdater(ExistingSamplesUpdater):
                                  tag_name,
                                  len(requests_with_tag))
                 for index, request in enumerate(requests_with_tag):
+                    is_existing_campaign = False
+                    for name in campaign_names:
+                        if name in request['member_of_campaign']:
+                            is_existing_campaign = True
+                    if is_existing_campaign:
+                        continue
+
                     self.logger.info('%s/%s %s', index + 1, len(requests_with_tag), request['prepid'])
                     start = time.time()
                     self.process_request(tag_uid, request)
@@ -54,8 +65,8 @@ class UserSamplesUpdater(ExistingSamplesUpdater):
                     self.logger.info('Processed %s in %.4fs', request['prepid'], end - start)
 
                 # Delete rows that were not updated
-                self.conn.execute('DELETE FROM %s WHERE updated = 0 AND campaign_uid = ?;' % (entries_table),
-                                  [tag_uid])
+                self.conn.execute('DELETE FROM %s WHERE updated = 0 AND campaign_uid = ? AND tags LIKE ?;' % (entries_table),
+                                  [tag_uid, tag_name])
                 self.conn.commit()
             except Exception as ex:
                 self.logger.error('Error processing %s', tag)

@@ -50,17 +50,18 @@
 
 import axios from 'axios'
 import { roleMixin } from '../mixins/UserRoleMixin.js'
+import { userTagMixin } from '../mixins/UserTagMixin.js'
 import CustomTable from './CustomTableForm.vue'
 
 export default {
   name: 'home',
   mixins: [
-    roleMixin
+    roleMixin,
+    userTagMixin
   ],
   data () {
     return {
       existingCampaigns: [],
-      userTags: [],
       pwgs: ['B2G', 'BPH', 'BTV', 'EGM', 'EXO', 'FSQ', 'HCA', 'HGC', 'HIG', 'HIN', 'JME', 'L1T', 'LUM', 'MUO', 'PPS', 'SMP', 'SUS', 'TAU', 'TOP', 'TRK', 'TSG'],
     }
   },
@@ -72,9 +73,6 @@ export default {
       let component = this;
       axios.get('api/existing/get_all').then(response => {
         component.existingCampaigns = response.data.response;
-      });
-      axios.get('api/user_tag/get_all').then(response => {
-        component.userTags = response.data.response;
       });
     },
   },

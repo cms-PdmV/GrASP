@@ -69,6 +69,14 @@
       </select>
       <b>physics working group as interested PWG in samples</b>
     </div>
+    <div v-if="campaign.entries" class="align-center ma-2">
+      <b>I am going to add or remove</b>
+      <select v-model="selectedGrASPTag" class="ml-2 mr-2">
+        <option selected value=''></option>
+        <option v-for="tag in userTags" :key="tag.name" :value="tag.name">{{tag.name}}</option>
+      </select>
+      <b>GrASP Custom Tag in samples</b>
+    </div>
     <table v-if="campaign.entries">
       <tr>
         <th>Short Name<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.short_name" @input="applyFilters()"></th>
@@ -78,6 +86,7 @@
         <th>NanoAOD Request<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.nanoaod" @input="applyFilters()"></th>
         <th>Chained Request<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.chained_request" @input="applyFilters()"></th>
         <th>Interested PWGs</th>
+        <th>Tags</th>
         <th style="text-align: center">
           <input type="checkbox" style="width: auto" :checked="selectAllChecked" v-on:change="toggleAllCheckboxes" v-model="selectAllChecked" :indeterminate.prop="selectAllIndeterminate">
         </th>
@@ -166,6 +175,14 @@
             <span class="remove-pwg-link" v-if="entry.interested_pwgs.includes(selectedPWG)" @click="removePWGFromEntriesAction(selectedPWG, [entry])">Remove {{selectedPWG}}</span>
           </template>
         </td>
+        <td style="max-width: 100px; min-height: 50px; min-width: 50px; overflow: auto">
+          {{entry.tags}}
+          <template v-if="selectedGrASPTag && role('user')">
+            <br>
+            <span class="add-pwg-link" v-if="!entry.tags.includes(selectedGrASPTag)" @click="addGrASPTagToEntriesAction(selectedGrASPTag, [entry])">Add {{selectedGrASPTag}}</span>
+            <span class="remove-pwg-link" v-if="entry.tags.includes(selectedGrASPTag)" @click="removeGrASPTagFromEntriesAction(selectedGrASPTag, [entry])">Remove {{selectedGrASPTag}}</span>
+          </template>
+        </td>
         <td style="min-width: 30px; text-align: center">
           <input type="checkbox" :checked="entry.checked" v-on:change="toggleOneCheckbox" v-model="entry.checked">
         </td>
@@ -174,13 +191,14 @@
 
     <footer v-if="selectAllChecked || selectAllIndeterminate">
       Selected items ({{selectedCount}}) actions:
-      <template v-if="selectedPWG && role('user')">
-        <span class="add-pwg-link" @click="addPWGToSelectedEntriesAction(selectedPWG)">Add {{selectedPWG}}</span>
-        <span class="remove-pwg-link" @click="removePWGFromSelectedEntriesAction(selectedPWG)">Remove {{selectedPWG}}</span>
+      <template v-if="role('user')">
+        <span v-if="selectedGrASPTag" class="add-pwg-link" @click="addGrASPTagToSelectedEntriesAction(selectedGrASPTag)">Add {{selectedGrASPTag}}</span>
+        <span v-if="selectedGrASPTag"  class="remove-pwg-link" @click="removeGrASPTagFromSelectedEntriesAction(selectedGrASPTag)">Remove {{selectedGrASPTag}}</span>
+        <span v-if="selectedPWG"  class="add-pwg-link" @click="addPWGToSelectedEntriesAction(selectedPWG)">Add {{selectedPWG}}</span>
+        <span v-if="selectedPWG"  class="remove-pwg-link" @click="removePWGFromSelectedEntriesAction(selectedPWG)">Remove {{selectedPWG}}</span>
       </template>
       <span style="color: var(--v-anchor-base); cursor: pointer" @click="openPmpSelectedEntries()">pMp Historical</span>
     </footer>
-
   </div>
 </template>
 
@@ -189,18 +207,21 @@
 import axios from 'axios'
 import { utilsMixin } from '../mixins/UtilsMixin.js'
 import { roleMixin } from '../mixins/UserRoleMixin.js'
+import { userTagMixin } from '../mixins/UserTagMixin.js'
 import ExcelJS from 'exceljs'
 
 export default {
   name: 'existing',
   mixins: [
     utilsMixin,
-    roleMixin
+    roleMixin,
+    userTagMixin
   ],
   data () {
     return {
       interestedPWG: undefined,
       selectedPWG: undefined,
+      selectedGrASPTag: undefined,
       allPWGs: ['B2G', 'BPH', 'BTV', 'EGM', 'EXO', 'FSQ', 'HCA',
                 'HGC', 'HIG', 'HIN', 'JME', 'L1T', 'LUM', 'MUO',
                 'PPS', 'SMP', 'SUS', 'TAU', 'TOP', 'TRK', 'TSG'],
@@ -270,7 +291,8 @@ export default {
       for (let entry of entries) {
         entriesToUpdate.push({'campaign_uid': entry.campaign_uid,
                               'uid': entry.uid,
-                              'interested_pwgs': entry.interested_pwgs});
+                              'interested_pwgs': entry.interested_pwgs,
+                              'tags': entry.tags});
       }
       entriesToUpdate = this.makeCopy(entriesToUpdate);
       let httpRequest = axios.post('api/existing/update_entries', entriesToUpdate);
@@ -396,6 +418,60 @@ export default {
     },
     removePWGFromSelectedEntriesAction: function(pwg) {
       this.removePWGFromEntriesAction(pwg, this.entries.filter(x => x.checked));
+    },
+    addGrASPTagToEntriesAction: function(grasptag, entries) {
+      const component = this;
+      component.addGrASPTagToEntries(grasptag, entries, function() {
+        component.undoStack.push({'action': 'addTag', 'entries': entries, 'grasptag': grasptag});
+      });
+    },
+    addGrASPTagToEntries: function(grasptag, entries, onSuccess) {
+      const component = this;
+      let entriesToUpdate = [];
+      for (let entry of entries) {
+        if (this.cleanSplit(entry.tags, ',').includes(grasptag)) {
+          continue
+        }
+        entry.tags = (this.cleanSplit(entry.tags, ',').concat([grasptag])).sort().join(',');
+        entriesToUpdate.push(entry);
+      }
+      if (!entriesToUpdate.length) {
+        return;
+      }
+      component.updateEntries(entriesToUpdate);
+      if (onSuccess) {
+        onSuccess(entriesToUpdate);
+      }
+    },
+    removeGrASPTagFromEntriesAction: function(grasptag, entries) {
+      const component = this;
+      component.removeGrASPTagFromEntries(grasptag, entries, function() {
+        component.undoStack.push({'action': 'removeTag', 'entries': entries, 'grasptag': grasptag});
+      });
+    },
+    removeGrASPTagFromEntries: function(grasptag, entries, onSuccess) {
+      const component = this;
+      let entriesToUpdate = [];
+      for (let entry of entries) {
+        if (!this.cleanSplit(entry.tags, ',').includes(grasptag)) {
+          continue
+        }
+        entry.tags = (this.cleanSplit(entry.tags, ',').filter(function(p) { return p !== grasptag})).join(',');
+        entriesToUpdate.push(entry);
+      }
+      if (!entriesToUpdate.length) {
+        return;
+      }
+      component.updateEntries(entriesToUpdate);
+      if (onSuccess) {
+        onSuccess(entriesToUpdate);
+      }
+    },
+    addGrASPTagToSelectedEntriesAction: function(grasptag) {
+      this.addGrASPTagToEntriesAction(grasptag, this.entries.filter(x => x.checked));
+    },
+    removeGrASPTagFromSelectedEntriesAction: function(grasptag) {
+      this.removeGrASPTagFromEntriesAction(grasptag, this.entries.filter(x => x.checked));
     },
     mergeCells: function(list, attributes) {
       list.forEach(element => {
@@ -523,7 +599,7 @@ export default {
                           'interested_pwgs': entry.interested_pwgs,
                           });
       }
-      let fileName = this.campaign.name.replace(/\*/g, 'x');
+      let fileName = this.campaingName.replace(/\*/g, 'x');
       if (this.interestedPWG) {
         fileName += '_' + this.interestedPWG;
       }
@@ -559,9 +635,17 @@ export default {
         component.removePWGFromEntries(action.pwg, action.entries, function() {
           component.redoStack.push({'action': 'remove', 'entries': action.entries, 'pwg': action.pwg});
         });
-      } else if (action.action == 'remove') {
+      } if (action.action == 'remove') {
         component.addPWGToEntries(action.pwg, action.entries, function() {
           component.redoStack.push({'action': 'add', 'entries': action.entries, 'pwg': action.pwg});
+        });
+      } if (action.action == 'addTag') {
+        component.removeGrASPTagFromEntries(action.grasptag, action.entries, function() {
+          component.redoStack.push({'action': 'removeTag', 'entries': action.entries, 'grasptag': action.grasptag});
+        });
+      } else if (action.action == 'removeTag') {
+        component.addGrASPTagToEntries(action.grasptag, action.entries, function() {
+          component.redoStack.push({'action': 'addTag', 'entries': action.entries, 'grasptag': action.grasptag});
         });
       }
     },
@@ -575,9 +659,17 @@ export default {
         component.addPWGToEntries(action.pwg, action.entries, function() {
           component.undoStack.push({'action': 'add', 'entries': action.entries, 'pwg': action.pwg});
         });
-      } else if (action.action == 'add') {
+      } if (action.action == 'add') {
         component.removePWGFromEntries(action.pwg, action.entries, function() {
           component.undoStack.push({'action': 'remove', 'entries': action.entries, 'pwg': action.pwg});
+        });
+      } if (action.action == 'removeTag') {
+        component.addGrASPTagToEntries(action.grasptag, action.entries, function() {
+          component.undoStack.push({'action': 'addTag', 'entries': action.entries, 'grasptag': action.grasptag});
+        });
+      } else if (action.action == 'addTag') {
+        component.removeGrASPFromEntries(action.grasptag, action.entries, function() {
+          component.undoStack.push({'action': 'removeTag', 'entries': action.entries, 'grasptag': action.grasptag});
         });
       }
     },

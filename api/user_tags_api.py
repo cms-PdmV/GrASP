@@ -74,8 +74,8 @@ class GetUserTagAPI(APIBase):
                 raise Exception('Could not find given tag')
 
             tag = tags[0]
-            query_where = 'WHERE campaign_uid = ?'
-            query_args = [tag['uid']]
+            query_where = 'WHERE tags LIKE ?'
+            query_args = [tag['name']]
             if interested_pwg:
                 interested_pwg = '%%%s%%' % (interested_pwg.strip().upper())
                 query_args.append(interested_pwg)
@@ -83,7 +83,7 @@ class GetUserTagAPI(APIBase):
 
             query_where += ' ORDER BY dataset COLLATE NOCASE'
             entries = query(conn,
-                            'user_tag_entries',
+                            'existing_campaign_entries',
                             ['uid',
                              'chained_request',
                              'dataset',
