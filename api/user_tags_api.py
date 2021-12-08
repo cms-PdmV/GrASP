@@ -30,7 +30,7 @@ class CreateUserTagAPI(APIBase):
         data = json.loads(data.decode('utf-8'))
         self.logger.info('Creating new user tag %s', data)
         name = data['name'].strip()
-        if not matches_regex(name, '^[a-zA-Z0-9_-]{3,25}$'):
+        if not matches_regex(name, '^[a-zA-Z0-9_-]{3,50}$'):
             raise Exception('Tag "%s" is not valid' % (name))
 
         conn = sqlite3.connect(self.db_path)
@@ -156,7 +156,7 @@ class UpdateUserTagAPI(APIBase):
         self.logger.info('Updating user tag %s', data)
         name = data['name'].strip()
         uid = int(data['uid'])
-        if not matches_regex(name, '^[a-zA-Z0-9_-]{3,25}$'):
+        if not matches_regex(name, '^[a-zA-Z0-9_-]{3,50}$'):
             raise Exception('Tag "%s" is not valid' % (name))
 
         conn = sqlite3.connect(self.db_path)
