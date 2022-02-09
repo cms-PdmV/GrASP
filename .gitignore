@@ -115,3 +115,5 @@ cookie.txt
 
 # nohup
 nohup.out
+
+*.pid
