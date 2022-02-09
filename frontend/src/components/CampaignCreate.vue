@@ -4,7 +4,7 @@
     <table>
       <tr>
         <td>Campaign name</td>
-        <td><input type="text" v-model="name"></td>
+        <td><input type="text" style="border: none !important;" v-model="name"></td>
       </tr>
     </table>
     <div style="text-align: center;">

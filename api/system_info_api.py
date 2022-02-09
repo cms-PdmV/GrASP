@@ -7,6 +7,7 @@ import flask
 from api.api_base import APIBase
 from utils.grasp_database import Database
 from utils.user import User
+from utils.utils import clean_split
 
 
 class UserInfoAPI(APIBase):
@@ -32,8 +33,19 @@ class UserActionHistory(APIBase):
         """
         Fetch a list of all users' or a particular user's actions
         """
-        database = Database('history')
-        return {'response': [], 'success': True, 'message': '#TODO'}
+        history_db = Database('history')
+        if username:
+            entries = history_db.query(f'user={username}',
+                                       limit=999,
+                                       sort_attr='time',
+                                       sort_asc=False)
+        else:
+            entries = history_db.query('user=*',
+                                       limit=999,
+                                       sort_attr='time',
+                                       sort_asc=False)
+
+        return {'response': entries, 'success': True, 'message': ''}
 
 
 class SearchAPI(APIBase):
@@ -50,6 +62,7 @@ class SearchAPI(APIBase):
             args = {}
 
         query = args.pop('q', '')
+        query = clean_split(query, ',')[-1]
         query = query.strip().replace(' ', '*')
         if len(query.replace('*', '')) < 3:
             return {'response': [], 'success': True, 'message': 'Query string too short'}

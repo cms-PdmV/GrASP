@@ -4,7 +4,7 @@
     <table>
       <tr>
         <td>Tag</td>
-        <td><input type="text" v-model="name"></td>
+        <td><input type="text" style="border: none !important" v-model="name"></td>
       </tr>
     </table>
     <div style="text-align: center;">
@@ -35,7 +35,7 @@ export default {
     save: function() {
       const component = this;
       axios.put('api/tags/create', {'name': this.name}).then(() => {
-        window.location = 'samples?tag=' + component.name;
+        window.location = 'samples?tags=' + component.name;
       }).catch(error => {
         alert(error.response.data.message);
       });

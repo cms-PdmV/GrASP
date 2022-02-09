@@ -26,6 +26,7 @@ class CreateTagAPI(APIBase):
         tag_db = Database('tags')
         tag = {'_id': name, 'name': name}
         tag_db.save(tag)
+        self.add_history_entry('', 'create tag', name)
         return {'response': tag, 'success': True, 'message': ''}
 
 
@@ -55,6 +56,7 @@ class DeleteTagAPI(APIBase):
         """
         self.logger.info('Deleting tag %s', tag)
         tag_db = Database('tags')
-        tag_db.delete_document({'_id': tag}, purge=True)
+        tag_db.delete_document({'_id': tag})
         # Entries from samples database should be deleted during next update
+        self.add_history_entry('', 'delete tag', tag)
         return {'response': None, 'success': True, 'message': ''}

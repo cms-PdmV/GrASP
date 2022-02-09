@@ -1,26 +1,27 @@
 <template>
   <div>
-    <h1 v-if="!loading" class="page-title">
-      <template  v-if="campaign || tags || pwgs">
-        <span class="font-weight-light">Samples </span>
-        <template v-if="campaign">
-          <span class="font-weight-light">in</span> {{campaign}}
-        </template>
-        <template v-if="tags">
-          <span class="font-weight-light">tagged</span> {{tags}}
-        </template>
-        <template v-if="pwgs">
-          <span class="font-weight-light">where</span> {{pwgs}} <span class="font-weight-light">is interested</span>
-        </template>
+    <h1 v-if="!loading && (campaign || tags || pwgs)" class="page-title">
+      <span class="font-weight-light">Samples </span>
+      <template v-if="campaign">
+        <span class="font-weight-light">in</span> {{campaign}}
+      </template>
+      <template v-if="tags">
+        <span class="font-weight-light">tagged</span> {{tags}}
+      </template>
+      <template v-if="pwgs">
+        <span class="font-weight-light">where</span> {{pwgs}} <span class="font-weight-light">is interested</span>
       </template>
     </h1>
+    <h2 v-if="!loading && onlyDataset" class="page-title">
+      <span class="font-weight-light">Dataset</span> {{onlyDataset}}
+    </h2>
     <div class="align-center mt-4" v-if="loading">
       <img :src="'static/loading' + getRandomInt(5) + '.gif'" style="width: 120px; height: 120px;"/>
       <h3>Loading table...</h3>
     </div>
     <div v-if="!loading" class="align-center">
       <div class="ml-1 mr-1" style="display: inline-block">
-        Events Filter:
+        Events:
         <template v-for="eventsPair in eventFilterOptions">
           <a :key="eventsPair[0]"
              class="ml-1 mr-1"
@@ -31,7 +32,7 @@
       </div>
       |
       <div class="ml-1 mr-1" style="display: inline-block">
-        MiniAOD Filter:
+        MiniAOD:
         <template v-for="miniaodPair in miniaodFilterOptions">
           <a :key="miniaodPair[0]"
              class="ml-1 mr-1"
@@ -42,7 +43,7 @@
       </div>
       |
       <div class="ml-1 mr-1" style="display: inline-block">
-        NanoAOD Filter:
+        NanoAOD:
         <template v-for="nanoaodPair in nanoaodFilterOptions">
           <a :key="nanoaodPair[0]"
              class="ml-1 mr-1"
@@ -53,52 +54,61 @@
       </div>
       |
       <div class="ml-1 mr-1" style="display: inline-block">
-        Download Table:
+        Download table:
         <a title="Comma-separated values file" class="ml-1 mr-1" @click="downloadExcelFile('csv')">CSV</a>
         <a title="Microsoft Office Excel file" class="ml-1 mr-1" @click="downloadExcelFile('xls')">XLS</a>
       </div>
-      |
-      <div class="ml-1 mr-1" style="display: inline-block">
-        <a class="ml-1 mr-1"
-           title="Click here to go to GrASP's github issues"
-           target="_blank"
-           href="https://github.com/cms-PdmV/GrASP/issues/new/choose">Report a bug or suggest a feature</a>
-      </div>
     </div>
     <div v-if="!loading" class="align-center ma-2">
-      <b>I am going to add or remove</b>
-      <select v-model="selectedPWG" class="ml-2 mr-2">
+      Add or remove
+      <select v-model="selectedPWG" class="ml-1 mr-1" style="padding: 0 4px;">
         <option selected value=''></option>
         <option v-for="pwg in allPWGs" :key="pwg" :value="pwg">{{pwg}}</option>
       </select>
-      <b>physics working group as interested PWG in samples</b>
-    </div>
-    <div v-if="!loading" class="align-center ma-2">
-      <b>I am going to add or remove</b>
-      <select v-model="selectedTag" class="ml-2 mr-2">
+      interested PWG or
+      <select v-model="selectedTag" class="ml-1 mr-1" style="padding: 0 4px;">
         <option selected value=''></option>
         <option v-for="tag in allTags" :key="tag" :value="tag">{{tag}}</option>
       </select>
-      <b>GrASP Custom Tag in samples</b>
+      tag
     </div>
     <table v-if="!loading">
       <tr>
-        <th>Short Name<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.short_name" @input="applyFilters()"></th>
-        <th>Dataset Name<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.dataset" @input="applyFilters()"></th>
-        <th>Root Request<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.root" @input="applyFilters()"></th>
-        <th>MiniAOD Request<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.miniaod" @input="applyFilters()"></th>
-        <th>NanoAOD Request<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.nanoaod" @input="applyFilters()"></th>
-        <th>Chained Request<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.chained_request" @input="applyFilters()"></th>
-        <th>Interested PWGs</th>
-        <th>Tags</th>
-        <th style="text-align: center">
+        <th rowspan="2">Short Name<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.short_name" @input="applyFilters()"></th>
+        <th rowspan="2">Dataset Name<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.dataset" @input="applyFilters()" v-if="!onlyDataset"></th>
+        <th colspan="3">Root Request</th>
+        <th rowspan="2">MiniAOD Request<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.miniaod" @input="applyFilters()"></th>
+        <th rowspan="2">NanoAOD Request<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.nanoaod" @input="applyFilters()"></th>
+        <th rowspan="2">Chained Request<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.chained_request" @input="applyFilters()"></th>
+        <th rowspan="2" style="text-align: center">
           <input type="checkbox" style="width: auto" :checked="selectAllChecked" v-on:change="toggleAllCheckboxes" v-model="selectAllChecked" :indeterminate.prop="selectAllIndeterminate">
         </th>
+      </tr>
+      <tr>
+        <th>Tags</th>
+        <th title="Interested PWGs">Int. PWGs</th>
+        <th><input type="text" class="header-search" placeholder="Type to search..." v-model="search.root" @input="applyFilters()"></th>
       </tr>
       <tr v-for="entry in entries" :key="entry._id">
         <td v-if="entry.rowspan.short_name > 0" :rowspan="entry.rowspan.short_name">{{entry.short_name}}</td>
         <td class="dataset-column" v-if="entry.rowspan.dataset > 0" :rowspan="entry.rowspan.dataset">
           <a :href="'https://cms-pdmv.cern.ch/mcm/requests?dataset_name=' + entry.dataset + '&member_of_campaign=' + entry.campaign_name" target="_blank">{{entry.dataset}}</a>
+        </td>
+        <td v-if="entry.rowspan.root > 0" :rowspan="entry.rowspan.root" class="tags-cell">
+          {{entry.tagsNice}}
+          <template v-if="selectedTag && role('user')">
+            <br>
+            <span class="add-pwg-link" v-if="!entry.tags.includes(selectedTag)" @click="addTagToEntries(selectedTag, [entry])">Add {{selectedTag}}</span>
+            <span class="remove-pwg-link" v-if="entry.tags.includes(selectedTag)" @click="removeTagFromEntries(selectedTag, [entry])">Remove {{selectedTag}}</span>
+          </template>
+        </td>
+        <td v-if="entry.rowspan.root > 0" :rowspan="entry.rowspan.root" class="tags-cell">
+          {{entry.pwgsNice}}
+          <template v-if="selectedPWG && role('user')">
+            <br>
+            <span class="add-pwg-link" v-if="!entry.pwgs.includes(selectedPWG)" @click="addPWGToEntries(selectedPWG, [entry])">Add {{selectedPWG}}</span>
+            <span class="remove-pwg-link" v-if="entry.pwgs.includes(selectedPWG)" @click="removePWGFromEntries(selectedPWG, [entry])">Remove {{selectedPWG}}</span>
+          </template>
         </td>
         <td v-if="entry.rowspan.root > 0" :rowspan="entry.rowspan.root" class="progress-cell">
           <div>
@@ -171,35 +181,19 @@
         <td>
           <a :href="'https://cms-pdmv.cern.ch/mcm/chained_requests?prepid=' + entry.chained_request" target="_blank">{{entry.chain_tag}}</a>
         </td>
-        <td class="tags-cell">
-          {{entry.pwgsNice}}
-          <template v-if="selectedPWG && role('user')">
-            <br>
-            <span class="add-pwg-link" v-if="!entry.pwgs.includes(selectedPWG)" @click="addPWGToEntries(selectedPWG, [entry])">Add {{selectedPWG}}</span>
-            <span class="remove-pwg-link" v-if="entry.pwgs.includes(selectedPWG)" @click="removePWGFromEntries(selectedPWG, [entry])">Remove {{selectedPWG}}</span>
-          </template>
-        </td>
-        <td class="tags-cell">
-          {{entry.tagsNice}}
-          <template v-if="selectedTag && role('user')">
-            <br>
-            <span class="add-pwg-link" v-if="!entry.tags.includes(selectedTag)" @click="addTagToEntries(selectedTag, [entry])">Add {{selectedTag}}</span>
-            <span class="remove-pwg-link" v-if="entry.tags.includes(selectedTag)" @click="removeTagFromEntries(selectedTag, [entry])">Remove {{selectedTag}}</span>
-          </template>
-        </td>
         <td style="min-width: 30px; text-align: center">
           <input type="checkbox" :checked="entry.checked" v-on:change="toggleOneCheckbox" v-model="entry.checked">
         </td>
       </tr>
     </table>
 
-    <footer v-if="selectAllChecked || selectAllIndeterminate">
+    <footer v-if="selectedCount > 0">
       Selected items ({{selectedCount}}) actions:
       <template v-if="role('user')">
-        <span v-if="selectedTag" class="add-pwg-link" @click="addGrASPTagToSelectedEntriesAction(selectedTag)">Add {{selectedTag}}</span>
-        <span v-if="selectedTag" class="remove-pwg-link" @click="removeGrASPTagFromSelectedEntriesAction(selectedTag)">Remove {{selectedTag}}</span>
-        <span v-if="selectedPWG" class="add-pwg-link" @click="addPWGToSelectedEntriesAction(selectedPWG)">Add {{selectedPWG}}</span>
-        <span v-if="selectedPWG" class="remove-pwg-link" @click="removePWGFromSelectedEntriesAction(selectedPWG)">Remove {{selectedPWG}}</span>
+        <span v-if="selectedTag" class="add-pwg-link" @click="addTagToSelectedEntries(selectedTag)">Add {{selectedTag}}</span>
+        <span v-if="selectedTag" class="remove-pwg-link" @click="removeTagFromSelectedEntries(selectedTag)">Remove {{selectedTag}}</span>
+        <span v-if="selectedPWG" class="add-pwg-link" @click="addPWGToSelectedEntries(selectedPWG)">Add {{selectedPWG}}</span>
+        <span v-if="selectedPWG" class="remove-pwg-link" @click="removePWGFromSelectedEntries(selectedPWG)">Remove {{selectedPWG}}</span>
       </template>
       <span style="color: var(--v-anchor-base); cursor: pointer" @click="openPmpSelectedEntries()">pMp Historical</span>
     </footer>
@@ -225,6 +219,7 @@ export default {
       campaign: undefined,
       pwgs: undefined,
       tags: undefined,
+      onlyDataset: undefined,
       selectedPWG: undefined,
       selectedTag: undefined,
       allPWGs: ['B2G', 'BPH', 'BTV', 'EGM', 'EXO', 'FSQ', 'HCA',
@@ -257,11 +252,14 @@ export default {
     if (query.campaign && query.campaign.length) {
       this.campaign = query.campaign.trim();
     }
-    if (query.pwg && query.pwg.length) {
-      this.pwg = query.pwg.toUpperCase();
+    if (query.pwgs && query.pwgs.length) {
+      this.pwgs = query.pwgs.toUpperCase();
     }
     if (query.tags && query.tags.length) {
       this.tags = query.tags.trim();
+    }
+    if (!this.campaign && !this.pwgs && !this.tags && query.dataset) {
+      this.onlyDataset = query.dataset.trim();
     }
     if (query.short_name && query.short_name.length) {
       this.search.short_name = query.short_name.trim();
@@ -360,7 +358,7 @@ export default {
         entry.nanoaodPercentage = 100;
         entry.nanoaodEventsNice = entry.nanoaodTotalEventsNice;
       }
-      entry.checked = false;
+      entry.checked = entry.checked !== undefined ? entry.checked : false;
       entry.pwgsNice = entry.pwgs.join(', ');
       entry.tagsNice = entry.tags.join(', ');
     },
@@ -370,31 +368,43 @@ export default {
         component.allTags = response.data.response;
       });
     },
+    addPWGToSelectedEntries: function(pwg) {
+      this.addPWGToEntries(pwg, this.entries.filter(x => x.checked));
+    },
     addPWGToEntries: function(pwg, entries) {
       let entriesToUpdate = [];
       for (let entry of entries) {
-        entriesToUpdate.push({'id': entry._id, 'action': 'add_pwg', 'value': pwg})
+        entriesToUpdate.push({'prepid': entry.root, 'action': 'add_pwg', 'value': pwg})
       }
       this.updateEntries(entriesToUpdate);
+    },
+    removePWGFromSelectedEntries: function(pwg) {
+      this.removePWGFromEntries(pwg, this.entries.filter(x => x.checked));
     },
     removePWGFromEntries: function(pwg, entries) {
       let entriesToUpdate = [];
       for (let entry of entries) {
-        entriesToUpdate.push({'id': entry._id, 'action': 'remove_pwg', 'value': pwg})
+        entriesToUpdate.push({'prepid': entry.root, 'action': 'remove_pwg', 'value': pwg})
       }
       this.updateEntries(entriesToUpdate);
     },
-    addTagToEntries: function(pwg, entries) {
+    addTagToSelectedEntries: function(tag) {
+      this.addTagToEntries(tag, this.entries.filter(x => x.checked));
+    },
+    addTagToEntries: function(tag, entries) {
       let entriesToUpdate = [];
       for (let entry of entries) {
-        entriesToUpdate.push({'id': entry._id, 'action': 'add_tag', 'value': pwg})
+        entriesToUpdate.push({'prepid': entry.root, 'action': 'add_tag', 'value': tag})
       }
       this.updateEntries(entriesToUpdate);
     },
-    removeTagFromEntries: function(pwg, entries) {
+    removeTagFromSelectedEntries: function(tag) {
+      this.removeTagFromEntries(tag, this.entries.filter(x => x.checked));
+    },
+    removeTagFromEntries: function(tag, entries) {
       let entriesToUpdate = [];
       for (let entry of entries) {
-        entriesToUpdate.push({'id': entry._id, 'action': 'remove_tag', 'value': pwg})
+        entriesToUpdate.push({'prepid': entry.root, 'action': 'remove_tag', 'value': tag})
       }
       this.updateEntries(entriesToUpdate);
     },
@@ -403,7 +413,7 @@ export default {
       const component = this;
       httpRequest.then(response => {
         for (let updatedEntry of response.data.response) {
-          for (let existingEntry of this.entries) {
+          for (let existingEntry of this.allEntries) {
             if (updatedEntry._id == existingEntry._id) {
               // Update existing entry
               Object.assign(existingEntry, updatedEntry);
@@ -531,6 +541,7 @@ export default {
         { header: 'NanoAOD output', key: 'nanoaod_output'},
         { header: 'Chained request', key: 'chained_request'},
         { header: 'Interested PWGs', key: 'pwgs'},
+        { header: 'Tags', key: 'tags'},
       ];
 
       for (let entry of this.entries) {
@@ -553,13 +564,24 @@ export default {
                           'nanoaod_total_events': entry.nanoaod_total_events,
                           'nanoaod_output': entry.nanoaod_output,
                           'chained_request': entry.chained_request,
-                          'pwgs': entry.pwgs,
+                          'pwgs': entry.pwgs.join(', '),
+                          'tags': entry.tags.join(', '),
                           });
       }
-      let fileName = this.campaingName.replace(/\*/g, 'x');
-      if (this.interestedPWG) {
-        fileName += '_' + this.interestedPWG;
+      let fileName = ['GrASP'];
+      if (this.campaign) {
+        fileName.push(this.campaign);
       }
+      if (this.tags) {
+        fileName.push(this.tags);
+      }
+      if (this.pwgs) {
+        fileName.push(this.pwgs);
+      }
+      if (this.onlyDataset) {
+        fileName.push(this.onlyDataset);
+      }
+      fileName = fileName.join('_').replaceAll(',', '_').replace(/[^A-Za-z0-9_-]/g, 'x');
       if (outputFormat == 'xls') {
         workbook.xlsx.writeBuffer().then(function (data) {
           const blob = new Blob([data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
@@ -596,7 +618,7 @@ export default {
       if (this.entries.every(x => x.checked)) {
         // If all selected
         this.selectedCount = this.entries.length;
-        this.selectAllChecked = true;
+        this.selectAllChecked = this.entries.length > 0;
         this.selectAllIndeterminate = false;
       } else if (this.entries.some(x => x.checked)) {
         // If some are selected

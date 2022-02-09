@@ -29,7 +29,7 @@
           v-for="(value, index) in items"
           :key="index"
           class="suggestion-item"
-          @click="select(value)"
+          @click="select(value.link)"
           @mouseover="mouseEnteredItem(index)"
           v-bind:class="{ 'suggestion-item-hover': index == selectedIndex }"
         >
@@ -96,6 +96,12 @@ export default {
       newValue = newValue.trim();
       if (newValue in this.cache) {
         this.items = this.cache[newValue];
+        this.items = this.items.map(function (x) {return {'wild': false, 'value': x, 'link': x}});
+        if (!this.cache[newValue].includes(newValue) && newValue.replaceAll('*', '').replaceAll(' ', '').length > 2) {
+          this.items.push({'wild': true,
+                           'value': newValue.split(',').filter(Boolean).map(x => x.trim()).join(','),
+                           'link': newValue.split(',').filter(Boolean).map(x => `*${x.replaceAll(' ', '*').trim()}*`).join(',')});
+        }
         this.suggestionsTimer = undefined;
       } else {
         this.suggestionsTimer = setTimeout(() => {
@@ -105,6 +111,12 @@ export default {
           axios.get("api/search?q=" + newValue).then((response) => {
             component.items = response.data.response;
             component.cache[newValue] = component.items;
+            component.items = component.items.map(function (x) {return {'wild': false, 'value': x, 'link': x}});
+            if (!response.data.response.includes(newValue) && newValue.replaceAll('*', '').replaceAll(' ', '').length > 2) {
+              component.items.push({'wild': true,
+                                    'value': newValue.split(',').filter(Boolean).map(x => x.trim()).join(','),
+                                    'link': newValue.split(',').filter(Boolean).map(x => `*${x.replaceAll(' ', '*').trim()}*`).join(',')});
+            }
             component.loading = false;
           }).catch(() => {
             component.loading = false;
@@ -131,22 +143,27 @@ export default {
       this.selectedIndex = index;
     },
     highlight(item) {
-      const splitValues = this.value.toLowerCase().replace(/\*/g, " ").split(" ").filter(Boolean);
+      let splitValues = this.value.split(',').filter(Boolean)
+      let value = splitValues[splitValues.length - 1].toLowerCase().replace(/\*/g, " ").split(" ").filter(Boolean);
       let highlighted = "";
       let lastIndex = 0;
-      const lowerCaseItem = item.toLowerCase();
-      for (let split of splitValues) {
+      let lowerCaseItem = item.value.toLowerCase();
+      for (let split of value) {
         let foundIndex = lowerCaseItem.indexOf(split, lastIndex);
         if (foundIndex < 0) {
           continue;
         }
-        highlighted += item.slice(lastIndex, foundIndex);
+        highlighted += item.value.slice(lastIndex, foundIndex);
         lastIndex += foundIndex - lastIndex;
-        let highlightedPiece = item.slice(foundIndex, foundIndex + split.length);
+        let highlightedPiece = item.value.slice(foundIndex, foundIndex + split.length);
         highlighted += '<b style="background: #dadada">' + highlightedPiece + '</b>';
         lastIndex += split.length;
       }
-      highlighted += item.slice(lastIndex);
+      highlighted += item.value.slice(lastIndex);
+      if (item.wild) {
+        highlighted = highlighted.replaceAll(',', ' or ');
+        highlighted = '<i>All samples containing ' + highlighted + '</i>';
+      }
       return highlighted;
     },
     arrowKey(direction) {
