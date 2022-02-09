@@ -106,7 +106,6 @@ table {
 
 input {
   border: 1px solid rgba(0, 0, 0, 0.87) !important;
-  border-radius: 4px !important;
   background: white !important;
   color: rgba(0, 0, 0, 0.87);
   width: 100%;

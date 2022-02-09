@@ -317,7 +317,7 @@ class Database:
 
         return 'AND'.join(query)
 
-    def search(self, query_dict, page=0, limit=20, include_fields=None, total_rows=False, sort=None, sort_asc=True):
+    def search(self, query_dict, page=0, limit=20, total_rows=False, sort=None, sort_asc=True):
         """
         Query couchdb-lucene with given query dict
         Return a dict of results "rows" and number of "total_rows"
@@ -330,14 +330,6 @@ class Database:
                    'include_docs': True,
                    'sort': '_id<string>' if not sort else sort,
                    'q': query}
-        if include_fields:
-            # couchdb-lucene bug - _id must be always included when specifying
-            # which fields to fetch because couchdb-lucene has "_id" hardcoded
-            include_fields = set(include_fields.split(','))
-            include_fields.add('_id')
-            include_fields = ','.join(sorted(list(include_fields)))
-            options['include_fields'] = include_fields
-
         if not sort_asc:
             options['sort'] = '\\%s' % (options['sort'])
 

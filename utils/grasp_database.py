@@ -104,9 +104,6 @@ class Database():
     def delete_document(self, document, purge=False):
         """
         Delete a document
-        It does not actually delete a document, just removes all attributes
-        except _id and marks it as "deleted"
-        If purge is set to True, then document is actually removed from DB
         """
         if not isinstance(document, dict):
             self.logger.error('%s is not a dictionary', document)
@@ -118,12 +115,7 @@ class Database():
             self.logger.error('%s does not have a _id', document)
             return False
 
-        if purge:
-            return self.collection.delete_one({'_id': document_id})
-
-        deleted_document = {'_id': document_id,
-                            'deleted': True}
-        return self.save(deleted_document)
+        return self.collection.delete_one({'_id': document_id})
 
     def save(self, document):
         """
@@ -150,7 +142,6 @@ class Database():
               query_string=None,
               page=0, limit=20,
               sort_attr=None, sort_asc=True,
-              include_deleted=False,
               ignore_case=False):
         """
         Same as query_with_total_rows, but return only list of objects
@@ -160,7 +151,6 @@ class Database():
                                           limit,
                                           sort_attr,
                                           sort_asc,
-                                          include_deleted,
                                           ignore_case)[0]
 
     def get_value_condition(self, value):
@@ -235,27 +225,19 @@ class Database():
                               query_string=None,
                               page=0, limit=20,
                               sort_attr=None, sort_asc=True,
-                              include_deleted=False,
                               ignore_case=False):
         """
         Perform a query in a database
         And operator is &&
         Example prepid=*19*&&is_root=false
-        This is horrible, please think of something better
         """
         query_dict = {'$and': []}
-        if not include_deleted:
-            query_dict['$and'].append({'deleted': {'$ne': True}})
-
         if query_string:
             query_string_parts = [x for x in query_string.split('&&') if x.strip()]
             self.logger.debug('Query parts %s', query_string_parts)
             for part in query_string_parts:
                 split_part = part.split('=')
                 key = split_part[0].strip()
-                if key == 'deleted':
-                    # Prevent cheating
-                    continue
 
                 values = split_part[1].strip().replace('**', '*').replace('*', '.*')
                 values = [value.strip() for value in values.split(',') if value.strip()]
@@ -281,6 +263,6 @@ class Database():
         self.logger.debug('Sorting on %s ascending %s', sort_attr, 'YES' if sort_asc else 'NO')
         result = self.collection.find(query_dict)
         result = result.sort(sort_attr, ASCENDING if sort_asc else DESCENDING)
-        total_rows = result.count()
+        total_rows = 0 # result.count()
         result = result.skip(page * limit).limit(limit)
         return list(result), int(total_rows)

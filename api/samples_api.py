@@ -156,27 +156,19 @@ class GetSamplesAPI(APIBase):
 
         list_of_objects.sort(key=cmp_to_key(comp))
 
-    def get_miniaod_version(self, prepid):
+    def get_xaod_version(self, prepid):
         if not prepid:
             return ''
 
-        if 'MiniAODv' in prepid:
-            version = prepid.lower().split('miniaod')[-1].lstrip('v')
+        prepid = prepid.lower()
+        if 'aod' in prepid:
+            # Remove v or APVv
+            version = prepid.split('aod')[-1].lstrip('apv')
             version = version.replace(version.lstrip('0123456789'), '')
             if version != '':
-                return version
+                return f'v{version}'
 
-        return ''
-
-    def get_nanoaod_version(self, prepid):
-        if not prepid:
-            return ''
-
-        if 'NanoAODv' in prepid:
-            version = prepid.lower().split('nanoaod')[-1].lstrip('v')
-            version = version.replace(version.lstrip('0123456789'), '')
-            if version != '':
-                return version
+            return 'v1'
 
         return ''
 
@@ -209,12 +201,13 @@ class GetSamplesAPI(APIBase):
         sample_db = Database('samples')
         tag_db = Database('tags')
         tags = set(t['name'] for t in tag_db.query(limit=tag_db.get_count()))
-        results = sample_db.query('&&'.join(query), limit=25000)
+        query = '&&'.join(query)
+        results = sample_db.query(query, limit=25000, ignore_case=bool('*' in query))
         for entry in results:
             entry['short_name'] = self.get_short_name(entry['dataset'])
             entry['chain_tag'] = self.get_chain_tag(entry['chained_request'])
-            entry['miniaod_version'] = self.get_nanoaod_version(entry['miniaod'])
-            entry['nanoaod_version'] = self.get_miniaod_version(entry['nanoaod'])
+            entry['miniaod_version'] = self.get_xaod_version(entry['miniaod'])
+            entry['nanoaod_version'] = self.get_xaod_version(entry['nanoaod'])
             entry['tags'] = sorted(list(tags & set(entry['tags'])))
 
         self.multiarg_sort(results, ['short_name', 'dataset', 'root', 'miniaod', 'nanoaod'])
@@ -246,12 +239,12 @@ class UpdateSampleAPI(APIBase):
         all_tags = set(self.get_all_tags())
         for entry in data:
             try:
-                entry_id = entry['id']
+                entry_root = entry['prepid']
                 entry_action = entry['action']
                 entry_value = entry['value']
-                self.logger.info('Updating %s (%s): %s', entry_id, entry_action, entry_value)
-                entry_sample = sample_db.get(entry_id)
-                for sample in self.related_samples(entry_sample):
+                self.logger.info('Updating %s (%s): %s', entry_root, entry_action, entry_value)
+                samples = sample_db.query(f'root={entry_root}')
+                for sample in samples:
                     if entry_action in ('add_tag', 'remove_tag'):
                         if entry_value not in all_tags:
                             self.logger.info('Invalid tag %s', entry_value)
@@ -284,19 +277,18 @@ class UpdateSampleAPI(APIBase):
                         self.logger.warning('Invalid action')
                         continue
 
-                    entry['tags'] = sorted(list(all_tags & set(entry['tags'])))
+                    sample['tags'] = sorted(list(all_tags & set(sample['tags'])))
                     sample_db.save(sample)
-                    updated_entries.append(sample)
+                    updated_entries.append({'_id': sample['_id'],
+                                            'tags': sample['tags'],
+                                            'pwgs': sample['pwgs']})
+                    self.add_history_entry(sample['root'],
+                                           entry_action.replace('_', ' '),
+                                           entry_value)
             except Exception as ex:
                 self.logger.error(ex)
 
         return {'response': updated_entries, 'success': True, 'message': ''}
-
-    def related_samples(self, sample):
-        sample_db = Database('samples')
-        results = list(sample_db.collection.find({'root': sample['root']}))
-        self.logger.info('Found %s related samples for %s', len(results), sample['_id'])
-        return results
 
     def get_all_tags(self):
         if not self.tags:

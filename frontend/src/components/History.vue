@@ -6,14 +6,14 @@
       <tr>
         <th>Time</th>
         <th>Username</th>
-        <th>Module</th>
+        <th>Request</th>
         <th>Action</th>
         <th>Value</th>
       </tr>
       <tr v-for="entry in historyEntries" :key="entry.uid">
         <td>{{niceDate(entry.time)}}</td>
-        <td>{{entry.username}}</td>
-        <td>{{entry.module}}</td>
+        <td>{{entry.user}}</td>
+        <td>{{entry.prepid}}</td>
         <td>{{entry.action}}</td>
         <td>{{entry.value}}</td>
       </tr>
@@ -42,8 +42,6 @@ export default {
     let query = Object.assign({}, this.$route.query);
     if (query.name && query.name.length) {
       this.username = query.name;
-    } else {
-      this.username = '';
     }
     let component = this;
     axios.get('api/system/history' + (this.username ? '/' + this.username : '')).then(response => {

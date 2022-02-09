@@ -26,6 +26,7 @@ class CreateCampaignAPI(APIBase):
         campaign_db = Database('campaigns')
         campaign = {'_id': name, 'name': name}
         campaign_db.save(campaign)
+        self.add_history_entry('', 'create campaign', name)
         return {'response': campaign, 'success': True, 'message': ''}
 
 
@@ -55,6 +56,7 @@ class DeleteCampaignAPI(APIBase):
         """
         self.logger.info('Deleting campaign %s', campaign_name)
         campaign_db = Database('campaigns')
-        campaign_db.delete_document({'_id': campaign_name}, purge=True)
+        campaign_db.delete_document({'_id': campaign_name})
         # Entries from samples database should be deleted during next update
+        self.add_history_entry('', 'delete campaign', campaign_name)
         return {'response': None, 'success': True, 'message': ''}

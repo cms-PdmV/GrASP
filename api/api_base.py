@@ -3,10 +3,11 @@ API base module
 """
 import json
 import logging
-import traceback
 import time
+import hashlib
 from flask import request, make_response
 from flask_restful import Resource
+from utils.grasp_database import Database
 from utils.user import User
 
 
@@ -160,3 +161,16 @@ class APIBase(Resource):
         resp.headers['Content-Type'] = content_type
         resp.headers['Access-Control-Allow-Origin'] = '*'
         return resp
+
+    def add_history_entry(self, prepid, action, value):
+        """
+        Add entry to the history table
+        """
+        history_db = Database('history')
+        entry = {'time': int(time.time()),
+                 'user': User().get_username(),
+                 'prepid': prepid,
+                 'action': action,
+                 'value': value}
+        entry['_id'] = hashlib.sha256(json.dumps(entry, sort_keys=True).encode('utf-8')).hexdigest()
+        history_db.save(entry)

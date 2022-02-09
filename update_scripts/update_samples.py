@@ -32,12 +32,12 @@ class SampleUpdater():
         self.updated_prepids = set()
         self.cache = {}
 
-    def get_mcm_request(self, prepid):
+    def get_mcm_request(self, prepid, use_cache=True):
         """
         Get request from McM if it exists or provide default values if it does
         not exist
         """
-        if prepid in self.cache:
+        if use_cache and prepid in self.cache:
             return self.cache[prepid]
 
         if not prepid:
@@ -48,6 +48,8 @@ class SampleUpdater():
                 logger.error('Could not find %s in McM', prepid)
                 mcm_request = {}
 
+        output_dataset = mcm_request.get('output_dataset')
+        output_dataset = output_dataset[-1] if output_dataset else ''
         # Get request attributes
         request = {'prepid': prepid,
                    'member_of_campaign': mcm_request.get('member_of_campaign', ''),
@@ -56,77 +58,82 @@ class SampleUpdater():
                    'total_events': max(0, mcm_request.get('total_events', 0)),
                    'done_events': max(0, mcm_request.get('completed_events', 0)),
                    'status': mcm_request.get('status', ''),
-                   'output_dataset': mcm_request['output_dataset'][-1] if mcm_request.get('output_dataset') else '',
+                   'output_dataset': output_dataset,
                    'pwgs': mcm_request.get('interested_pwg', []),
                    'tags': mcm_request.get('tags', [])}
-        self.cache[prepid] = request
+        if use_cache:
+            self.cache[prepid] = request
+
         return request
 
-    def sync_tags(self, existing_sample, root):
+    def sync_with_mcm(self, sample, request):
         """
-        Compare local and McM tags and update McM if needed
+        Compare local and McM tags and interested PWGs and update McM if needed
         """
         # Tags
-        reference = set(existing_sample['ref_tags'])
-        local = set(existing_sample['tags'])
-        remote = set(root['tags'])
+        tag_reference = set(sample['ref_tags'])
+        tag_local = set(sample['tags'])
+        tag_remote = set(request['tags'])
         # Tag changes
-        added = (local - reference) | (remote - reference)
-        removed = (reference - local) | (reference - remote)
-        if added:
-            logger.info('Added %s', ','.join(sorted(list(added))))
-
-        if removed:
-            logger.info('Removed %s', ','.join(sorted(list(added))))
-
-        if not added and not removed:
-            return sorted(list(local))
-
-        new_tags = (reference | added) - removed
-        prepid = root['prepid']
-        logger.info('Updating %s tags: %s (McM) + %s (GrASP) -> %s',
-                    prepid,
-                    sorted(list(remote)),
-                    sorted(list(local)),
-                    sorted(list(new_tags)))
-        mcm_request = self.mcm.get('requests', prepid)
-        mcm_request['tags'] = sorted(list(new_tags))
-        result = self.mcm.update('requests', mcm_request)
-        logger.info('Update result: %s', result)
-        return sorted(list(new_tags))
-
-    def sync_pwgs(self, existing_sample, root):
-        """
-        Compare local and McM interested PWG and update McM if needed
-        """
+        tag_added = (tag_local - tag_reference) | (tag_remote - tag_reference)
+        tag_removed = (tag_reference - tag_local) | (tag_reference - tag_remote)
         # PWGs
-        reference = set(existing_sample['ref_pwgs'])
-        local = set(existing_sample['pwgs'])
-        remote = set(root['pwgs'])
+        pwg_reference = set(sample['ref_pwgs'])
+        pwg_local = set(sample['pwgs'])
+        pwg_remote = set(request['interested_pwg'])
         # PWG changes
-        added = (local - reference) | (remote - reference)
-        removed = (reference - local) | (reference - remote)
-        if added:
-            logger.info('Added %s', ','.join(sorted(list(added))))
+        pwg_added = (pwg_local - pwg_reference) | (pwg_remote - pwg_reference)
+        pwg_removed = (pwg_reference - pwg_local) | (pwg_reference - pwg_remote)
 
-        if removed:
-            logger.info('Removed %s', ','.join(sorted(list(added))))
+        prepid = request['prepid']
+        if not tag_added and not tag_removed and not pwg_added and not pwg_removed:
+            logger.debug('No changes for %s', prepid)
+            return
 
-        if not added and not removed:
-            return sorted(list(local))
+        if tag_added:
+            logger.info('Added tags %s', ','.join(sorted(list(tag_added))))
 
-        new_pwgs = (reference | added) - removed
-        prepid = root['prepid']
-        logger.info('Updating %s pwgs: %s (McM) + %s (GrASP) -> %s',
-                    prepid,
-                    sorted(list(remote)),
-                    sorted(list(local)),
-                    sorted(list(new_pwgs)))
-        mcm_request = self.mcm.get('requests', prepid)
-        mcm_request['interested_pwg'] = sorted(list(new_pwgs))
-        result = self.mcm.update('requests', mcm_request)
+        if tag_removed:
+            logger.info('Removed tags %s', ','.join(sorted(list(tag_removed))))
+
+        if pwg_added:
+            logger.info('Added PWGs %s', ','.join(sorted(list(pwg_added))))
+
+        if pwg_removed:
+            logger.info('Removed PWGs %s', ','.join(sorted(list(pwg_removed))))
+
+        new_tags = (tag_reference | tag_added) - tag_removed
+        new_pwgs = (pwg_reference | pwg_added) - pwg_removed
+        update = False
+        if new_tags != tag_remote:
+            request['tags'] = sorted(list(new_tags))
+            logger.info('Updating %s tags: %s (McM) + %s (GrASP) -> %s',
+                        prepid,
+                        ','.join(sorted(list(tag_remote))),
+                        ','.join(sorted(list(tag_local))),
+                        ','.join(sorted(list(new_tags))))
+            update = True
+
+        if new_pwgs != pwg_remote:
+            request['interested_pwg'] = sorted(list(new_pwgs))
+            logger.info('Updating %s PWGs: %s (McM) + %s (GrASP) -> %s',
+                        prepid,
+                        ','.join(sorted(list(pwg_remote))),
+                        ','.join(sorted(list(pwg_local))),
+                        ','.join(sorted(list(new_pwgs))))
+            update = True
+
+        if not update:
+            return True
+
+        result = self.mcm.update('requests', request)
+        self.cache[prepid] = result
         logger.info('Update result: %s', result)
-        return sorted(list(new_pwgs))
+        if result.get('results'):
+            return True
+
+        logger.warning('Update not successful')
+        return False
 
     def entry_hash(self, entry):
         """
@@ -139,68 +146,78 @@ class SampleUpdater():
         """
         Process request into all it's chained requests and insert or update them
         """
+        prepid = request.get('prepid')
         if not request['dataset_name']:
-            logger.warning('No dataset name %s', request.get('prepid'))
+            logger.warning('No dataset name %s', prepid)
             # Skip empty dataset requests
             return
 
-        prepid = request['prepid']
+        if request['pilot']:
+            logger.info('Skipping "pilot" %s', prepid)
+            # Skip pilots
+            return
+
+        if request['flown_with']:
+            logger.debug('Skipping %s because it is not root request', prepid)
+            # Skip flown requests
+            return
+
         # Check request membership in chains
         if not request['member_of_chain']:
             # Create a fake chain request
             chained_requests = [{'prepid': '',
-                                'chain': [prepid]}]
+                                 'chain': [prepid]}]
         else:
             # Fetch all chained requests that this request is member of
             chained_requests = self.mcm_chained_request_db.bulk_get(request['member_of_chain'])
-            # TODO: pick only newest 2?
-            logger.debug('Fetched %s chained requests for %s', len(chained_requests), prepid)
+
+        # Keep only those chained requests that have request as root
+        chained_requests = [c for c in chained_requests if c['chain'] and c['chain'][0] == prepid]
+        if not chained_requests:
+            return
+
+        existing_samples = self.sample_db.query(f'root={prepid}')
+        def get_existing_sample(chain_prepid):
+            for existing_sample in existing_samples:
+                if existing_sample['chained_request'] == chain_prepid:
+                    existing_sample.pop('last_update', None)
+                    return existing_sample
+
+            return None
+
+        # Whether current root request was synced with McM
+        synced_with_mcm = False
+        root_output = request['output_dataset'][-1] if request['output_dataset'] else ''
+        tags = sorted(list(set(request['tags'])))
+        pwgs = sorted(list(set(request['interested_pwg'])))
 
         for chained_request in chained_requests:
             chained_request_prepid = chained_request['prepid']
-            if chained_request_prepid in self.updated_prepids:
-                logger.info('Skipping %s', chained_request_prepid)
-                continue
-
             root_prepid = chained_request['chain'][0]
-            # Update McM early
-            existing_sample = self.sample_db.query('root=%s&&chained_request=%s' % (root_prepid, chained_request_prepid))
-            if existing_sample:
-                existing_sample = existing_sample[0]
-                existing_sample.pop('last_update', None)
-            else:
-                existing_sample = None
-
+            logger.debug('Processing %s', chained_request_prepid)
+            existing_sample = get_existing_sample(chained_request_prepid)
             # Split chained request to steps
             steps = chained_request_to_steps(chained_request)
             miniaod_prepid = steps.get('miniaod', '')
             nanoaod_prepid = steps.get('nanoaod', '')
             # Get root request of the chain
-            root = self.get_mcm_request(root_prepid)
             miniaod = self.get_mcm_request(miniaod_prepid)
             nanoaod = self.get_mcm_request(nanoaod_prepid)
             # Update tags and interested PWGs in McM
-            if existing_sample:
-                # tags = self.sync_tags(existing_sample, root, miniaod, nanoaod)
-                # pwgs = self.sync_pwgs(existing_sample, root, miniaod, nanoaod)
-                tags = self.sync_tags(existing_sample, root)
-                pwgs = self.sync_pwgs(existing_sample, root)
-            else:
-                # Get union of tags and interested pwgs
-                # tags = sorted(list(set(root['tags'] + miniaod['tags'] + nanoaod['tags'])))
-                # pwgs = sorted(list(set(root['pwgs'] + miniaod['pwgs'] + nanoaod['pwgs'])))
-                tags = sorted(list(set(root['tags'])))
-                pwgs = sorted(list(set(root['pwgs'])))
+            if existing_sample and not synced_with_mcm:
+                synced_with_mcm = self.sync_with_mcm(existing_sample, request)
+                tags = sorted(list(set(request['tags'])))
+                pwgs = sorted(list(set(request['interested_pwg'])))
 
-            entry = {'campaign': root['member_of_campaign'],
+            entry = {'campaign': request['member_of_campaign'],
                      'chained_request': chained_request_prepid,
-                     'dataset': root['dataset_name'],
+                     'dataset': request['dataset_name'],
                      'root': root_prepid,
-                     'root_priority': root['priority'],
-                     'root_total_events': root['total_events'],
-                     'root_done_events': root['done_events'],
-                     'root_status': root['status'],
-                     'root_output': root['output_dataset'],
+                     'root_priority': request['priority'],
+                     'root_total_events': request['total_events'],
+                     'root_done_events': request['completed_events'],
+                     'root_status': request['status'],
+                     'root_output': root_output,
                      'miniaod': miniaod_prepid,
                      'miniaod_priority': miniaod['priority'],
                      'miniaod_total_events': miniaod['total_events'],
@@ -236,93 +253,59 @@ class SampleUpdater():
             if nanoaod_prepid:
                 self.updated_prepids.add(nanoaod_prepid)
 
-            if chained_request_prepid:
-                self.updated_prepids.add(chained_request_prepid)
-
             time.sleep(0.01)
 
     def update_campaigns(self):
         """
-        Main function - go through campaigns, fetch requests in these campaigns
-        and process chained requests that these requests are members of
+        Fetch all campaigns and trigger request update for these campaigns
         """
         campaign_db = GrASPDatabase('campaigns')
-        logger.debug('Campaign group count - %s', campaign_db.get_count())
-        campaigns = campaign_db.query(limit=campaign_db.get_count())
-        for campaign in campaigns:
-            campaign_name = campaign['name']
-            logger.info('Starting campaign group %s', campaign_name)
-            self.cache = {}
-            try:
-                requests = [{}]
-                page = 0
-                total = 0
-                limit = 50 if self.debug else 500
-                index = 0
-                while requests:
-                    requests = self.mcm_request_db.search({'member_of_campaign': campaign_name},
-                                                          page=page,
-                                                          limit=limit)
-                    total += len(requests)
-                    logger.info('Fetched %s requests for %s in page %s, total %s',
-                                len(requests),
-                                campaign_name,
-                                page,
-                                total)
-                    for request in requests:
-                        logger.info('Processing %s', request['prepid'])
-                        start = time.time()
-                        self.process_request(request)
-                        end = time.time()
-                        index += 1
-                        logger.info('Processed %s %s in %.4fs', index, request['prepid'], end - start)
-
-                    page += 1
-
-            except Exception as ex:
-                logger.error('Error processing %s', campaign_name)
-                logger.error(ex)
+        count = campaign_db.get_count()
+        logger.debug('Campaign count - %s', count)
+        campaigns =  [c['name'] for c in campaign_db.query(limit=count)]
+        logger.debug('Campaigns: %s', ', '.join(campaigns))
+        self.update_requests({'member_of_campaign': campaigns})
 
     def update_tags(self):
         """
-        Main function - go through tags, fetch requests with these tags
-        and process chained requests that these requests are members of
+        Fetch all tags and trigger request update for these tags
         """
         tag_db = GrASPDatabase('tags')
-        logger.debug('Campaign group count - %s', tag_db.get_count())
-        tags = tag_db.query(limit=tag_db.get_count())
-        for tag_dict in tags:
-            tag = tag_dict['name']
-            logger.info('Starting tag %s', tag)
-            self.cache = {}
-            try:
-                requests = [{}]
-                page = 0
-                total = 0
-                limit = 50 if self.debug else 500
-                index = 0
-                while requests:
-                    requests = self.mcm_request_db.search({'tags': tag}, page=page, limit=limit)
-                    total += len(requests)
-                    logger.info('Fetched %s requests for %s in page %s, total %s',
-                                len(requests),
-                                tag,
-                                page,
-                                total)
-                    for request in requests:
-                        logger.info('Processing %s', request['prepid'])
-                        start = time.time()
-                        self.process_request(request)
-                        end = time.time()
-                        index += 1
-                        logger.info('Processed %s %s in %.4fs', index, request['prepid'], end - start)
+        count = tag_db.get_count()
+        logger.debug('Tag count - %s', count)
+        tags = [t['name'] for t in tag_db.query(limit=count)]
+        logger.debug('Tags: %s', ', '.join(tags))
+        self.update_requests({'tags': tags})
 
-                    page += 1
-                    break
+    def update_requests(self, query):
+        """
+        Main function - go through requests for given query and process chained
+        requests that these requests are members of
+        """
+        logger.info('Update requests for query %s', query)
+        self.cache = {}
+        page = 0
+        limit = 75 if self.debug else 750
+        index = 0
+        requests = [{}]
+        self.updated_prepids = set()
+        while requests:
+            requests = self.mcm_request_db.search(query, page=page, limit=limit)
+            logger.info('Fetched %s requests for %s in page %s', len(requests), query, page)
+            for request in requests:
+                index += 1
+                prepid = request['prepid']
+                if prepid in self.updated_prepids:
+                    logger.info('Skipping %s as it was already updated', prepid)
+                    continue
 
-            except Exception as ex:
-                logger.error('Error processing %s', tag)
-                logger.error(ex)
+                logger.info('Processing %s', prepid)
+                start = time.time()
+                self.process_request(request)
+                end = time.time()
+                logger.info('Processed %s %s in %.4fs', index, prepid, end - start)
+
+            page += 1
 
     def cleanup(self):
         """
@@ -331,11 +314,15 @@ class SampleUpdater():
         sample_db = GrASPDatabase('samples')
         logger.info('Cleaning up')
         samples = [{}]
+        deleted = 0
         while samples:
-            samples = sample_db.query('updated<int>=<%s' % (self.update_timestamp),
+            samples = sample_db.query(f'updated<int>=<{self.update_timestamp}',
                                       limit=50)
             for sample in samples:
-                sample_db.delete_document(sample, purge=True)
+                sample_db.delete_document(sample)
+                deleted += 1
+
+        logger.info('Deleted %s', deleted)
 
 
 def main():
