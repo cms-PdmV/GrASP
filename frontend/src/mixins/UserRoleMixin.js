@@ -3,10 +3,14 @@ import axios from 'axios'
 export const roleMixin = {
 
   data: () => ({
-    userInfo: undefined
+    userInfo: undefined,
+    fetched: false,
   }),
   created () {
-    this.fetchUserInfo();
+    if (!this.fetched) {
+      this.fetched = true;
+      this.fetchUserInfo();
+    }
   },
   methods: {
     fetchUserInfo () {

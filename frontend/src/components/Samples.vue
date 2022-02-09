@@ -1,20 +1,24 @@
 <template>
   <div>
-    <h1 v-if="campaign.entries" class="page-title">
-      <span class="font-weight-light">Samples in</span> {{campaingName}}
-      <template v-if="interestedPWG">
-        <span class="font-weight-light">where</span> {{interestedPWG}} <span class="font-weight-light">is interested</span>
+    <h1 v-if="!loading" class="page-title">
+      <template  v-if="campaign || tags || pwgs">
+        <span class="font-weight-light">Samples </span>
+        <template v-if="campaign">
+          <span class="font-weight-light">in</span> {{campaign}}
+        </template>
+        <template v-if="tags">
+          <span class="font-weight-light">tagged</span> {{tags}}
+        </template>
+        <template v-if="pwgs">
+          <span class="font-weight-light">where</span> {{pwgs}} <span class="font-weight-light">is interested</span>
+        </template>
       </template>
     </h1>
-    <div class="align-center mt-4" v-if="!campaign.entries">
-      <img :src="'static/loading' + getRandomInt(3) + '.gif'" style="width: 120px; height: 120px;"/>
+    <div class="align-center mt-4" v-if="loading">
+      <img :src="'static/loading' + getRandomInt(5) + '.gif'" style="width: 120px; height: 120px;"/>
       <h3>Loading table...</h3>
     </div>
-    <div class="align-center mb-4" v-if="undoStack.length || redoStack.length">
-    <v-btn class="normal ma-1" small :disabled="!undoStack.length" @click="undoEvent">Undo</v-btn>
-    <v-btn class="normal ma-1" small :disabled="!redoStack.length" @click="redoEvent">Redo</v-btn>
-    </div>
-    <div v-if="campaign.entries" class="align-center">
+    <div v-if="!loading" class="align-center">
       <div class="ml-1 mr-1" style="display: inline-block">
         Events Filter:
         <template v-for="eventsPair in eventFilterOptions">
@@ -28,23 +32,23 @@
       |
       <div class="ml-1 mr-1" style="display: inline-block">
         MiniAOD Filter:
-        <template v-for="miniaodPair in miniaodVersionFilterOptions">
+        <template v-for="miniaodPair in miniaodFilterOptions">
           <a :key="miniaodPair[0]"
              class="ml-1 mr-1"
              :title="'Show samples with ' + miniaodPair[0]"
              @click="onMiniAODFilterUpdate(miniaodPair[0])"
-             :class="miniaodPair[0] == miniaodVersionFilter ? 'bold-text' : ''">{{miniaodPair[1]}}</a>
+             :class="miniaodPair[0] == miniaodFilter ? 'bold-text' : ''">{{miniaodPair[1]}}</a>
         </template>
       </div>
       |
       <div class="ml-1 mr-1" style="display: inline-block">
         NanoAOD Filter:
-        <template v-for="nanoaodPair in nanoaodVersionFilterOptions">
+        <template v-for="nanoaodPair in nanoaodFilterOptions">
           <a :key="nanoaodPair[0]"
              class="ml-1 mr-1"
              :title="'Show samples with ' + nanoaodPair[0]"
              @click="onNanoAODFilterUpdate(nanoaodPair[0])"
-             :class="nanoaodPair[0] == nanoaodVersionFilter ? 'bold-text' : ''">{{nanoaodPair[1]}}</a>
+             :class="nanoaodPair[0] == nanoaodFilter ? 'bold-text' : ''">{{nanoaodPair[1]}}</a>
         </template>
       </div>
       |
@@ -61,7 +65,7 @@
            href="https://github.com/cms-PdmV/GrASP/issues/new/choose">Report a bug or suggest a feature</a>
       </div>
     </div>
-    <div v-if="campaign.entries" class="align-center ma-2">
+    <div v-if="!loading" class="align-center ma-2">
       <b>I am going to add or remove</b>
       <select v-model="selectedPWG" class="ml-2 mr-2">
         <option selected value=''></option>
@@ -69,19 +73,19 @@
       </select>
       <b>physics working group as interested PWG in samples</b>
     </div>
-    <div v-if="campaign.entries" class="align-center ma-2">
+    <div v-if="!loading" class="align-center ma-2">
       <b>I am going to add or remove</b>
-      <select v-model="selectedGrASPTag" class="ml-2 mr-2">
+      <select v-model="selectedTag" class="ml-2 mr-2">
         <option selected value=''></option>
-        <option v-for="tag in userTags" :key="tag.name" :value="tag.name">{{tag.name}}</option>
+        <option v-for="tag in allTags" :key="tag" :value="tag">{{tag}}</option>
       </select>
       <b>GrASP Custom Tag in samples</b>
     </div>
-    <table v-if="campaign.entries">
+    <table v-if="!loading">
       <tr>
         <th>Short Name<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.short_name" @input="applyFilters()"></th>
         <th>Dataset Name<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.dataset" @input="applyFilters()"></th>
-        <th>Root Request<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.root_request" @input="applyFilters()"></th>
+        <th>Root Request<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.root" @input="applyFilters()"></th>
         <th>MiniAOD Request<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.miniaod" @input="applyFilters()"></th>
         <th>NanoAOD Request<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.nanoaod" @input="applyFilters()"></th>
         <th>Chained Request<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.chained_request" @input="applyFilters()"></th>
@@ -91,30 +95,30 @@
           <input type="checkbox" style="width: auto" :checked="selectAllChecked" v-on:change="toggleAllCheckboxes" v-model="selectAllChecked" :indeterminate.prop="selectAllIndeterminate">
         </th>
       </tr>
-      <tr v-for="entry in entries" :key="entry.dataset + entry.uid">
+      <tr v-for="entry in entries" :key="entry._id">
         <td v-if="entry.rowspan.short_name > 0" :rowspan="entry.rowspan.short_name">{{entry.short_name}}</td>
         <td class="dataset-column" v-if="entry.rowspan.dataset > 0" :rowspan="entry.rowspan.dataset">
           <a :href="'https://cms-pdmv.cern.ch/mcm/requests?dataset_name=' + entry.dataset + '&member_of_campaign=' + entry.campaign_name" target="_blank">{{entry.dataset}}</a>
         </td>
-        <td v-if="entry.rowspan.root_request > 0" :rowspan="entry.rowspan.root_request" class="progress-cell">
+        <td v-if="entry.rowspan.root > 0" :rowspan="entry.rowspan.root" class="progress-cell">
           <div>
-            <a :href="'https://cms-pdmv.cern.ch/mcm/requests?prepid=' + entry.root_request" target="_blank">McM</a>
-            <a :href="'https://cms-pdmv.cern.ch/pmp/historical?r=' + entry.root_request" target="_blank" class="ml-1">pMp</a>
-            <template v-if="entry.root_request_output">
-              <a :href="makeDASLink(entry.root_request_output)" target="_blank" class="ml-1">DAS</a>
+            <a :href="'https://cms-pdmv.cern.ch/mcm/requests?prepid=' + entry.root" target="_blank">McM</a>
+            <a :href="'https://cms-pdmv.cern.ch/pmp/historical?r=' + entry.root" target="_blank" class="ml-1">pMp</a>
+            <template v-if="entry.root_output">
+              <a :href="makeDASLink(entry.root_output)" target="_blank" class="ml-1">DAS</a>
             </template>
             <br>
-            <small>Campaign: {{entry.campaign_name}}</small>
+            <small>{{entry.campaign}}</small>
             <br>
             <small>Events: {{entry.rootEventsNice}}</small>
-            <template v-if="entry.root_request_status === 'submitted'">
+            <template v-if="entry.root_status === 'submitted'">
               <br>
-              <small>Priority: {{entry.root_request_priority}}</small>
+              <small>Priority: {{entry.root_priority}}</small>
             </template>
             <br>
-            <small>Status: {{entry.root_request_status}}</small>
+            <small>Status: {{entry.root_status}}</small>
           </div>
-          <div :class="'progress-background ' + entry.root_request_status + '-background'"
+          <div :class="'progress-background ' + entry.root_status + '-background'"
                :style="'width: ' + entry.rootPercentage + '%;'">
           </div>
         </td>
@@ -167,20 +171,20 @@
         <td>
           <a :href="'https://cms-pdmv.cern.ch/mcm/chained_requests?prepid=' + entry.chained_request" target="_blank">{{entry.chain_tag}}</a>
         </td>
-        <td class="align-center">
-          {{entry.interested_pwgs}}
+        <td class="tags-cell">
+          {{entry.pwgsNice}}
           <template v-if="selectedPWG && role('user')">
             <br>
-            <span class="add-pwg-link" v-if="!entry.interested_pwgs.includes(selectedPWG)" @click="addPWGToEntriesAction(selectedPWG, [entry])">Add {{selectedPWG}}</span>
-            <span class="remove-pwg-link" v-if="entry.interested_pwgs.includes(selectedPWG)" @click="removePWGFromEntriesAction(selectedPWG, [entry])">Remove {{selectedPWG}}</span>
+            <span class="add-pwg-link" v-if="!entry.pwgs.includes(selectedPWG)" @click="addPWGToEntries(selectedPWG, [entry])">Add {{selectedPWG}}</span>
+            <span class="remove-pwg-link" v-if="entry.pwgs.includes(selectedPWG)" @click="removePWGFromEntries(selectedPWG, [entry])">Remove {{selectedPWG}}</span>
           </template>
         </td>
-        <td style="max-width: 100px; min-height: 50px; min-width: 50px; overflow: auto">
-          {{entry.tags}}
-          <template v-if="selectedGrASPTag && role('user')">
+        <td class="tags-cell">
+          {{entry.tagsNice}}
+          <template v-if="selectedTag && role('user')">
             <br>
-            <span class="add-pwg-link" v-if="!entry.tags.includes(selectedGrASPTag)" @click="addGrASPTagToEntriesAction(selectedGrASPTag, [entry])">Add {{selectedGrASPTag}}</span>
-            <span class="remove-pwg-link" v-if="entry.tags.includes(selectedGrASPTag)" @click="removeGrASPTagFromEntriesAction(selectedGrASPTag, [entry])">Remove {{selectedGrASPTag}}</span>
+            <span class="add-pwg-link" v-if="!entry.tags.includes(selectedTag)" @click="addTagToEntries(selectedTag, [entry])">Add {{selectedTag}}</span>
+            <span class="remove-pwg-link" v-if="entry.tags.includes(selectedTag)" @click="removeTagFromEntries(selectedTag, [entry])">Remove {{selectedTag}}</span>
           </template>
         </td>
         <td style="min-width: 30px; text-align: center">
@@ -192,10 +196,10 @@
     <footer v-if="selectAllChecked || selectAllIndeterminate">
       Selected items ({{selectedCount}}) actions:
       <template v-if="role('user')">
-        <span v-if="selectedGrASPTag" class="add-pwg-link" @click="addGrASPTagToSelectedEntriesAction(selectedGrASPTag)">Add {{selectedGrASPTag}}</span>
-        <span v-if="selectedGrASPTag"  class="remove-pwg-link" @click="removeGrASPTagFromSelectedEntriesAction(selectedGrASPTag)">Remove {{selectedGrASPTag}}</span>
-        <span v-if="selectedPWG"  class="add-pwg-link" @click="addPWGToSelectedEntriesAction(selectedPWG)">Add {{selectedPWG}}</span>
-        <span v-if="selectedPWG"  class="remove-pwg-link" @click="removePWGFromSelectedEntriesAction(selectedPWG)">Remove {{selectedPWG}}</span>
+        <span v-if="selectedTag" class="add-pwg-link" @click="addGrASPTagToSelectedEntriesAction(selectedTag)">Add {{selectedTag}}</span>
+        <span v-if="selectedTag" class="remove-pwg-link" @click="removeGrASPTagFromSelectedEntriesAction(selectedTag)">Remove {{selectedTag}}</span>
+        <span v-if="selectedPWG" class="add-pwg-link" @click="addPWGToSelectedEntriesAction(selectedPWG)">Add {{selectedPWG}}</span>
+        <span v-if="selectedPWG" class="remove-pwg-link" @click="removePWGFromSelectedEntriesAction(selectedPWG)">Remove {{selectedPWG}}</span>
       </template>
       <span style="color: var(--v-anchor-base); cursor: pointer" @click="openPmpSelectedEntries()">pMp Historical</span>
     </footer>
@@ -207,44 +211,42 @@
 import axios from 'axios'
 import { utilsMixin } from '../mixins/UtilsMixin.js'
 import { roleMixin } from '../mixins/UserRoleMixin.js'
-import { userTagMixin } from '../mixins/UserTagMixin.js'
 import ExcelJS from 'exceljs'
 
 export default {
-  name: 'existing',
+  name: 'samples',
   mixins: [
     utilsMixin,
     roleMixin,
-    userTagMixin
   ],
   data () {
     return {
-      interestedPWG: undefined,
+      loading: true,
+      campaign: undefined,
+      pwgs: undefined,
+      tags: undefined,
       selectedPWG: undefined,
-      selectedGrASPTag: undefined,
+      selectedTag: undefined,
       allPWGs: ['B2G', 'BPH', 'BTV', 'EGM', 'EXO', 'FSQ', 'HCA',
                 'HGC', 'HIG', 'HIN', 'JME', 'L1T', 'LUM', 'MUO',
                 'PPS', 'SMP', 'SUS', 'TAU', 'TOP', 'TRK', 'TSG'],
-      campaign: {},
-      campaingName: '',
-      newEntry: {},
+      allTags: [],
       eventFilterOptions: [[0, 'All'], [5e6, '5M+'], [10e6, '10M+'], [20e6, '20M+'], [50e6, '50M+']],
       eventsFilter: 0,
-      miniaodVersionFilterOptions: [],
-      miniaodVersionFilter: '',
-      nanoaodVersionFilterOptions: [],
-      nanoaodVersionFilter: '',
+      miniaodFilterOptions: [],
+      miniaodFilter: '',
+      nanoaodFilterOptions: [],
+      nanoaodFilter: '',
+      allEntries: [], // All fetched entries
       entries: [], // Filtered entries,
       search: {
         short_name: undefined,
         dataset: undefined,
-        root_request: undefined,
+        root: undefined,
         miniaod: undefined,
         nanoaod: undefined,
         chained_request: undefined,
       },
-      undoStack: [],
-      redoStack: [],
       selectAllChecked: false,
       selectAllIndeterminate: false,
       selectedCount: 0,
@@ -252,9 +254,14 @@ export default {
   },
   created () {
     let query = Object.assign({}, this.$route.query);
-    let campaignName = query.name;
+    if (query.campaign && query.campaign.length) {
+      this.campaign = query.campaign.trim();
+    }
     if (query.pwg && query.pwg.length) {
-      this.interestedPWG = query.pwg.toUpperCase();
+      this.pwg = query.pwg.toUpperCase();
+    }
+    if (query.tags && query.tags.length) {
+      this.tags = query.tags.trim();
     }
     if (query.short_name && query.short_name.length) {
       this.search.short_name = query.short_name.trim();
@@ -262,8 +269,8 @@ export default {
     if (query.dataset && query.dataset.length) {
       this.search.dataset = query.dataset.trim();
     }
-    if (query.root_request && query.root_request.length) {
-      this.search.root_request = query.root_request.trim();
+    if (query.root && query.root.length) {
+      this.search.root = query.root.trim();
     }
     if (query.miniaod && query.miniaod.length) {
       this.search.miniaod = query.miniaod.trim();
@@ -278,34 +285,45 @@ export default {
       this.eventsFilter = parseInt(query.events);
     }
     if (query.miniaod_version && query.miniaod_version.length) {
-      this.miniaodVersionFilter = query.miniaod_version;
+      this.miniaodFilter = query.miniaod_version;
     }
     if (query.nanoaod_version && query.nanoaod_version.length) {
-      this.nanoaodVersionFilter = query.nanoaod_version;
+      this.nanoaodFilter = query.nanoaod_version;
     }
-    this.fetchCampaign(campaignName);
+    this.fetchTags();
+    this.fetchEntries();
   },
   methods: {
-    updateEntries: function(entries) {
-      let entriesToUpdate = [];
-      for (let entry of entries) {
-        entriesToUpdate.push({'campaign_uid': entry.campaign_uid,
-                              'uid': entry.uid,
-                              'interested_pwgs': entry.interested_pwgs,
-                              'tags': entry.tags});
+    fetchEntries: function() {
+      let query = [];
+      if (this.campaign) {
+        query.push('campaign=' + this.campaign)
       }
-      entriesToUpdate = this.makeCopy(entriesToUpdate);
-      let httpRequest = axios.post('api/existing/update_entries', entriesToUpdate);
-      httpRequest.then(response => {
-        for (let updatedEntry of response.data.response) {
-          for (let existingEntry of this.entries) {
-            if (updatedEntry.uid == existingEntry.uid) {
-              // Update existing entry
-              Object.assign(existingEntry, updatedEntry);
-              break
-            }
-          }
-        }
+      if (this.tags) {
+        query.push('tags=' + this.tags)
+      }
+      if (this.pwgs) {
+        query.push('pwgs=' + this.pwgs)
+      }
+      if (!query.length && this.search.dataset) {
+        query.push('dataset=' + this.search.dataset);
+      }
+      if (!query.length) {
+        return;
+      }
+      let component = this;
+      let url = 'api/samples/get?' + query.join('&');
+      axios.get(url).then(response => {
+        let entries = response.data.response;
+        entries.forEach(element => {
+          component.processEntry(element);
+        });
+        component.miniaodFilterOptions = Array.from(new Set(['', ...entries.map(x => x.miniaod_version).sort()]), x => [x, x == '' ? 'All' : x]);
+        component.nanoaodFilterOptions = Array.from(new Set(['', ...entries.map(x => x.nanoaod_version).sort()]), x => [x, x == '' ? 'All' : x]);
+        component.mergeCells(entries, ['short_name', 'dataset', 'root', 'miniaod']);
+        component.allEntries = entries;
+        component.applyFilters();
+        component.loading = false;
       }).catch(error => {
         alert(error.response.data.message);
       });
@@ -313,14 +331,14 @@ export default {
     processEntry: function(entry) {
       // Add or set to default some attributes
       // and calculate number with SI suffix
-      entry.rootDoneEventsNice = this.suffixNumber(entry.root_request_done_events);
-      entry.rootTotalEventsNice = this.suffixNumber(entry.root_request_total_events);
+      entry.rootDoneEventsNice = this.suffixNumber(entry.root_done_events);
+      entry.rootTotalEventsNice = this.suffixNumber(entry.root_total_events);
       entry.miniaodDoneEventsNice = this.suffixNumber(entry.miniaod_done_events);
       entry.miniaodTotalEventsNice = this.suffixNumber(entry.miniaod_total_events);
       entry.nanoaodDoneEventsNice = this.suffixNumber(entry.nanoaod_done_events);
       entry.nanoaodTotalEventsNice = this.suffixNumber(entry.nanoaod_total_events);
-      if ((entry.root_request_status == 'submitted' || entry.root_request_status == 'done') && entry.root_request_output.length && entry.root_request_total_events) {
-        entry.rootPercentage = entry.root_request_done_events / entry.root_request_total_events * 100;
+      if ((entry.root_status == 'submitted' || entry.root_status == 'done') && entry.root_output.length && entry.root_total_events) {
+        entry.rootPercentage = entry.root_done_events / entry.root_total_events * 100;
         entry.rootEventsNice = entry.rootDoneEventsNice + '/' + entry.rootTotalEventsNice;
       } else {
         entry.rootPercentage = 100;
@@ -342,136 +360,61 @@ export default {
         entry.nanoaodPercentage = 100;
         entry.nanoaodEventsNice = entry.nanoaodTotalEventsNice;
       }
-      entry.checked = entry.checked == undefined ? false : entry.checked;
+      entry.checked = false;
+      entry.pwgsNice = entry.pwgs.join(', ');
+      entry.tagsNice = entry.tags.join(', ');
     },
-    fetchCampaign: function(campaignName) {
-      let component = this;
-      let url = 'api/existing/get_entries/' + campaignName;
-      if (this.interestedPWG) {
-        url += '/' + this.interestedPWG;
+    fetchTags: function() {
+      const component = this;
+      axios.get('api/tags/get_all').then(response => {
+        component.allTags = response.data.response;
+      });
+    },
+    addPWGToEntries: function(pwg, entries) {
+      let entriesToUpdate = [];
+      for (let entry of entries) {
+        entriesToUpdate.push({'id': entry._id, 'action': 'add_pwg', 'value': pwg})
       }
-      axios.get(url).then(response => {
-        let campaign = response.data.response;
-        campaign.entries.forEach(element => {
-          component.processEntry(element);
-        });
-        component.miniaodVersionFilterOptions = Array.from(new Set(['', ...campaign.entries.map(x => x.miniaod_version).sort()]), x => [x, x == '' ? 'All' : x]);
-        component.nanoaodVersionFilterOptions = Array.from(new Set(['', ...campaign.entries.map(x => x.nanoaod_version).sort()]), x => [x, x == '' ? 'All' : x]);
-        component.mergeCells(campaign.entries, ['short_name', 'dataset', 'root_request', 'miniaod'])
-        this.campaingName = campaignName
-        component.$set(component, 'campaign', campaign);
-        component.applyFilters();
+      this.updateEntries(entriesToUpdate);
+    },
+    removePWGFromEntries: function(pwg, entries) {
+      let entriesToUpdate = [];
+      for (let entry of entries) {
+        entriesToUpdate.push({'id': entry._id, 'action': 'remove_pwg', 'value': pwg})
+      }
+      this.updateEntries(entriesToUpdate);
+    },
+    addTagToEntries: function(pwg, entries) {
+      let entriesToUpdate = [];
+      for (let entry of entries) {
+        entriesToUpdate.push({'id': entry._id, 'action': 'add_tag', 'value': pwg})
+      }
+      this.updateEntries(entriesToUpdate);
+    },
+    removeTagFromEntries: function(pwg, entries) {
+      let entriesToUpdate = [];
+      for (let entry of entries) {
+        entriesToUpdate.push({'id': entry._id, 'action': 'remove_tag', 'value': pwg})
+      }
+      this.updateEntries(entriesToUpdate);
+    },
+    updateEntries: function(entries) {
+      let httpRequest = axios.post('api/samples/update', entries);
+      const component = this;
+      httpRequest.then(response => {
+        for (let updatedEntry of response.data.response) {
+          for (let existingEntry of this.entries) {
+            if (updatedEntry._id == existingEntry._id) {
+              // Update existing entry
+              Object.assign(existingEntry, updatedEntry);
+              component.processEntry(existingEntry);
+              break
+            }
+          }
+        }
       }).catch(error => {
         alert(error.response.data.message);
       });
-    },
-    addPWGToEntriesAction: function(pwg, entries) {
-      const component = this;
-      component.addPWGToEntries(pwg, entries, function() {
-        component.undoStack.push({'action': 'add', 'entries': entries, 'pwg': pwg});
-      });
-    },
-    addPWGToEntries: function(pwg, entries, onSuccess) {
-      const component = this;
-      let entriesToUpdate = [];
-      for (let entry of entries) {
-        if (this.cleanSplit(entry.interested_pwgs, ',').includes(pwg)) {
-          continue
-        }
-        entry.interested_pwgs = (this.cleanSplit(entry.interested_pwgs, ',').concat([pwg])).sort().join(',');
-        entriesToUpdate.push(entry);
-      }
-      if (!entriesToUpdate.length) {
-        return;
-      }
-      component.updateEntries(entriesToUpdate);
-      if (onSuccess) {
-        onSuccess(entriesToUpdate);
-      }
-    },
-    removePWGFromEntriesAction: function(pwg, entries) {
-      const component = this;
-      component.removePWGFromEntries(pwg, entries, function() {
-        component.undoStack.push({'action': 'remove', 'entries': entries, 'pwg': pwg});
-      });
-    },
-    removePWGFromEntries: function(pwg, entries, onSuccess) {
-      const component = this;
-      let entriesToUpdate = [];
-      for (let entry of entries) {
-        if (!this.cleanSplit(entry.interested_pwgs, ',').includes(pwg)) {
-          continue
-        }
-        entry.interested_pwgs = (this.cleanSplit(entry.interested_pwgs, ',').filter(function(p) { return p !== pwg})).join(',');
-        entriesToUpdate.push(entry);
-      }
-      if (!entriesToUpdate.length) {
-        return;
-      }
-      component.updateEntries(entriesToUpdate);
-      if (onSuccess) {
-        onSuccess(entriesToUpdate);
-      }
-    },
-    addPWGToSelectedEntriesAction: function(pwg) {
-      this.addPWGToEntriesAction(pwg, this.entries.filter(x => x.checked));
-    },
-    removePWGFromSelectedEntriesAction: function(pwg) {
-      this.removePWGFromEntriesAction(pwg, this.entries.filter(x => x.checked));
-    },
-    addGrASPTagToEntriesAction: function(grasptag, entries) {
-      const component = this;
-      component.addGrASPTagToEntries(grasptag, entries, function() {
-        component.undoStack.push({'action': 'addTag', 'entries': entries, 'grasptag': grasptag});
-      });
-    },
-    addGrASPTagToEntries: function(grasptag, entries, onSuccess) {
-      const component = this;
-      let entriesToUpdate = [];
-      for (let entry of entries) {
-        if (this.cleanSplit(entry.tags, ',').includes(grasptag)) {
-          continue
-        }
-        entry.tags = (this.cleanSplit(entry.tags, ',').concat([grasptag])).sort().join(',');
-        entriesToUpdate.push(entry);
-      }
-      if (!entriesToUpdate.length) {
-        return;
-      }
-      component.updateEntries(entriesToUpdate);
-      if (onSuccess) {
-        onSuccess(entriesToUpdate);
-      }
-    },
-    removeGrASPTagFromEntriesAction: function(grasptag, entries) {
-      const component = this;
-      component.removeGrASPTagFromEntries(grasptag, entries, function() {
-        component.undoStack.push({'action': 'removeTag', 'entries': entries, 'grasptag': grasptag});
-      });
-    },
-    removeGrASPTagFromEntries: function(grasptag, entries, onSuccess) {
-      const component = this;
-      let entriesToUpdate = [];
-      for (let entry of entries) {
-        if (!this.cleanSplit(entry.tags, ',').includes(grasptag)) {
-          continue
-        }
-        entry.tags = (this.cleanSplit(entry.tags, ',').filter(function(p) { return p !== grasptag})).join(',');
-        entriesToUpdate.push(entry);
-      }
-      if (!entriesToUpdate.length) {
-        return;
-      }
-      component.updateEntries(entriesToUpdate);
-      if (onSuccess) {
-        onSuccess(entriesToUpdate);
-      }
-    },
-    addGrASPTagToSelectedEntriesAction: function(grasptag) {
-      this.addGrASPTagToEntriesAction(grasptag, this.entries.filter(x => x.checked));
-    },
-    removeGrASPTagFromSelectedEntriesAction: function(grasptag) {
-      this.removeGrASPTagFromEntriesAction(grasptag, this.entries.filter(x => x.checked));
     },
     mergeCells: function(list, attributes) {
       list.forEach(element => {
@@ -497,56 +440,70 @@ export default {
       this.applyFilters();
     },
     onMiniAODFilterUpdate: function(miniaod) {
-      this.miniaodVersionFilter = miniaod;
+      this.miniaodFilter = miniaod;
       this.applyFilters();
     },
     onNanoAODFilterUpdate: function(nanoaod) {
-      this.nanoaodVersionFilter = nanoaod;
+      this.nanoaodFilter = nanoaod;
       this.applyFilters();
     },
     applyFilters: function() {
       let query = Object.assign({}, this.$route.query);
-      let filteredEntries = this.campaign.entries;
+      let filteredEntries = this.allEntries;
       if (this.eventsFilter != 0) {
-        filteredEntries = filteredEntries.filter(entry => entry.root_request_total_events >= this.eventsFilter);
+        filteredEntries = filteredEntries.filter(entry => entry.root_total_events >= this.eventsFilter);
         query['events'] = this.eventsFilter;
       } else {
         if ('events' in query) {
           delete query['events'];
         }
       }
-      if (this.miniaodVersionFilter.length != 0) {
-        filteredEntries = filteredEntries.filter(entry => entry.miniaod_version == this.miniaodVersionFilter);
-        query['miniaod_version'] = this.miniaodVersionFilter;
+      if (this.miniaodFilter.length != 0) {
+        filteredEntries = filteredEntries.filter(entry => entry.miniaod_version == this.miniaodFilter);
+        query['miniaod_version'] = this.miniaodFilter;
       } else {
         if ('miniaod_version' in query) {
           delete query['miniaod_version'];
         }
       }
-      if (this.nanoaodVersionFilter.length != 0) {
-        filteredEntries = filteredEntries.filter(entry => entry.nanoaod_version == this.nanoaodVersionFilter);
-        query['nanoaod_version'] = this.nanoaodVersionFilter;
+      if (this.nanoaodFilter.length != 0) {
+        filteredEntries = filteredEntries.filter(entry => entry.nanoaod_version == this.nanoaodFilter);
+        query['nanoaod_version'] = this.nanoaodFilter;
       } else {
         if ('nanoaod_version' in query) {
           delete query['nanoaod_version'];
         }
       }
       for (let attribute in this.search) {
-        if (this.search[attribute]) {
-          const pattern = this.search[attribute].replace(/\.\*/g, '*').replace(/ /g, '*').replace(/\*/g, '.*');
+        let pattern = this.search[attribute];
+        if (pattern && pattern.length && pattern != '-' && pattern != '!') {
+          let negate = false;
+          if (pattern[0] == '-' || pattern[0] == '!') {
+            negate = true;
+            pattern = pattern.substring(1);
+          }
+          pattern = pattern.replaceAll('.*', '*').replaceAll(' ', '*').replaceAll('*', '.*').replaceAll(',', '|');
           const regex = RegExp(pattern, 'i'); // 'i' for case insensitivity
-          filteredEntries = filteredEntries.filter(entry => entry[attribute] != '' && regex.test(entry[attribute]));
+          const filterFunc = function(entry) {
+            const value = entry[attribute];
+            if (value == undefined || value == '') {
+              // If negating, empty value should be shown
+              return negate;
+            }
+            return regex.test(value) ^ negate;
+          }
+          filteredEntries = filteredEntries.filter(filterFunc);
           // Update query parameters
-          query[attribute] = this.search[attribute];
+          query[attribute] = this.search[attribute].trim();
         } else {
           if (attribute in query) {
             delete query[attribute];
           }
         }
       }
-      this.entries = filteredEntries;
+      this.$set(this, 'entries', filteredEntries);
       this.toggleOneCheckbox();
-      this.mergeCells(this.entries, ['short_name', 'dataset', 'root_request', 'miniaod']);
+      this.mergeCells(this.entries, ['short_name', 'dataset', 'root', 'miniaod']);
       this.$router.replace({query: query}).catch(() => {});
     },
     downloadExcelFile: function(outputFormat) {
@@ -556,12 +513,12 @@ export default {
       worksheet.columns = [
         { header: 'Short Name', key: 'short_name'},
         { header: 'Dataset', key: 'dataset'},
-        { header: 'Root request', key: 'root_request'},
-        { header: 'Root request status', key: 'root_request_status'},
-        { header: 'Root request priority', key: 'root_request_priority'},
-        { header: 'Root request done events', key: 'root_request_done_events'},
-        { header: 'Root request total events', key: 'root_request_total_events'},
-        { header: 'Root request output', key: 'root_request_output'},
+        { header: 'Root request', key: 'root'},
+        { header: 'Root request status', key: 'root_status'},
+        { header: 'Root request priority', key: 'root_priority'},
+        { header: 'Root request done events', key: 'root_done_events'},
+        { header: 'Root request total events', key: 'root_total_events'},
+        { header: 'Root request output', key: 'root_output'},
         { header: 'MiniAOD status', key: 'miniaod_status'},
         { header: 'MiniAOD priority', key: 'miniaod_priority'},
         { header: 'MiniAOD done events', key: 'miniaod_done_events'},
@@ -573,18 +530,18 @@ export default {
         { header: 'NanoAOD total events', key: 'nanoaod_total_events'},
         { header: 'NanoAOD output', key: 'nanoaod_output'},
         { header: 'Chained request', key: 'chained_request'},
-        { header: 'Interested PWGs', key: 'interested_pwgs'},
+        { header: 'Interested PWGs', key: 'pwgs'},
       ];
 
       for (let entry of this.entries) {
         worksheet.addRow({'short_name': entry.short_name,
                           'dataset': entry.dataset,
-                          'root_request': entry.root_request,
-                          'root_request_status': entry.root_request_status,
-                          'root_request_priority': entry.root_request_priority,
-                          'root_request_done_events': entry.root_request_done_events,
-                          'root_request_total_events': entry.root_request_total_events,
-                          'root_request_output': entry.root_request_output,
+                          'root': entry.root,
+                          'root_status': entry.root_status,
+                          'root_priority': entry.root_priority,
+                          'root_done_events': entry.root_done_events,
+                          'root_total_events': entry.root_total_events,
+                          'root_output': entry.root_output,
                           'miniaod_status': entry.miniaod_status,
                           'miniaod_priority': entry.miniaod_priority,
                           'miniaod_done_events': entry.miniaod_done_events,
@@ -596,7 +553,7 @@ export default {
                           'nanoaod_total_events': entry.nanoaod_total_events,
                           'nanoaod_output': entry.nanoaod_output,
                           'chained_request': entry.chained_request,
-                          'interested_pwgs': entry.interested_pwgs,
+                          'pwgs': entry.pwgs,
                           });
       }
       let fileName = this.campaingName.replace(/\*/g, 'x');
@@ -622,54 +579,6 @@ export default {
           anchor.download = fileName + '.csv';
           anchor.click();
           window.URL.revokeObjectURL(url);
-        });
-      }
-    },
-    undoEvent: function() {
-      if (!this.undoStack.length){
-        return;
-      }
-      const component = this;
-      let action = this.undoStack.pop()
-      if (action.action == 'add') {
-        component.removePWGFromEntries(action.pwg, action.entries, function() {
-          component.redoStack.push({'action': 'remove', 'entries': action.entries, 'pwg': action.pwg});
-        });
-      } if (action.action == 'remove') {
-        component.addPWGToEntries(action.pwg, action.entries, function() {
-          component.redoStack.push({'action': 'add', 'entries': action.entries, 'pwg': action.pwg});
-        });
-      } if (action.action == 'addTag') {
-        component.removeGrASPTagFromEntries(action.grasptag, action.entries, function() {
-          component.redoStack.push({'action': 'removeTag', 'entries': action.entries, 'grasptag': action.grasptag});
-        });
-      } else if (action.action == 'removeTag') {
-        component.addGrASPTagToEntries(action.grasptag, action.entries, function() {
-          component.redoStack.push({'action': 'addTag', 'entries': action.entries, 'grasptag': action.grasptag});
-        });
-      }
-    },
-    redoEvent: function() {
-      if (!this.redoStack.length){
-        return;
-      }
-      const component = this;
-      let action = this.redoStack.pop()
-      if (action.action == 'remove') {
-        component.addPWGToEntries(action.pwg, action.entries, function() {
-          component.undoStack.push({'action': 'add', 'entries': action.entries, 'pwg': action.pwg});
-        });
-      } if (action.action == 'add') {
-        component.removePWGFromEntries(action.pwg, action.entries, function() {
-          component.undoStack.push({'action': 'remove', 'entries': action.entries, 'pwg': action.pwg});
-        });
-      } if (action.action == 'removeTag') {
-        component.addGrASPTagToEntries(action.grasptag, action.entries, function() {
-          component.undoStack.push({'action': 'addTag', 'entries': action.entries, 'grasptag': action.grasptag});
-        });
-      } else if (action.action == 'addTag') {
-        component.removeGrASPFromEntries(action.grasptag, action.entries, function() {
-          component.undoStack.push({'action': 'removeTag', 'entries': action.entries, 'grasptag': action.grasptag});
         });
       }
     },
@@ -712,9 +621,9 @@ export default {
         } else if (entry.miniaod) {
           prepid = entry.miniaod;
           status = entry.miniaod_status;
-        } else if (entry.root_request) {
-          prepid = entry.root_request;
-          status = entry.root_request_status;
+        } else if (entry.root) {
+          prepid = entry.root;
+          status = entry.root_status;
         }
         if (status == 'submitted' || status == 'done') {
           prepids.push(prepid);
@@ -820,6 +729,16 @@ select {
   float: right;
   margin-left: 8px;
   font-size: 0.8em;
+}
+
+td.tags-cell {
+  text-align: center;
+  max-width: 150px;
+  min-height: 50px;
+  min-width: 10px;
+  overflow: auto;
+  white-space: normal;
+  word-break: break-word;
 }
 
 </style>

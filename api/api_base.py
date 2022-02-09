@@ -7,7 +7,7 @@ import traceback
 import time
 from flask import request, make_response
 from flask_restful import Resource
-from utils.user_info import UserInfo
+from utils.user import User
 
 
 class APIBase(Resource):
@@ -27,81 +27,44 @@ class APIBase(Resource):
         """
         Resource.__init__(self)
         self.logger = logging.getLogger()
-        self.db_path = 'data.db'
 
     def __getattribute__(self, name):
-        attr = object.__getattribute__(self, name)
-        if name in ('get', 'put', 'post', 'delete') and hasattr(attr, '__call__'):
-            def newfunc(*args, **kwargs):
-                user_info = UserInfo()
-                start_time = time.time()
-                result = attr(*args, **kwargs)
-                end_time = time.time()
-                self.logger.info('[%s] {%s} %s %.4fs',
-                                 attr.__name__.upper(),
-                                 user_info.get_username(),
-                                 request.path,
-                                 end_time - start_time)
-                return result
-
-            return newfunc
-
-        return attr
-
-    @staticmethod
-    def ensure_request_data(func):
         """
-        Ensure that request has data (POST, PUT requests)
+        Catch GET, PUT, POST and DELETE methods and wrap them
         """
-        def ensure_request_data_wrapper(*args, **kwargs):
-            """
-            Wrapper around actual function
-            """
-            data = request.data
-            logging.getLogger().info('Checking if data exists...')
-            if not data:
-                logging.getLogger().error('No data was found in request')
-                return APIBase.output_text({'response': None,
-                                            'success': False,
-                                            'message': 'No data was found in request'},
-                                           code=400)
+        if name in {'get', 'put', 'post', 'delete'}:
+            attr = object.__getattribute__(self, name)
+            if hasattr(attr, '__call__'):
+                def wrapped_function(*args, **kwargs):
+                    start_time = time.time()
+                    try:
+                        result = attr(*args, **kwargs)
+                        if isinstance(result, (list, dict)):
+                            result = APIBase.build_response(result)
 
-            return func(*args, **kwargs)
+                        status_code = result.status_code
+                    except Exception as ex:
+                        status_code = 500
+                        import traceback
+                        self.logger.error(traceback.format_exc())
+                        return {'response': None,
+                                'success': False,
+                                'message': str(ex)}
+                    finally:
+                        end_time = time.time()
+                        self.logger.info('[%s] %s %.4fs %s',
+                                         name.upper(),
+                                         request.path,
+                                         end_time - start_time,
+                                         status_code)
+                    return result
 
-        ensure_request_data_wrapper.__name__ = func.__name__
-        ensure_request_data_wrapper.__doc__ = func.__doc__
-        if hasattr(func, '__role__'):
-            ensure_request_data_wrapper.__role__ = func.__role__
+                return wrapped_function
 
-        return ensure_request_data_wrapper
+        return super().__getattribute__(name)
 
-    @staticmethod
-    def exceptions_to_errors(func):
-        """
-        Ensure that request has data (POST, PUT requests)
-        """
-        def exceptions_to_errors_wrapper(*args, **kwargs):
-            """
-            Wrapper around actual function
-            """
-            try:
-                return func(*args, **kwargs)
-            except Exception as ex:  # pylint: disable=broad-except
-                logging.getLogger().error(traceback.format_exc())
-                return APIBase.output_text({'response': None,
-                                            'success': False,
-                                            'message': str(ex)},
-                                           code=APIBase.exception_to_http_code(ex))
-
-        exceptions_to_errors_wrapper.__name__ = func.__name__
-        exceptions_to_errors_wrapper.__doc__ = func.__doc__
-        if hasattr(func, '__role__'):
-            exceptions_to_errors_wrapper.__role__ = func.__role__
-
-        return exceptions_to_errors_wrapper
-
-    @staticmethod
-    def ensure_role(role_name):
+    @classmethod
+    def ensure_role(cls, role):
         """
         Ensure that user has appropriate roles for this API call
         """
@@ -113,45 +76,83 @@ class APIBase(Resource):
                 """
                 Wrapper inside wrapper
                 """
-                user_info = UserInfo()
-                logging.getLogger().info('Making sure user "%s" has "%s" role',
-                                         user_info.get_username(),
-                                         role_name)
-                if user_info.role_index_is_more_or_equal(role_name):
+                if '/public/' in request.path:
+                    # Public API, no need to ensure role
                     return func(*args, **kwargs)
 
-                return APIBase.output_text({'response': None,
-                                            'success': False,
-                                            'message': f'User "{user_info.get_username()}" '
-                                                       f'has role "{user_info.get_role()}" '
-                                                       f'and is not allowed to access this '
-                                                       f'API. Required role "{role_name}"'},
-                                           code=403)
+                user = User()
+                user_role = user.get_role()
+                logger = logging.getLogger('mcm_error')
+                logger.debug('Ensuring user %s (%s) is allowed to acces API %s limited to %s',
+                             user.get_username(),
+                             user_role,
+                             request.path,
+                             role)
+                if user_role >= role:
+                    return func(*args, **kwargs)
+
+                username = user.get_username()
+                api_role = role.name
+                message = 'API not allowed. User "%s" has role "%s", required "%s"' % (username,
+                                                                                       user_role,
+                                                                                       api_role)
+                return cls.build_response({'results': None, 'message': message}, code=403)
 
             ensure_role_wrapper_wrapper.__name__ = func.__name__
             ensure_role_wrapper_wrapper.__doc__ = func.__doc__
-            ensure_role_wrapper_wrapper.__role__ = role_name
+            ensure_role_wrapper_wrapper.__role__ = role
+            ensure_role_wrapper_wrapper.__func__ = func
             return ensure_role_wrapper_wrapper
 
         return ensure_role_wrapper
 
-    @staticmethod
-    def exception_to_http_code(exception):
+    @classmethod
+    def request_with_json(cls, func):
         """
-        Convert exception to HTTP status code
+        Ensure that request has data (POST, PUT requests) that's a valid JSON.
+        Parse the data to a dict it and pass it as a keyworded 'data' argument
         """
-        if isinstance(exception, ImportError):
-            return 500
+        def ensure_request_data_wrapper(*args, **kwargs):
+            """
+            Wrapper around actual function
+            """
+            data = request.data
+            logger = logging.getLogger('mcm_error')
+            logger.debug('Ensuring request data for %s', request.path)
+            if not data:
+                logger.error('No data was found in request %s', request.path)
+                return cls.build_response({'results': None,
+                                           'message': 'No data was found in request'},
+                                          code=400)
 
-        return 400
+            try:
+                data = json.loads(data)
+            except json.decoder.JSONDecodeError as ex:
+                logger.error('Invalid JSON: %s\nException: %s', data, ex)
+                return cls.build_response({'results': None,
+                                           'message': f'Invalid JSON {ex}'},
+                                          code=400)
+
+            kwargs['data'] = data
+            return func(*args, **kwargs)
+
+        ensure_request_data_wrapper.__name__ = func.__name__
+        ensure_request_data_wrapper.__doc__ = func.__doc__
+        if hasattr(func, '__role__'):
+            ensure_request_data_wrapper.__role__ = func.__role__
+
+        if hasattr(func, '__func__'):
+            ensure_request_data_wrapper.__func__ = func.__func__
+
+        return ensure_request_data_wrapper
 
     @staticmethod
-    def output_text(data, code=200, headers=None, content_type='application/json'):
+    def build_response(data, code=200, headers=None, content_type='application/json'):
         """
         Makes a Flask response with a plain text encoded body
         """
         if content_type == 'application/json':
-            resp = make_response(json.dumps(data, indent=2, sort_keys=True), code)
+            resp = make_response(json.dumps(data, indent=1, sort_keys=True), code)
         else:
             resp = make_response(data, code)
 

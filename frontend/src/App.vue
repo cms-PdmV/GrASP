@@ -31,10 +31,10 @@ export default {
   ],
   computed: {
     userRolePicture: function() {
-      if (this.userInfo.role_index == 5) {
+      if (this.role('administrator')) {
         return 'static/admin_star.png';
       }
-      if (this.userInfo.role_index >= 1) {
+      if (this.role('user')) {
         return 'static/star.png';
       }
       return 'static/invisible.png';
@@ -105,20 +105,12 @@ table {
 }
 
 input {
-  /* border: 1px solid rgba(0, 0, 0, 0.87) !important; */
-  border-radius: 4px;
-  background: #fbfbfb;
+  border: 1px solid rgba(0, 0, 0, 0.87) !important;
+  border-radius: 4px !important;
+  background: white !important;
   color: rgba(0, 0, 0, 0.87);
   width: 100%;
   padding: 0 4px;
-}
-
-td > input {
-  margin-left: -9px;
-  margin-right: -9px;
-  padding: 0 9px;
-  outline: none;
-  width: calc(100% + 18px);
 }
 
 td > input[type="checkbox"] {

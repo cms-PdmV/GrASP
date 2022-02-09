@@ -1,43 +1,45 @@
 <template>
   <div>
     <h1 class="page-title">GrASP</h1>
-    <h3 style="text-align: center">Custom Table Generator</h3>
-    <CustomTable :existingCampaigns="existingCampaigns"/>
-    <h3 style="text-align: center">Existing Samples</h3>
+    <h3 style="text-align: center">Dataset search</h3>
+    <div style="max-width: 700px; margin: 0 auto 40px auto;">
+      <wild-search></wild-search>
+    </div>
+    <h3 style="text-align: center">Campaigns</h3>
     <table>
       <tr>
-        <th>Campaign Name</th>
+        <th>Name</th>
         <th :colspan="pwgs.length">Interested PWGs</th>
       </tr>
-      <tr v-for="campaign in existingCampaigns" :key="campaign.name">
+      <tr v-for="campaign in campaigns" :key="campaign">
         <td>
-          <a :href="'existing?name=' + campaign.name">{{campaign.name}}</a>
-          <a v-if="role('administrator')" :title="'Edit ' + campaign.name" style="text-decoration: none;" :href="'existing_edit?name=' + campaign.name">&#128295;</a>
+          <a :href="'samples?campaign=' + campaign">{{campaign}}</a>
+          <span v-if="role('production_manager')" class="delete-button" :title="'Delete ' + campaign" @click="deleteCampaign(campaign)">&#10060;</span>
         </td>
         <td v-for="pwg in pwgs" :key="pwg">
-          <a :href="'existing?name=' + campaign.name + '&pwg=' + pwg">{{pwg}}</a>
+          <a :href="'samples?campaign=' + campaign + '&pwgs=' + pwg">{{pwg}}</a>
         </td>
       </tr>
       <tr v-if="role('production_manager')">
         <td :colspan="pwgs.length + 2">
-          <a :href="'existing_edit'"><i>Add new campaign</i></a>
+          <a :href="'campaign'"><i>Add new campaign</i></a>
         </td>
       </tr>
     </table>
-    <h3 style="text-align: center">User Tagged Samples</h3>
+    <h3 style="text-align: center">Tags</h3>
     <table>
       <tr>
         <th>Tag</th>
       </tr>
-      <tr v-for="tag in userTags" :key="tag.name">
+      <tr v-for="tag in tags" :key="tag">
         <td>
-          <a :href="'tags?name=' + tag.name">{{tag.name}}</a>
-          <a v-if="role('administrator')" :title="'Edit ' + tag.name" style="text-decoration: none;" :href="'tag_edit?name=' + tag.name">&#128295;</a>
+          <a :href="'samples?tags=' + tag">{{tag}}</a>
+          <span v-if="role('production_manager')" class="delete-button" :title="'Delete ' + tag" @click="deleteTag(tag)">&#10060;</span>
         </td>
       </tr>
       <tr v-if="role('user')">
         <td :colspan="pwgs.length + 2">
-          <a :href="'tag_edit'"><i>Add new tag</i></a>
+          <a :href="'tag'"><i>Add new tag</i></a>
         </td>
       </tr>
     </table>
@@ -50,18 +52,20 @@
 
 import axios from 'axios'
 import { roleMixin } from '../mixins/UserRoleMixin.js'
-import { userTagMixin } from '../mixins/UserTagMixin.js'
-import CustomTable from './CustomTableForm.vue'
+import WildSearch from './WildSearch'
 
 export default {
   name: 'home',
   mixins: [
     roleMixin,
-    userTagMixin
   ],
+  components: {
+    WildSearch
+  },
   data () {
     return {
-      existingCampaigns: [],
+      campaigns: [],
+      tags: [],
       pwgs: ['B2G', 'BPH', 'BTV', 'EGM', 'EXO', 'FSQ', 'HCA', 'HGC', 'HIG', 'HIN', 'JME', 'L1T', 'LUM', 'MUO', 'PPS', 'SMP', 'SUS', 'TAU', 'TOP', 'TRK', 'TSG'],
     }
   },
@@ -71,14 +75,39 @@ export default {
   methods: {
     fetchObjectsInfo () {
       let component = this;
-      axios.get('api/existing/get_all').then(response => {
-        component.existingCampaigns = response.data.response;
+      axios.get('api/campaigns/get_all').then(response => {
+        component.campaigns = response.data.response;
+      });
+      axios.get('api/tags/get_all').then(response => {
+        component.tags = response.data.response;
       });
     },
+    deleteCampaign: function(campaignName) {
+      if (confirm('Are you sure you want to remove campaign ' + campaignName)) {
+        const component = this;
+        axios.delete('api/campaigns/delete/' + campaignName).then(response => {
+          component.fetchObjectsInfo();
+        });
+      }
+    },
+    deleteTag: function(tag) {
+      if (confirm('Are you sure you want to remove tag ' + tag)) {
+        const component = this;
+        axios.delete('api/tags/delete/' + tag).then(response => {
+          component.fetchObjectsInfo();
+        });
+      }
+    }
   },
-  components: {
-    CustomTable
-  }
 }
 </script>
 
+<style scoped>
+
+.delete-button {
+  cursor: pointer;
+  font-size: 0.5em;
+  margin-left: 4px;
+}
+
+</style>
