@@ -1,58 +1,58 @@
 """
-This module handles user synchronization between Samples page and McM
+Module handles user synchronization with McM
 """
-import sys
-import sqlite3
+import argparse
 import logging
-#pylint: disable=wrong-import-position,import-error
-sys.path.append('/afs/cern.ch/cms/PPD/PdmV/tools/McM/')
-from rest import McM
-#pylint: enable=wrong-import-position,import-error
-# McM instance
-mcm = McM(dev=('--dev' in sys.argv), cookie='cookie.txt')
+from utils.grasp_database import Database as GrASPDatabase
+from utils.mcm_database import Database as McMDatabase
 
-# Logger
-logging.basicConfig(format='[%(asctime)s][%(levelname)s] %(message)s', level=logging.INFO)
+
 logger = logging.getLogger()
 
-def update_users(conn):
-    """
-    Clear mcm_users table and update with users from McM
-    """
-    # Create table if it does not exist
-    conn.execute('''CREATE TABLE IF NOT EXISTS mcm_users
-                    (username text PRIMARY KEY NOT NULL,
-                     name text NOT NULL,
-                     role text NOT NULL)''')
-    # Clear the table
-    conn.execute('DELETE FROM `mcm_users`')
-    conn.commit()
 
-    # Get all McM users and insert
-    users = mcm.get('users', query='username=*')
-    for user in users:
-        logger.info('Inserting %s (%s - %s)',
-                    user['fullname'],
-                    user['username'],
-                    user['role'])
-        conn.execute('''INSERT INTO mcm_users (username, name, role)
-                        VALUES (?, ?, ?)''',
-                     [user['username'],
-                      user['fullname'],
-                      user['role']])
-        conn.commit()
+class UserUpdater():
 
-    conn.close()
+    def __init__(self, dev):
+        self.mcm_user_db = McMDatabase('users', dev=dev)
+        self.user_db = GrASPDatabase('users')
+
+    def update(self):
+        """
+        Copy McM users to GrASP user database
+        """
+        logger.info('Updating users')
+        for users in self.mcm_user_db.bulk_yield(100):
+            for user in users:
+                username = user['username']
+                role = user['role']
+                logger.info('Updating %s (%s)', username, role)
+                self.user_db.save({'_id': username,
+                                   'username': username,
+                                   'role': role})
 
 
 def main():
-    try:
-        conn = sqlite3.connect('../data.db')
-        update_users(conn)
-    except Exception as ex:
-        logger.error(ex)
-    finally:
-        conn.close()
+    parser = argparse.ArgumentParser(description='GrASP user update script')
+    parser.add_argument('--db_auth',
+                        help='Path to GrASP database auth file')
+    parser.add_argument('--debug',
+                        help='Enable debug logs',
+                        action='store_true')
+    parser.add_argument('--dev',
+                        help='Use McM-Dev',
+                        action='store_true')
+    args = vars(parser.parse_args())
+    debug = args.get('debug')
+    logging.basicConfig(format='[%(asctime)s][%(levelname)s] %(message)s',
+                        level=logging.DEBUG if debug else logging.INFO)
+    db_auth = args.get('db_auth')
+    dev = args.get('dev')
+    logger.debug('db_auth=%s, dev=%s, debug=%s', db_auth, dev, debug)
+    GrASPDatabase.set_database_name('grasp')
+    if db_auth:
+        GrASPDatabase.set_credentials_file(db_auth)
+
+    UserUpdater(dev=dev).update()
 
 
 if __name__ == '__main__':

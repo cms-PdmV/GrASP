@@ -3,34 +3,25 @@ Main module that starts flask web server
 """
 import os
 import sys
+import json
 import logging
 import logging.handlers
 import argparse
 import os.path
+from api.samples_api import GetSamplesAPI
 from flask_restful import Api
 from flask_cors import CORS
-from flask import Flask, render_template
+from flask import Flask, render_template, render_template_string
 from jinja2.exceptions import TemplateNotFound
-from utils.global_config import Config
+from utils.grasp_database import Database
 from utils.username_filter import UsernameFilter
-from api.existing_samples_api import (CreateExistingCampaignAPI,
-                                      GetExistingCampaignAPI,
-                                      GetExistingCampaignEntriesAPI,
-                                      UpdateExistingCampaignAPI,
-                                      DeleteExistingCampaignAPI,
-                                      GetAllExistingCampaignsAPI,
-                                      UpdateEntriesInExistingCampaignAPI)
-from api.user_tags_api import (CreateUserTagAPI,
-                               GetUserTagAPI,
-                               UpdateUserTagAPI,
-                               DeleteUserTagAPI,
-                               GetAllUserTagsAPI)
-from api.system_info_api import (UserInfoAPI,
-                                 UserActionHistory)
+from utils.utils import get_api_documentation
+from api.campaigns_api import CreateCampaignAPI, GetCampaignsAPI, DeleteCampaignAPI
+from api.tags_api import CreateTagAPI, GetTagsAPI, DeleteTagAPI
+from api.samples_api import GetSamplesAPI, UpdateSampleAPI
+from api.system_info_api import UserInfoAPI, UserActionHistory, SearchAPI
 
 
-log_format = '[%(asctime)s][%(levelname)s] %(message)s'
-logging.basicConfig(format=log_format, level=logging.DEBUG)
 
 app = Flask(__name__,
             static_folder='./frontend/dist/static',
@@ -61,41 +52,25 @@ def catch_all(_path):
         return response
 
 
-@app.route('/api', defaults={'_path': ''})
-@app.route('/api/<path:_path>')
-def api_documentation(_path):
+def setup_api_docs(flask_app):
     """
-    Endpoint for API documentation HTML
+    Setup an enpoint for getting API documentation
     """
-    docs = {}
-    for endpoint, view in app.view_functions.items():
-        view_class = dict(view.__dict__).get('view_class')
-        if view_class is None:
-            continue
+    with open('frontend/dist/api.html') as template_file:
+        api_template = template_file.read()
 
-        class_name = view_class.__name__
-        class_doc = view_class.__doc__.strip()
-        #pylint: disable=protected-access
-        urls = sorted([r.rule for r in app.url_map._rules_by_endpoint[endpoint]])
-        #pylint: enable=protected-access
-        if _path:
-            urls = [u for u in urls if u.startswith(f'/api/{_path}')]
-            if not urls:
-                continue
+    def _api_documentation(api_path=None):
+        """
+        Endpoint for API documentation HTML
+        """
+        docs = get_api_documentation(flask_app, api_path)
+        try:
+            return render_template_string(api_template, docs=docs)
+        except TemplateNotFound:
+            return json.dumps(docs, indent=2, sort_keys=True)
 
-        category = [x for x in urls[0].split('/') if x][1]
-        if category not in docs:
-            docs[category] = {}
-
-        docs[category][class_name] = {'doc': class_doc, 'urls': urls, 'methods': {}}
-        for method_name in view_class.methods:
-            method = view_class.__dict__.get(method_name.lower())
-            method_dict = {'doc': method.__doc__.strip()}
-            docs[category][class_name]['methods'][method_name] = method_dict
-            if hasattr(method, '__role__'):
-                method_dict['role'] = getattr(method, '__role__')
-
-    return render_template('api_documentation.html', docs=docs)
+    flask_app.add_url_rule('/api', None, _api_documentation)
+    flask_app.add_url_rule('/api/<path:api_path>', None, _api_documentation)
 
 
 # System APIs
@@ -103,30 +78,24 @@ api.add_resource(UserInfoAPI, '/api/system/user_info')
 api.add_resource(UserActionHistory,
                  '/api/system/history',
                  '/api/system/history/<string:username>')
+api.add_resource(SearchAPI, '/api/search')
 
-# Existing samples
-api.add_resource(CreateExistingCampaignAPI, '/api/existing/create')
-api.add_resource(GetExistingCampaignAPI, '/api/existing/get/<string:campaign_name>')
-api.add_resource(GetExistingCampaignEntriesAPI,
-                 '/api/existing/get_entries/<string:campaign_name>',
-                 '/api/existing/get_entries/<string:campaign_name>/<string:interested_pwg>')
-api.add_resource(UpdateExistingCampaignAPI, '/api/existing/update')
-api.add_resource(DeleteExistingCampaignAPI, '/api/existing/delete')
-api.add_resource(GetAllExistingCampaignsAPI, '/api/existing/get_all')
-api.add_resource(UpdateEntriesInExistingCampaignAPI,
-                 '/api/existing/update_entry',
-                 '/api/existing/update_entries')
+# Campaigns
+api.add_resource(CreateCampaignAPI, '/api/campaigns/create')
+api.add_resource(GetCampaignsAPI, '/api/campaigns/get_all')
+api.add_resource(DeleteCampaignAPI, '/api/campaigns/delete/<string:campaign_name>')
 
-# User tags
-api.add_resource(CreateUserTagAPI, '/api/user_tag/create')
-api.add_resource(GetUserTagAPI,
-                 '/api/user_tag/get/<string:tag_name>',
-                 '/api/user_tag/get/<string:tag_name>/<string:interested_pwg>')
-api.add_resource(UpdateUserTagAPI, '/api/user_tag/update')
-api.add_resource(DeleteUserTagAPI, '/api/user_tag/delete')
-api.add_resource(GetAllUserTagsAPI, '/api/user_tag/get_all')
+# Tags
+api.add_resource(CreateTagAPI, '/api/tags/create')
+api.add_resource(GetTagsAPI, '/api/tags/get_all')
+api.add_resource(DeleteTagAPI, '/api/tags/delete/<string:tag>')
 
-def setup_logging(config, debug):
+# Samples
+api.add_resource(GetSamplesAPI, '/api/samples/get')
+api.add_resource(UpdateSampleAPI, '/api/samples/update')
+
+
+def setup_logging(debug):
     logger = logging.getLogger()
     logger.propagate = False
     if debug:
@@ -151,37 +120,38 @@ def main():
     Main function: start Flask web server
     """
     parser = argparse.ArgumentParser(description='GrASP Webpage')
-    parser.add_argument('--mode',
-                        help='Use production (prod) or development (dev) section of config',
-                        choices=['prod', 'dev'],
-                        required=True)
-    parser.add_argument('--config',
-                        default='config.cfg',
-                        help='Specify non standard config file name')
-    parser.add_argument('--debug',
-                        help='Run Flask in debug mode',
-                        action='store_true')
-    parser.add_argument('--port',
-                        help='Port, default is 8088')
-    parser.add_argument('--host',
-                        help='Host IP, default is 127.0.0.1')
+    parser.add_argument('--port', help='Port, default is 8002', type=int, default=8002)
+    parser.add_argument('--host', help='Host IP, default is 127.0.0.1', default='127.0.0.1')
+    parser.add_argument('--debug', help='Run Flask in debug mode', action='store_true')
+    parser.add_argument('--db_auth', help='Path to GrASP database auth file')
     args = vars(parser.parse_args())
-    config = Config.load(args.get('config'), args.get('mode'))
-    debug = args.get('debug', False)
-    port = int(config.get('port', 8002))
-    host = config.get('host', '0.0.0.0')
-    logger = setup_logging(config, debug)
-    logger.info('Starting... Debug: %s, Host: %s, Port: %s', debug, host, port)
+    port = args.get('port')
+    host = args.get('host')
+    debug = args.get('debug')
+    db_auth = args.get('db_auth')
+    # Setup loggers
+    logging.root.setLevel(logging.DEBUG if debug else logging.INFO)
+    logger = setup_logging(debug)
+    # Write PID to a file
     if os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
         # Do only once, before the reloader
         pid = os.getpid()
+        logger.info('PID: %s', pid)
         with open('grasp.pid', 'w') as pid_file:
             pid_file.write(str(pid))
 
+    Database.set_database_name('grasp')
+    if db_auth:
+        Database.set_credentials_file(db_auth)
+
+    setup_api_docs(app)
+    logger.info('Starting GrASP, host=%s, port=%s, debug=%s', host, port, debug)
+    # Run flask
     app.run(host=host,
             port=port,
             debug=debug,
             threaded=True)
+
 
 if __name__ == '__main__':
     main()

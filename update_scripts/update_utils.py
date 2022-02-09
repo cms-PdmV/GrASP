@@ -6,72 +6,7 @@ These functions do not depend on any other components
 import time
 import re
 
-#pylint: disable=too-many-branches,too-many-statements
-# It is ok to have many ifs in this function
-def get_short_name(name):
-    """
-    Return short name of dataset name
-    """
-    spl = name.split('_')
-    short_name = spl[0]
 
-    if 'GluGluToH' in name or 'GluGluH' in name:
-        short_name = 'GluGluToH'
-    elif 'TTTo' in name:
-        short_name = 'TTbar'
-    elif 'GluGluToPseudoScalarH' in name:
-        short_name = 'GluGluToPseudoScalarH'
-    elif 'VBFHiggs' in name:
-        short_name = 'VBFHiggs'
-    elif 'ZHiggs' in name:
-        short_name = 'ZHiggs'
-    elif 'WHiggs' in name:
-        short_name = 'WHiggs'
-    elif 'GluGluToMaxmixH' in name:
-        short_name = 'GluGluToMaxmixH'
-    elif 'GluGluToContin' in name:
-        short_name = 'GluGluToContin'
-    elif 'DiPhotonJets' in name:
-        short_name = 'DiPhotonJets'
-    elif 'JJH' in name:
-        short_name = 'JJHiggs'
-    elif 'GluGluToBulkGraviton' in name:
-        short_name = 'GluGluToBulkGraviton'
-    elif 'BulkGraviton' in name:
-        short_name = 'BulkGraviton'
-    elif short_name == 'b':
-        short_name = 'bbbar4l'
-    elif short_name == 'ST':
-        short_name = 'SingleTop'
-    elif short_name == 'QCD' and 'Flat' in name and not 'herwig' in name:
-        short_name = 'Flat QCD P8'
-    elif short_name == 'QCD' and 'Flat' in name and 'herwig' in name:
-        short_name = 'Flat QCD H7'
-    elif short_name == 'QCD' and '_Pt_' in name:
-        short_name = 'QCD P8'
-
-    if 'madgraphMLM' in name:
-        short_name += ' LO MG+P8'
-    elif 'FxFx' in name or 'amcatnlo' in name:
-        short_name += ' NLO MG+P8'
-    elif 'powheg' in name and 'pythia8' in name:
-        short_name += ' NLO PH+P8'
-    elif 'sherpa' in name:
-        short_name += ' Sherpa'
-    elif 'madgraph' in name:
-        short_name += ' LO MG+P8'
-
-    if short_name.startswith('WW'):
-        short_name = short_name.replace('WW', 'VV', 1)
-    elif short_name.startswith('WZ'):
-        short_name = short_name.replace('WZ', 'VV', 1)
-    elif short_name.startswith('ZZ'):
-        short_name = short_name.replace('ZZ', 'VV', 1)
-    elif short_name.startswith('ZW'):
-        short_name = short_name.replace('ZW', 'VV', 1)
-
-    return short_name
-#pylint: enable=too-many-branches,too-many-statements
 
 
 def get_physics_process_name(dataset_name):
@@ -286,27 +221,7 @@ def update_entry(cursor, table_name, entry):
     cursor.execute('UPDATE %s SET %s WHERE uid = ?' % (table_name, keys), values)
 
 
-def get_chain_tag(name):
-    """
-    Get chain tag out of chained request name
-    If there is something after DIGI, use that something
-    Else it is Classical
-    """
-    if name == '':
-        return ''
 
-    tag = ''
-    try:
-        if 'DIGI' in name:
-            tag = name.split('-')[1].split('DIGI')[1].split('_')[0]
-
-        if tag:
-            return tag
-
-    except IndexError:
-        pass
-
-    return 'Classical'
 
 
 def parse_number(number):
@@ -329,70 +244,6 @@ def parse_number(number):
     return number
 
 
-def valid_pwg(pwg):
-    """
-    Return whether given PWG is in list of allowed PWGs
-    """
-    return pwg in {'B2G', 'BPH', 'BTV', 'EGM', 'EXO',
-                   'FSQ', 'HCA', 'HGC', 'HIG', 'HIN',
-                   'JME', 'L1T', 'LUM', 'MUO', 'PPD',
-                   'PPS', 'SMP', 'SUS', 'TAU', 'TOP',
-                   'TRK', 'TSG'}
-
-
-def cmp_to_key(mycmp):
-    """
-    Convert a cmp= function into a key= function
-    """
-    class ComparerClass():
-        """
-        Class that implements all comparison methods
-        """
-        def __init__(self, obj, *args):
-            self.obj = obj
-
-        def __lt__(self, other):
-            return mycmp(self.obj, other.obj) < 0
-
-        def __gt__(self, other):
-            return mycmp(self.obj, other.obj) > 0
-
-        def __eq__(self, other):
-            return mycmp(self.obj, other.obj) == 0
-
-        def __le__(self, other):
-            return mycmp(self.obj, other.obj) <= 0
-
-        def __ge__(self, other):
-            return mycmp(self.obj, other.obj) >= 0
-
-        def __ne__(self, other):
-            return mycmp(self.obj, other.obj) != 0
-
-    return ComparerClass
-
-
-def multiarg_sort(list_of_objects, columns):
-    """
-    Sort list of objects based on multiple arguments
-    """
-    def comp(left_value, right_value):
-        for key in columns:
-            left = left_value[key]
-            right = right_value[key]
-            if isinstance(left, str) and isinstance(right, str):
-                left = left.lower()
-                right = right.lower()
-
-            if left < right:
-                return -1
-
-            if left > right:
-                return 1
-
-        return 0
-
-    list_of_objects.sort(key=cmp_to_key(comp))
 
 
 def matches_regex(value, regex):
