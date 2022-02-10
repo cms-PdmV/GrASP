@@ -1,39 +1,53 @@
 <template>
-  <div style="position: relative">
-    <input
-      type="text"
-      v-model="value"
-      id="search-input"
-      :placeholder="randomPlaceholder"
-      @focus="makeFocused(true)"
-      @blur="makeFocused(false)"
-      v-on:keydown.up.capture.prevent="arrowKey(-1)"
-      v-on:keydown.down.capture.prevent="arrowKey(1)"
-      v-on:keydown.enter.capture.prevent="enterKey()"
-    />
-    <v-progress-circular
-      :size="18"
-      :width="2"
-      style="margin: 4px 0; position: absolute; right: 4px"
-      color="primary"
-      indeterminate
-      v-if="suggestionsTimer || loading"
-    ></v-progress-circular>
-    <div
-      class="suggestion-list-wrapper"
-      @mouseover="mouseEnteredList(true)"
-      @mouseleave="mouseEnteredList(false)"
-    >
-      <div class="elevation-3 suggestion-list">
-        <div
-          v-for="(value, index) in items"
-          :key="index"
-          class="suggestion-item"
-          @click="select(value.link)"
-          @mouseover="mouseEnteredItem(index)"
-          v-bind:class="{ 'suggestion-item-hover': index == selectedIndex }"
-        >
-          <div style="line-break: anywhere" v-html="highlight(value)"></div>
+  <div>
+    <div style="display: flex; flex-direction: row; flex-wrap: wrap; justify-content: space-evenly;">
+      <div v-for="campaign in campaignNames"
+           :key="campaign"
+           style="white-space: nowrap; margin: 1px 8px; text-align: center">
+        <label>
+          <input type="checkbox"
+                 style="width: auto"
+                 :name="campaign"
+                 v-model="campaigns[campaign]">&nbsp;{{campaign}}
+        </label>
+      </div>
+    </div>
+    <div style="position: relative">
+      <input
+        type="text"
+        v-model="value"
+        id="search-input"
+        :placeholder="randomPlaceholder"
+        @focus="makeFocused(true)"
+        @blur="makeFocused(false)"
+        v-on:keydown.up.capture.prevent="arrowKey(-1)"
+        v-on:keydown.down.capture.prevent="arrowKey(1)"
+        v-on:keydown.enter.capture.prevent="enterKey()"
+      />
+      <v-progress-circular
+        :size="18"
+        :width="2"
+        style="margin: 4px 0; position: absolute; right: 4px"
+        color="primary"
+        indeterminate
+        v-if="suggestionsTimer || loading"
+      ></v-progress-circular>
+      <div
+        class="suggestion-list-wrapper"
+        @mouseover="mouseEnteredList(true)"
+        @mouseleave="mouseEnteredList(false)"
+      >
+        <div class="elevation-3 suggestion-list">
+          <div
+            v-for="(value, index) in items"
+            :key="index"
+            class="suggestion-item"
+            @click="select(value.link)"
+            @mouseover="mouseEnteredItem(index)"
+            v-bind:class="{ 'suggestion-item-hover': index == selectedIndex }"
+          >
+            <div style="line-break: anywhere" v-html="highlight(value)"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -47,6 +61,7 @@ import axios from "axios";
    when the user changes the value.
 */
 export default {
+  props: ['campaignNames'],
   data() {
     return {
       items: [],
@@ -60,10 +75,16 @@ export default {
       ignoreChange: false,
       selectedIndex: 0,
       loading: false,
+      campaigns: {},
     };
   },
   created() {},
   watch: {
+    campaignNames() {
+      for (let name of this.campaignNames) {
+        this.campaigns[name] = true;
+      }
+    },
     isFocused(focused) {
       if (!focused) {
         this.savedItems = this.items;
@@ -136,7 +157,11 @@ export default {
   methods: {
     select(value) {
       this.ignoreChange = true;
-      let url = window.location.origin + "/grasp/samples?dataset=" + value;
+      let selectedCampaigns = this.campaignNames.filter(x => this.campaigns[x]);
+      let url = window.location.origin + "/grasp/samples?dataset_query=" + value;
+      if (selectedCampaigns.length && selectedCampaigns.length != this.campaignNames.length) {
+        url += "&campaign=" + selectedCampaigns.sort().join(',');
+      }
       window.location.href = url;
     },
     makeFocused(focused) {
@@ -170,7 +195,7 @@ export default {
       highlighted += item.value.slice(lastIndex);
       if (item.wild) {
         highlighted = highlighted.replaceAll(',', '" or "');
-        highlighted = '<i>All samples containing "' + highlighted + '"</i>';
+        highlighted = '<i>All samples with "' + highlighted + '"</i>';
       }
       return highlighted;
     },

@@ -5,6 +5,7 @@ import time
 import re
 import flask
 from api.api_base import APIBase
+from update_scripts.update_utils import query
 from utils.grasp_database import Database
 from utils.user import User
 from utils.utils import clean_split
@@ -61,15 +62,19 @@ class SearchAPI(APIBase):
         if args is None:
             args = {}
 
-        query = args.pop('q', '')
-        query = clean_split(query, ',')[-1]
-        query = query.strip().replace(' ', '*')
-        if len(query.replace('*', '')) < 3:
+        dataset = args.pop('q', '')
+        dataset = dataset.strip().replace(' ', '*')
+        if len(dataset.replace('*', '')) < 3:
             return {'response': [], 'success': True, 'message': 'Query string too short'}
+
+        query = f'dataset=*{dataset}*'
+        campaign = args.pop('c', '')
+        if campaign:
+            query += f'&&campaign={campaign}'
 
         sample_db = Database('samples')
         # Fetch 50 items, in case there are duplicates
-        results = sample_db.query(f'dataset=*{query}*', 0, 50, ignore_case=True)
+        results = sample_db.query(query, 0, 50, ignore_case=True)
         # Return only 30
         results = sorted(set(r['dataset'] for r in results))[:20]
         return {'response': results, 'success': True, 'message': ''}

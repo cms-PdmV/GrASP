@@ -3,7 +3,7 @@
     <h1 class="page-title">GrASP</h1>
     <h3 style="text-align: center">Dataset search</h3>
     <div style="max-width: 700px; margin: 0 auto 40px auto;">
-      <wild-search></wild-search>
+      <wild-search :campaignNames="campaigns"></wild-search>
     </div>
     <h3 style="text-align: center">Campaigns</h3>
     <table>
