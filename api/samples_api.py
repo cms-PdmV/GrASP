@@ -157,6 +157,9 @@ class GetSamplesAPI(APIBase):
         list_of_objects.sort(key=cmp_to_key(comp))
 
     def get_xaod_version(self, prepid):
+        """
+        Return version of MiniAOD or NanoAOD of request
+        """
         if not prepid:
             return ''
 
@@ -195,7 +198,7 @@ class GetSamplesAPI(APIBase):
 
     def get(self):
         """
-        Get a single existing campaign with all entries inside
+        Handle normal GET method
         """
         args = flask.request.args
         self.logger.info('Getting samples %s', args)
@@ -206,6 +209,9 @@ class GetSamplesAPI(APIBase):
         return self.get_samples(campaign, tags, pwgs, dataset)
 
     def get_samples(self, campaign, tags, pwgs, dataset):
+        """
+        Get samples in given campaign, with given tags/pwgs/dataset
+        """
         query = []
         if campaign:
             query.append('campaign=%s' % (campaign))
@@ -315,6 +321,9 @@ class UpdateSampleAPI(APIBase):
         return {'response': updated_entries, 'success': True, 'message': ''}
 
     def get_all_tags(self):
+        """
+        Fetch all tags from the databse
+        """
         if not self.tags:
             tag_db = Database('tags')
             tags = tag_db.query(limit=tag_db.get_count())
@@ -324,6 +333,9 @@ class UpdateSampleAPI(APIBase):
         return self.tags
 
     def get_all_pwgs(self):
+        """
+        Get all valid PWGs
+        """
         if not self.pwgs:
             self.pwgs = get_pwgs()
 

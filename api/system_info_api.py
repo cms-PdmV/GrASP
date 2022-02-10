@@ -1,14 +1,10 @@
 """
 Module with all system APIs
 """
-import time
-import re
 import flask
 from api.api_base import APIBase
-from update_scripts.update_utils import query
 from utils.grasp_database import Database
 from utils.user import User
-from utils.utils import clean_split
 
 
 class UserInfoAPI(APIBase):
