@@ -89,7 +89,7 @@ export default {
     deleteCampaign: function(campaignName) {
       if (confirm('Are you sure you want to remove campaign ' + campaignName)) {
         const component = this;
-        axios.delete('api/campaigns/delete/' + campaignName).then(_ => {
+        axios.delete('api/campaigns/delete/' + campaignName).then(() => {
           component.fetchObjectsInfo();
         });
       }
@@ -97,7 +97,7 @@ export default {
     deleteTag: function(tag) {
       if (confirm('Are you sure you want to remove tag ' + tag)) {
         const component = this;
-        axios.delete('api/tags/delete/' + tag).then(_ => {
+        axios.delete('api/tags/delete/' + tag).then(() => {
           component.fetchObjectsInfo();
         });
       }
