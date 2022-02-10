@@ -12,9 +12,9 @@
         <span class="font-weight-light">where</span> {{pwgs}} <span class="font-weight-light">is interested</span>
       </template>
     </h1>
-    <h2 v-if="!loading && onlyDataset" class="page-title">
-      <span class="font-weight-light">Dataset</span> {{onlyDataset}}
-    </h2>
+    <h3 v-if="!loading && datasetQuery" class="page-title">
+      <span class="font-weight-light">Dataset</span> {{datasetQuery}}
+    </h3>
     <div class="align-center mt-4" v-if="loading">
       <img :src="'static/loading' + getRandomInt(5) + '.gif'" style="width: 120px; height: 120px;"/>
       <h3>Loading table...</h3>
@@ -75,7 +75,7 @@
     <table v-if="!loading">
       <tr>
         <th rowspan="2">Short Name<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.short_name" @input="applyFilters()"></th>
-        <th rowspan="2">Dataset Name<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.dataset" @input="applyFilters()" v-if="!onlyDataset"></th>
+        <th rowspan="2">Dataset Name<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.dataset" @input="applyFilters()"></th>
         <th colspan="3">Root Request</th>
         <th rowspan="2">MiniAOD Request<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.miniaod" @input="applyFilters()"></th>
         <th rowspan="2">NanoAOD Request<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.nanoaod" @input="applyFilters()"></th>
@@ -219,7 +219,7 @@ export default {
       campaign: undefined,
       pwgs: undefined,
       tags: undefined,
-      onlyDataset: undefined,
+      datasetQuery: undefined,
       selectedPWG: undefined,
       selectedTag: undefined,
       allPWGs: ['B2G', 'BPH', 'BTV', 'EGM', 'EXO', 'FSQ', 'HCA',
@@ -258,8 +258,8 @@ export default {
     if (query.tags && query.tags.length) {
       this.tags = query.tags.trim();
     }
-    if (!this.campaign && !this.pwgs && !this.tags && query.dataset) {
-      this.onlyDataset = query.dataset.trim();
+    if (query.dataset_query && query.dataset_query.length) {
+      this.datasetQuery = query.dataset_query.trim();
     }
     if (query.short_name && query.short_name.length) {
       this.search.short_name = query.short_name.trim();
@@ -303,8 +303,8 @@ export default {
       if (this.pwgs) {
         query.push('pwgs=' + this.pwgs)
       }
-      if (!query.length && this.search.dataset) {
-        query.push('dataset=' + this.search.dataset);
+      if (this.datasetQuery) {
+        query.push('dataset=' + this.datasetQuery);
       }
       if (!query.length) {
         return;
@@ -578,8 +578,8 @@ export default {
       if (this.pwgs) {
         fileName.push(this.pwgs);
       }
-      if (this.onlyDataset) {
-        fileName.push(this.onlyDataset);
+      if (this.datasetQuery) {
+        fileName.push(this.datasetQuery);
       }
       fileName = fileName.join('_').replaceAll(',', '_').replace(/[^A-Za-z0-9_-]/g, 'x');
       if (outputFormat == 'xls') {
