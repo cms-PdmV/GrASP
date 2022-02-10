@@ -154,7 +154,7 @@ class SampleUpdater():
             # Skip empty dataset requests
             return
 
-        if request['pilot']:
+        if request['pilot'] or request.get('process_string', '').lower() == 'pilot':
             logger.info('Skipping "pilot" %s', prepid)
             # Skip pilots
             return
