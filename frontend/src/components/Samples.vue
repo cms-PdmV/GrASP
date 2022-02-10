@@ -450,7 +450,7 @@ export default {
       }
 
       let formInput = this.$refs['file-upload-input'];
-      formInput.onchange = function(e) {
+      formInput.onchange = function() {
         component.fetchEntries(formInput.files[0]);
       }
     },
