@@ -93,14 +93,22 @@ export default {
       }
       this.items = [];
       // Trim in case there are spaces around
-      newValue = newValue.trim();
-      if (newValue in this.cache) {
-        this.items = this.cache[newValue];
+      newValue = newValue.replace(/[^*A-Za-z0-9-_, ]/g, ' ').replace(/\*+/g, '*').replace(/ +/g, ' ').trim();
+      let lastPart = newValue.split(',').pop().replaceAll('*', ' ').trim().replace(/ +/g, '*');
+      let lastPartLength = lastPart.replaceAll('*', '').length;
+      if (lastPartLength < 3) {
+        this.items = [];
+        return;
+      }
+      newValue = newValue.split(',').filter(x => x.replace(/[* ]/g, '').length).map(x => x.trim()).join(',').replace(/\*+/g, '*').replace(/ +/g, ' ');
+      let link = newValue.replaceAll(' ', '*').split(',').map(x => `*${x}*`).join(',').replaceAll(' ', '*').replace(/\*+/g, '*');
+      if (lastPart in this.cache) {
+        this.items = this.cache[lastPart];
         this.items = this.items.map(function (x) {return {'wild': false, 'value': x, 'link': x}});
-        if (!this.cache[newValue].includes(newValue) && newValue.replaceAll('*', '').replaceAll(' ', '').length > 2) {
-          this.items.push({'wild': true,
-                           'value': newValue.split(',').filter(Boolean).map(x => x.trim()).join(','),
-                           'link': newValue.split(',').filter(Boolean).map(x => `*${x.replaceAll(' ', '*').trim()}*`).join(',')});
+        if (!this.cache[lastPart].includes(newValue)) {
+          this.items.unshift({'wild': true,
+                              'value': newValue,
+                              'link': link});
         }
         this.suggestionsTimer = undefined;
       } else {
@@ -108,14 +116,14 @@ export default {
           const component = this;
           component.suggestionsTimer = undefined;
           component.loading = true;
-          axios.get("api/search?q=" + newValue).then((response) => {
+          axios.get("api/search?q=" + lastPart).then((response) => {
             component.items = response.data.response;
-            component.cache[newValue] = component.items;
+            component.cache[lastPart] = component.items;
             component.items = component.items.map(function (x) {return {'wild': false, 'value': x, 'link': x}});
-            if (!response.data.response.includes(newValue) && newValue.replaceAll('*', '').replaceAll(' ', '').length > 2) {
-              component.items.push({'wild': true,
-                                    'value': newValue.split(',').filter(Boolean).map(x => x.trim()).join(','),
-                                    'link': newValue.split(',').filter(Boolean).map(x => `*${x.replaceAll(' ', '*').trim()}*`).join(',')});
+            if (!response.data.response.includes(newValue)) {
+              this.items.unshift({'wild': true,
+                                  'value': newValue,
+                                  'link': link});
             }
             component.loading = false;
           }).catch(() => {
@@ -161,8 +169,8 @@ export default {
       }
       highlighted += item.value.slice(lastIndex);
       if (item.wild) {
-        highlighted = highlighted.replaceAll(',', ' or ');
-        highlighted = '<i>All samples containing ' + highlighted + '</i>';
+        highlighted = highlighted.replaceAll(',', '" or "');
+        highlighted = '<i>All samples containing "' + highlighted + '"</i>';
       }
       return highlighted;
     },
