@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div style="text-align: center">
     <div style="display: flex; flex-direction: row; flex-wrap: wrap; justify-content: space-evenly;">
       <div v-for="campaign in campaignNames"
            :key="campaign"
@@ -51,6 +51,7 @@
         </div>
       </div>
     </div>
+    <small><i>Spaces and asterisks act as wildcards, use comma to specify more than one term</i></small>
   </div>
 </template>
 
@@ -157,11 +158,12 @@ export default {
   methods: {
     select(value) {
       this.ignoreChange = true;
-      let selectedCampaigns = this.campaignNames.filter(x => this.campaigns[x]);
-      let url = window.location.origin + "/grasp/samples?dataset_query=" + value;
-      if (selectedCampaigns.length && selectedCampaigns.length != this.campaignNames.length) {
-        url += "&campaign=" + selectedCampaigns.sort().join(',');
+      let selectedCampaigns = this.campaignNames.filter(x => this.campaigns[x]).sort().join(',');
+      if (!selectedCampaigns.length) {
+        alert('No campaigns selected');
+        return;
       }
+      let url = window.location.origin + "/grasp/samples?dataset_query=" + value + "&campaign=" + selectedCampaigns;
       window.location.href = url;
     },
     makeFocused(focused) {

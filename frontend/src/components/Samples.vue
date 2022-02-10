@@ -125,8 +125,10 @@
               <br>
               <small>Priority: {{entry.root_priority}}</small>
             </template>
-            <br>
-            <small>Status: {{entry.root_status}}</small>
+            <template v-if="entry.root_status !== 'done'">
+              <br>
+              <small>Status: {{entry.root_status}}</small>
+            </template>
           </div>
           <div :class="'progress-background ' + entry.root_status + '-background'"
                :style="'width: ' + entry.rootPercentage + '%;'">
@@ -147,8 +149,10 @@
                 <br>
                 <small>Priority: {{entry.miniaod_priority}}</small>
               </template>
-              <br>
-              <small>Status: {{entry.miniaod_status}}</small>
+              <template v-if="entry.miniaod_status !== 'done'">
+                <br>
+                <small>Status: {{entry.miniaod_status}}</small>
+              </template>
             </div>
             <div :class="'progress-background ' + entry.miniaod_status + '-background'"
                  :style="'width: ' + entry.miniaodPercentage + '%;'">
@@ -170,8 +174,10 @@
                 <br>
                 <small>Priority: {{entry.nanoaod_priority}}</small>
               </template>
-              <br>
-              <small>Status: {{entry.nanoaod_status}}</small>
+              <template v-if="entry.nanoaod_status !== 'done'">
+                <br>
+                <small>Status: {{entry.nanoaod_status}}</small>
+              </template>
             </div>
             <div :class="'progress-background ' + entry.nanoaod_status + '-background'"
                  :style="'width: ' + entry.nanoaodPercentage + '%;'">
@@ -757,9 +763,9 @@ td.tags-cell {
   text-align: center;
   max-width: 150px;
   min-height: 50px;
-  min-width: 10px;
+  min-width: 70px;
   overflow: auto;
-  white-space: normal;
+  white-space: break-spaces;
   word-break: break-word;
 }
 
