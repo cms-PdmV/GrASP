@@ -2,25 +2,23 @@
 Main module that starts flask web server
 """
 import os
+import os.path
 import sys
 import json
 import logging
 import logging.handlers
 import argparse
-import os.path
-from api.samples_api import GetSamplesAPI
+from flask import Flask, render_template, render_template_string
 from flask_restful import Api
 from flask_cors import CORS
-from flask import Flask, render_template, render_template_string
 from jinja2.exceptions import TemplateNotFound
-from utils.grasp_database import Database
-from utils.username_filter import UsernameFilter
-from utils.utils import get_api_documentation
 from api.campaigns_api import CreateCampaignAPI, GetCampaignsAPI, DeleteCampaignAPI
 from api.tags_api import CreateTagAPI, GetTagsAPI, DeleteTagAPI
 from api.samples_api import GetSamplesAPI, UpdateSampleAPI
 from api.system_info_api import UserInfoAPI, UserActionHistory, SearchAPI
-
+from utils.utils import get_api_documentation
+from utils.username_filter import UsernameFilter
+from utils.grasp_database import Database
 
 
 app = Flask(__name__,
@@ -96,6 +94,9 @@ api.add_resource(UpdateSampleAPI, '/api/samples/update')
 
 
 def setup_logging(debug):
+    """
+    Setup loggin to console or file
+    """
     logger = logging.getLogger()
     logger.propagate = False
     if debug:

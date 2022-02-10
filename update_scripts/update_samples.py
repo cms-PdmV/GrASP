@@ -2,7 +2,6 @@
 Module handles update of all the samples
 """
 import json
-from re import purge
 import sys
 import time
 import argparse
@@ -10,7 +9,7 @@ import logging
 import hashlib
 from utils.grasp_database import Database as GrASPDatabase
 from utils.mcm_database import Database as McMDatabase
-from update_utils import chained_request_to_steps
+from utils.utils import chained_request_to_steps
 #pylint: disable=wrong-import-position,import-error
 sys.path.append('/afs/cern.ch/cms/PPD/PdmV/tools/McM/')
 from rest import McM
@@ -21,6 +20,9 @@ logger = logging.getLogger()
 
 
 class SampleUpdater():
+    """
+    Samples updater
+    """
 
     def __init__(self, dev, debug):
         self.mcm = McM(dev=dev)
@@ -88,7 +90,7 @@ class SampleUpdater():
         prepid = request['prepid']
         if not tag_added and not tag_removed and not pwg_added and not pwg_removed:
             logger.debug('No changes for %s', prepid)
-            return
+            return True
 
         if tag_added:
             logger.info('Added tags %s', ','.join(sorted(list(tag_added))))
@@ -326,6 +328,9 @@ class SampleUpdater():
 
 
 def main():
+    """
+    Main function
+    """
     parser = argparse.ArgumentParser(description='GrASP sample update script')
     parser.add_argument('--db_auth',
                         help='Path to GrASP database auth file')

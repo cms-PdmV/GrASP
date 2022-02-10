@@ -1,3 +1,6 @@
+"""
+Module that contains connector to McM database
+"""
 import time
 import logging
 import socket
@@ -8,6 +11,9 @@ from urllib.error import HTTPError
 
 
 class Database:
+    """
+    McM database object
+    """
     logger = logging.getLogger('')
     ip_cache = {}
 
@@ -142,9 +148,13 @@ class Database:
         return results
 
     def bulk_yield(self, size=5000):
+        """
+        Yield all documents from database
+        """
         # ask for one more document than you need - /bob/_all_docs?limit=101
         # apply changes and write them back in bulk (ignoring the 101st document)
-        # use the 101st document’s _id as the startkey_docid for the next block - /bob/_all_docs?limit=101&startkey_docid=8f31b4f..
+        # use the 101st document’s _id as the startkey_docid for the next block
+        # - /bob/_all_docs?limit=101&startkey_docid=8f31b4f..
         results = [{}]
         startkey = None
         while results:
@@ -172,7 +182,8 @@ class Database:
         skip = limit * page_num
         return limit, skip
 
-    def raw_query_view(self, design_doc, view_name, page, limit, options=None, with_total_rows=False):
+    def raw_query_view(self, design_doc, view_name, page,
+                       limit, options=None, with_total_rows=False):
         """
         Internal method for querying a CouchDB view
         """
@@ -227,7 +238,11 @@ class Database:
         """
         Get all documents from specific database
         """
-        return self.raw_query_view(self.db_name, 'all', page, limit, with_total_rows=with_total_rows)
+        return self.raw_query_view(self.db_name,
+                                   'all',
+                                   page,
+                                   limit,
+                                   with_total_rows=with_total_rows)
 
     def query_view(self, key, value, page_num=0, limit=20):
         """

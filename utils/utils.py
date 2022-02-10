@@ -1,3 +1,6 @@
+"""
+Module that contains all utility functions
+"""
 import os
 import re
 import inspect
@@ -99,3 +102,23 @@ def get_pwgs():
     """
     return ['B2G', 'BPH', 'BTV', 'EGM', 'EXO', 'FSQ', 'HCA', 'HGC', 'HIG', 'HIN', 'JME',
             'L1T', 'LUM', 'MUO', 'PPD', 'PPS', 'SMP', 'SUS', 'TAU', 'TOP', 'TRK', 'TSG']
+
+
+def chained_request_to_steps(chained_request):
+    """
+    Split chained request into dictionary of step prepids
+    """
+    steps = {}
+    for req_prepid in chained_request['chain']:
+        if 'pLHE' in req_prepid:
+            steps['plhe'] = req_prepid
+        elif 'GS' in req_prepid:
+            steps['gs'] = req_prepid
+        elif 'MiniAOD' in req_prepid:
+            steps['miniaod'] = req_prepid
+        elif 'NanoAOD' in req_prepid:
+            steps['nanoaod'] = req_prepid
+        elif 'DR' in req_prepid:
+            steps['dr'] = req_prepid
+
+    return steps

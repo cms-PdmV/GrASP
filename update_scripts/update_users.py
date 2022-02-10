@@ -11,6 +11,9 @@ logger = logging.getLogger()
 
 
 class UserUpdater():
+    """
+    User updater
+    """
 
     def __init__(self, dev):
         self.mcm_user_db = McMDatabase('users', dev=dev)
@@ -32,6 +35,9 @@ class UserUpdater():
 
 
 def main():
+    """
+    Main function
+    """
     parser = argparse.ArgumentParser(description='GrASP user update script')
     parser.add_argument('--db_auth',
                         help='Path to GrASP database auth file')

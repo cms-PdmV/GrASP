@@ -13,7 +13,7 @@ class RoleMeta(EnumMeta):
     """
     Metaclass to make roles case insensitive
     """
-    def __getitem__(self, key):
+    def __getitem__(cls, key):
         return super().__getitem__(key.upper())
 
 

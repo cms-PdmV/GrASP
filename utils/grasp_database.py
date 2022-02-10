@@ -101,7 +101,7 @@ class Database():
         response = self.get(document_id)
         return bool(response)
 
-    def delete_document(self, document, purge=False):
+    def delete_document(self, document):
         """
         Delete a document
         """
