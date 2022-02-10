@@ -375,19 +375,19 @@ class Database:
                 self.logger.error('HTTP error %s %s: %s', url, options, http_error)
                 if 400 <= code < 500:
                     # If it's HTTP 4xx - bad request, no point in retry
-                    break
+                    raise http_error
 
                 if attempt < self.max_attempts:
                     sleep = 2 ** attempt
                     time.sleep(sleep)
+                else:
+                    raise http_error
             except Exception as ex:
                 self.logger.error('Error %s %s: %s', url, options, ex)
                 if attempt < self.max_attempts:
                     sleep = 2 ** attempt
                     time.sleep(sleep)
+                else:
+                    raise ex
 
-        if total_rows:
-            return {'rows': [],
-                    'total_rows': 0}
-
-        return []
+        raise Exception('Error fetching %s' % (url))
