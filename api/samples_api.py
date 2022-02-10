@@ -5,7 +5,7 @@ import flask
 from api.api_base import APIBase
 from utils.grasp_database import Database
 from utils.user import Role
-from utils.utils import get_pwgs
+from utils.utils import clean_split, get_pwgs
 
 
 class GetSamplesAPI(APIBase):
@@ -172,6 +172,27 @@ class GetSamplesAPI(APIBase):
 
         return ''
 
+    def post(self):
+        """
+        Handle file upload
+        """
+        args = flask.request.args
+        files = flask.request.files
+        if not files or 'file' not in files:
+            return {'response': [], 'success': False, 'message': 'No file'}
+
+        try:
+            data = files['file'].read().decode('utf-8')
+        except Exception as ex:
+            return {'response': [], 'success': False, 'message': str(ex)}
+
+        self.logger.info('Getting samples %s and %s bytes data', args, len(data))
+        campaign = args.get('campaign')
+        tags = args.get('tags')
+        pwgs = args.get('pwgs')
+        dataset = ','.join(clean_split(data.replace('\n', ','), ','))
+        return self.get_samples(campaign, tags, pwgs, dataset)
+
     def get(self):
         """
         Get a single existing campaign with all entries inside
@@ -179,18 +200,21 @@ class GetSamplesAPI(APIBase):
         args = flask.request.args
         self.logger.info('Getting samples %s', args)
         campaign = args.get('campaign')
-        tag = args.get('tags')
-        pwg = args.get('pwgs')
+        tags = args.get('tags')
+        pwgs = args.get('pwgs')
         dataset = args.get('dataset')
+        return self.get_samples(campaign, tags, pwgs, dataset)
+
+    def get_samples(self, campaign, tags, pwgs, dataset):
         query = []
         if campaign:
             query.append('campaign=%s' % (campaign))
 
-        if tag:
-            query.append('tags=%s' % (tag))
+        if tags:
+            query.append('tags=%s' % (tags))
 
-        if pwg:
-            query.append('pwgs=%s' % (pwg))
+        if pwgs:
+            query.append('pwgs=%s' % (pwgs))
 
         if dataset:
             query.append('dataset=%s' % (dataset))
@@ -198,10 +222,10 @@ class GetSamplesAPI(APIBase):
         if not query:
             return {'response': [], 'success': False, 'message': 'No campaign or tag specified'}
 
+        query = '&&'.join(query)
         sample_db = Database('samples')
         tag_db = Database('tags')
         tags = set(t['name'] for t in tag_db.query(limit=tag_db.get_count()))
-        query = '&&'.join(query)
         results = sample_db.query(query, limit=25000, ignore_case=bool('*' in query))
         for entry in results:
             entry['short_name'] = self.get_short_name(entry['dataset'])
