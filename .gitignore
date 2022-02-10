@@ -110,8 +110,6 @@ venv.bak/
 # cookie file
 cookie.txt
 
-# all txt files
-*.txt
 
 # nohup
 nohup.out
