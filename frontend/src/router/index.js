@@ -36,6 +36,41 @@ const routes = [
     name: 'history',
     component: History
   },
+  {
+    path: '/*',
+    beforeEnter (to) {
+      let newQuery = [];
+      let path = to.path;
+      let query = to.query;
+      if (path == '/existing') {
+        if (query.name) {
+          newQuery.push(`campaign=${query.name}`)
+        }
+        if (query.pwg) {
+          newQuery.push(`pwgs=${query.pwg}`)
+        }
+      } else if (path == '/tags') {
+        if (query.name) {
+          newQuery.push(`tags=${query.name}`)
+        }
+      }
+
+      for (let key in query) {
+        if (key == 'name' || key == 'pwg') {
+          continue
+        }
+        let value = query[key];
+        if (key == 'miniaod_version' || key == 'nanoaod_version') {
+          value = value.replace('MiniAOD', '').replace('NanoAOD', '')
+        }
+        if (key == 'root_request') {
+          key = 'root';
+        }
+        newQuery.push(`${key}=${value}`);
+      }
+      window.location = 'samples' + (newQuery.length ? '?' : '') + newQuery.join('&')
+    }
+  }
 ]
 
 const router = new VueRouter({
