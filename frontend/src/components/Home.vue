@@ -1,11 +1,15 @@
 <template>
   <div>
     <h1 class="page-title">GrASP</h1>
-    <h3 style="text-align: center">Dataset search</h3>
-    <div style="max-width: 700px; margin: 0 auto 40px auto;">
+    <h3>Dataset search</h3>
+    <div style="max-width: 700px; margin: 0 auto; text-align: center;">
       <wild-search :campaignNames="campaigns"></wild-search>
     </div>
-    <h3 style="text-align: center">Campaigns</h3>
+    <h3>File upload</h3>
+    <div style="text-align: center;">
+      <a :href="'samples?file=true&campaign=' + campaigns.join(',')">Upload file with dataset names</a>
+    </div>
+    <h3>Campaigns</h3>
     <table>
       <tr>
         <th>Name</th>
@@ -26,7 +30,7 @@
         </td>
       </tr>
     </table>
-    <h3 style="text-align: center">Tags</h3>
+    <h3>Tags</h3>
     <table>
       <tr>
         <th>Tag</th>
@@ -43,7 +47,7 @@
         </td>
       </tr>
     </table>
-    <h3 style="text-align: center">GrASP Improvement</h3>
+    <h3>GrASP Improvement</h3>
     <div style="text-align: center"><a href="https://github.com/cms-PdmV/GrASP/issues/new/choose">Report a bug or suggest a feature</a></div>
   </div>
 </template>
@@ -108,6 +112,16 @@ export default {
   cursor: pointer;
   font-size: 0.5em;
   margin-left: 4px;
+}
+
+h3 {
+  text-align: center;
+  margin-top: 20px;
+  margin-bottom: 2px;
+}
+
+table {
+  margin-bottom: 0px;
 }
 
 </style>

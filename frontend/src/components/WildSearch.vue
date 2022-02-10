@@ -1,5 +1,5 @@
 <template>
-  <div style="text-align: center">
+  <div>
     <div style="display: flex; flex-direction: row; flex-wrap: wrap; justify-content: space-evenly;">
       <div v-for="campaign in campaignNames"
            :key="campaign"

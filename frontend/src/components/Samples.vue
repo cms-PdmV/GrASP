@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h1 v-if="!loading && (campaign || tags || pwgs)" class="page-title">
+    <h1 v-if="!loading && !fileUpload && (campaign || tags || pwgs)" class="page-title">
       <span class="font-weight-light">Samples </span>
       <template v-if="campaign">
         <span class="font-weight-light">in</span> {{campaign}}
@@ -12,14 +12,17 @@
         <span class="font-weight-light">where</span> {{pwgs}} <span class="font-weight-light">is interested</span>
       </template>
     </h1>
-    <h3 v-if="!loading && datasetQuery" class="page-title">
+    <h3 v-if="!loading && !fileUpload && datasetQuery" class="page-title">
       <span class="font-weight-light">Dataset</span> {{datasetQuery}}
     </h3>
+    <h1 v-if="!loading && fileUpload" class="page-title">
+      File <span class="font-weight-light">upload</span>
+    </h1>
     <div class="align-center mt-4" v-if="loading">
       <img :src="'static/loading' + getRandomInt(5) + '.gif'" style="width: 120px; height: 120px;"/>
       <h3>Loading table...</h3>
     </div>
-    <div v-if="!loading" class="align-center">
+    <div v-if="!loading && (!fileUpload || allEntries.length)" class="align-center">
       <div class="ml-1 mr-1" style="display: inline-block">
         Events:
         <template v-for="eventsPair in eventFilterOptions">
@@ -59,7 +62,7 @@
         <a title="Microsoft Office Excel file" class="ml-1 mr-1" @click="downloadExcelFile('xls')">XLS</a>
       </div>
     </div>
-    <div v-if="!loading" class="align-center ma-2">
+    <div v-if="!loading && (!fileUpload || allEntries.length)" class="align-center ma-2">
       Add or remove
       <select v-model="selectedPWG" class="ml-1 mr-1" style="padding: 0 4px;">
         <option selected value=''></option>
@@ -72,7 +75,7 @@
       </select>
       tag
     </div>
-    <table v-if="!loading">
+    <table v-if="!loading && (!fileUpload || allEntries.length)">
       <tr>
         <th rowspan="2">Short Name<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.short_name" @input="applyFilters()"></th>
         <th rowspan="2">Dataset Name<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.dataset" @input="applyFilters()"></th>
@@ -193,6 +196,21 @@
       </tr>
     </table>
 
+    <form v-show="!loading && fileUpload && !allEntries.length"
+          class="file-upload"
+          enctype="multipart/form-data"
+          @click="openFileChooseDialog()"
+          ref="file-upload-form">
+      <input style="display: none" type="file" ref="file-upload-input" />
+      <v-icon style="font-size: 80px">mdi-file-upload-outline</v-icon>
+      <br>
+      <b>Click here</b> to choose a file <span v-if="dragDropSupported">or drag and drop it in dashed area</span>
+      <br>
+      <div style="line-height: 80%; margin-top: 8px;">
+        <small>Only plain text files are supported, where contents are dataset names, one per line</small>
+      </div>
+    </form>
+
     <footer v-if="selectedCount > 0">
       Selected items ({{selectedCount}}) actions:
       <template v-if="role('user')">
@@ -226,6 +244,8 @@ export default {
       pwgs: undefined,
       tags: undefined,
       datasetQuery: undefined,
+      fileUpload: false,
+      dragDropSupported: false,
       selectedPWG: undefined,
       selectedTag: undefined,
       allPWGs: ['B2G', 'BPH', 'BTV', 'EGM', 'EXO', 'FSQ', 'HCA',
@@ -294,11 +314,21 @@ export default {
     if (query.nanoaod_version && query.nanoaod_version.length) {
       this.nanoaodFilter = query.nanoaod_version;
     }
+    if (query.file) {
+      this.fileUpload = true;
+    }
+  },
+  mounted() {
     this.fetchTags();
-    this.fetchEntries();
+    if (!this.fileUpload) {
+      this.fetchEntries(undefined);
+    } else {
+      this.prepareFileUploadForm();
+      this.loading = false;
+    }
   },
   methods: {
-    fetchEntries: function() {
+    fetchEntries: function(file) {
       let query = [];
       if (this.campaign) {
         query.push('campaign=' + this.campaign)
@@ -309,15 +339,24 @@ export default {
       if (this.pwgs) {
         query.push('pwgs=' + this.pwgs)
       }
-      if (this.datasetQuery) {
+      if (this.datasetQuery && !file) {
         query.push('dataset=' + this.datasetQuery);
       }
-      if (!query.length) {
+      if (!query.length && !file) {
         return;
       }
       let component = this;
       let url = 'api/samples/get?' + query.join('&');
-      axios.get(url).then(response => {
+      let method = undefined;
+      this.loading = true;
+      if (file) {
+        let formData = new FormData();
+        formData.append('file', file);
+        method = axios.post(url, formData, { headers: {'Content-Type': 'multipart/form-data' }});
+      } else {
+        method = axios.get(url);
+      }
+      method.then(response => {
         let entries = response.data.response;
         entries.forEach(element => {
           component.processEntry(element);
@@ -374,6 +413,46 @@ export default {
         component.allTags = response.data.response;
       });
     },
+    openFileChooseDialog: function() {
+      let formInput = this.$refs['file-upload-input'];
+      formInput.click()
+    },
+    prepareFileUploadForm: function() {
+      let divElement = document.createElement('div');
+      this.dragDropSupported = (('draggable' in divElement) || ('ondragstart' in divElement && 'ondrop' in divElement)) && 'FormData' in window && 'FileReader' in window;
+      const component = this;
+      if (this.dragDropSupported) {
+        let form = this.$refs['file-upload-form'];
+        const stopPropagation = function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        const draggingOver = function(e) {
+          stopPropagation(e);
+          form.classList.add('dragging-over');
+        }
+        const notDragingOver = function(e) {
+          stopPropagation(e);
+          form.classList.remove('dragging-over');
+        }
+        const drop = function(e) {
+          notDragingOver(e);
+          component.fetchEntries(e.dataTransfer.files[0]);
+        }
+        form.ondrag = stopPropagation;
+        form.ondragstart = stopPropagation;
+        form.ondragenter = notDragingOver;
+        form.ondragover = draggingOver;
+        form.ondragend = notDragingOver;
+        form.ondragleave = notDragingOver;
+        form.ondrop = drop;
+      }
+
+      let formInput = this.$refs['file-upload-input'];
+      formInput.onchange = function(e) {
+        component.fetchEntries(formInput.files[0]);
+      }
+    },
     addPWGToSelectedEntries: function(pwg) {
       this.addPWGToEntries(pwg, this.entries.filter(x => x.checked));
     },
@@ -415,9 +494,13 @@ export default {
       this.updateEntries(entriesToUpdate);
     },
     updateEntries: function(entries) {
-      let httpRequest = axios.post('api/samples/update', entries);
+      let httpRequest = axios.post('api/samples/update', entries, { timeout: 120000 });
       const component = this;
+      if (entries.length > 100) {
+        this.loading = true;
+      }
       httpRequest.then(response => {
+        component.loading = false;
         for (let updatedEntry of response.data.response) {
           for (let existingEntry of this.allEntries) {
             if (updatedEntry._id == existingEntry._id) {
@@ -429,6 +512,7 @@ export default {
           }
         }
       }).catch(error => {
+        component.loading = false;
         alert(error.response.data.message);
       });
     },
@@ -767,6 +851,20 @@ td.tags-cell {
   overflow: auto;
   white-space: break-spaces;
   word-break: break-word;
+}
+
+form.file-upload {
+  max-width: 400px;
+  margin: auto;
+  border: 2px gray dashed;
+  border-radius: 40px;
+  padding: 50px;
+  text-align: center;
+  cursor: pointer
+}
+
+form.file-upload.dragging-over {
+  background-color: #eaeaea;
 }
 
 </style>
