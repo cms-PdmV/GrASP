@@ -22,7 +22,7 @@
       <img :src="'static/loading' + getRandomInt(5) + '.gif'" style="width: 120px; height: 120px;"/>
       <h3>Loading table...</h3>
     </div>
-    <div v-if="!loading && (!fileUpload || allEntries.length)" class="align-center">
+    <div v-if="!loading && (!fileUpload || allEntries.length)" style="margin-top: 10px;" class="align-center">
       <div class="ml-1 mr-1" style="display: inline-block">
         Events:
         <template v-for="eventsPair in eventFilterOptions">
@@ -343,6 +343,7 @@ export default {
         query.push('dataset=' + this.datasetQuery);
       }
       if (!query.length && !file) {
+        this.loading = false;
         return;
       }
       let component = this;
