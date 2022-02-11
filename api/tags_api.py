@@ -13,7 +13,7 @@ class CreateTagAPI(APIBase):
     """
 
     @APIBase.request_with_json
-    @APIBase.ensure_role(Role.PRODUCTION_MANAGER)
+    @APIBase.ensure_role(Role.USER)
     def put(self, data):
         """
         Create a new tag with the provided JSON content
