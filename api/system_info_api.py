@@ -68,6 +68,7 @@ class SearchAPI(APIBase):
         if campaign:
             query += f'&&campaign={campaign}'
 
+        self.logger.info('Search for dataset "%s" and campaign "%s"', dataset, campaign)
         sample_db = Database('samples')
         # Fetch 50 items, in case there are duplicates
         results = sample_db.query(query, 0, 50, ignore_case=True)

@@ -20,7 +20,8 @@
     </h1>
     <div class="align-center mt-4" v-if="loading">
       <img :src="'static/loading' + getRandomInt(5) + '.gif'" style="width: 120px; height: 120px;"/>
-      <h3>Loading table...</h3>
+      <h3 v-if="!drawing">Loading table...</h3>
+      <h3 v-if="drawing">Drawing table...</h3>
     </div>
     <div v-if="!loading && (!fileUpload || allEntries.length)" style="margin-top: 10px;" class="align-center">
       <div class="ml-1 mr-1" style="display: inline-block">
@@ -195,6 +196,9 @@
         </td>
       </tr>
     </table>
+    <div v-if="entries.length" class="entries-count">
+      <small>Rows: {{entries.length}}/{{allEntries.length}}</small>
+    </div>
 
     <form v-show="!loading && fileUpload && !allEntries.length"
           class="file-upload"
@@ -240,6 +244,7 @@ export default {
   data () {
     return {
       loading: true,
+      drawing: false,
       campaign: undefined,
       pwgs: undefined,
       tags: undefined,
@@ -366,8 +371,12 @@ export default {
         component.nanoaodFilterOptions = Array.from(new Set(['', ...entries.map(x => x.nanoaod_version).sort()]), x => [x, x == '' ? 'All' : x]);
         component.mergeCells(entries, ['short_name', 'dataset', 'root', 'miniaod']);
         component.allEntries = entries;
-        component.applyFilters();
-        component.loading = false;
+        component.drawing = true;
+        setTimeout(() => {
+          component.applyFilters();
+          component.loading = false;
+          component.drawing = false;
+        }, 20);
       }).catch(error => {
         alert(error.response.data.message);
       });
@@ -866,6 +875,16 @@ form.file-upload {
 
 form.file-upload.dragging-over {
   background-color: #eaeaea;
+}
+
+.entries-count {
+  text-align: center;
+  cursor: default;
+  opacity: 0.05;
+}
+
+.entries-count:hover {
+  opacity: 1;
 }
 
 </style>

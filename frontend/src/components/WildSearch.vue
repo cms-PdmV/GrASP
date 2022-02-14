@@ -12,7 +12,7 @@
         </label>
       </div>
     </div>
-    <div style="position: relative">
+    <div style="position: relative; text-align: left">
       <input
         type="text"
         v-model="value"
@@ -214,7 +214,7 @@ export default {
       if (!this.items.length) {
         return;
       }
-      this.select(this.items[this.selectedIndex]);
+      this.select(this.items[this.selectedIndex].link);
     },
   },
   computed: {
@@ -247,7 +247,7 @@ export default {
   margin-top: 2px;
   margin-bottom: 2px;
   display: flex;
-  letter-spacing: -0.2px;
+  letter-spacing: -0.3px;
   justify-content: space-between;
   font-size: 0.9em;
 }
