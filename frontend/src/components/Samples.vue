@@ -98,16 +98,14 @@
         <td class="dataset-column" v-if="entry.rowspan.dataset > 0" :rowspan="entry.rowspan.dataset">
           <a :href="'https://cms-pdmv.cern.ch/mcm/requests?dataset_name=' + entry.dataset" target="_blank">{{entry.dataset}}</a>
         </td>
-        <td v-if="entry.rowspan.root > 0" :rowspan="entry.rowspan.root" class="tags-cell">
-          {{entry.tagsNice}}
+        <td v-if="entry.rowspan.root > 0" :rowspan="entry.rowspan.root" class="tags-cell">{{entry.tagsNice}}
           <template v-if="selectedTag && role('user')">
             <br>
             <span class="add-pwg-link" v-if="!entry.tags.includes(selectedTag)" @click="addTagToEntries(selectedTag, [entry])">Add {{selectedTag}}</span>
             <span class="remove-pwg-link" v-if="entry.tags.includes(selectedTag)" @click="removeTagFromEntries(selectedTag, [entry])">Remove {{selectedTag}}</span>
           </template>
         </td>
-        <td v-if="entry.rowspan.root > 0" :rowspan="entry.rowspan.root" class="tags-cell">
-          {{entry.pwgsNice}}
+        <td v-if="entry.rowspan.root > 0" :rowspan="entry.rowspan.root" class="tags-cell">{{entry.pwgsNice}}
           <template v-if="selectedPWG && role('user')">
             <br>
             <span class="add-pwg-link" v-if="!entry.pwgs.includes(selectedPWG)" @click="addPWGToEntries(selectedPWG, [entry])">Add {{selectedPWG}}</span>
@@ -133,6 +131,8 @@
               <br>
               <small>Status: {{entry.root_status}}</small>
             </template>
+            <br>
+            <small><i>{{entry.root_processing_string}}</i></small>
           </div>
           <div :class="'progress-background ' + entry.root_status + '-background'"
                :style="'width: ' + entry.rootPercentage + '%;'">
@@ -157,6 +157,8 @@
                 <br>
                 <small>Status: {{entry.miniaod_status}}</small>
               </template>
+              <br>
+              <small><i>{{entry.miniaod_processing_string}}</i></small>
             </div>
             <div :class="'progress-background ' + entry.miniaod_status + '-background'"
                  :style="'width: ' + entry.miniaodPercentage + '%;'">
@@ -182,6 +184,8 @@
                 <br>
                 <small>Status: {{entry.nanoaod_status}}</small>
               </template>
+              <br>
+              <small><i>{{entry.nanoaod_processing_string}}</i></small>
             </div>
             <div :class="'progress-background ' + entry.nanoaod_status + '-background'"
                  :style="'width: ' + entry.nanoaodPercentage + '%;'">

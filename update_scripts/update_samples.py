@@ -28,6 +28,7 @@ class SampleUpdater():
         self.mcm = McM(dev=dev)
         self.debug = debug
         self.mcm_request_db = McMDatabase('requests', dev=dev)
+        self.mcm_flow_db = McMDatabase('flows', dev=dev)
         self.mcm_chained_request_db = McMDatabase('chained_requests', dev=dev)
         self.sample_db = GrASPDatabase('samples')
         self.update_timestamp = int(time.time())
@@ -62,11 +63,33 @@ class SampleUpdater():
                    'status': mcm_request.get('status', ''),
                    'output_dataset': output_dataset,
                    'pwgs': mcm_request.get('interested_pwg', []),
-                   'tags': mcm_request.get('tags', [])}
+                   'tags': mcm_request.get('tags', []),
+                   'processing_string': self.get_processing_string(mcm_request)}
+
         if use_cache:
             self.cache[prepid] = request
 
         return request
+
+    def get_processing_string(self, request):
+        """
+        Return processing string of a request
+        """
+        if not request:
+            return ''
+
+        processing_string = []
+        if request.get('flown_with'):
+            flow_name = request['flown_with']
+            if flow_name not in self.cache:
+                self.cache[flow_name] = self.mcm_flow_db.get(flow_name)
+
+            flow = self.cache[flow_name]
+            processing_string.append(flow.get('request_parameters', {}).get('process_string'))
+
+        processing_string.append(request.get('process_string'))
+        processing_string = '_'.join(p for p in processing_string if p)
+        return processing_string
 
     def sync_with_mcm(self, sample, request):
         """
@@ -187,6 +210,8 @@ class SampleUpdater():
 
             return None
 
+        # Get root request processing string
+        request['processing_string'] = self.get_processing_string(request)
         # Whether current root request was synced with McM
         synced_with_mcm = False
         root_output = request['output_dataset'][-1] if request['output_dataset'] else ''
@@ -220,18 +245,21 @@ class SampleUpdater():
                      'root_done_events': request['completed_events'],
                      'root_status': request['status'],
                      'root_output': root_output,
+                     'root_processing_string': request['processing_string'],
                      'miniaod': miniaod_prepid,
                      'miniaod_priority': miniaod['priority'],
                      'miniaod_total_events': miniaod['total_events'],
                      'miniaod_done_events': miniaod['done_events'],
                      'miniaod_status': miniaod['status'],
                      'miniaod_output': miniaod['output_dataset'],
+                     'miniaod_processing_string': miniaod['processing_string'],
                      'nanoaod': nanoaod_prepid,
                      'nanoaod_priority': nanoaod['priority'],
                      'nanoaod_total_events': nanoaod['total_events'],
                      'nanoaod_done_events': nanoaod['done_events'],
                      'nanoaod_status': nanoaod['status'],
                      'nanoaod_output': nanoaod['output_dataset'],
+                     'nanoaod_processing_string': nanoaod['processing_string'],
                      'tags': tags,
                      'ref_tags': tags,
                      'pwgs': pwgs,
