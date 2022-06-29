@@ -257,7 +257,7 @@ export default {
       dragDropSupported: false,
       selectedPWG: undefined,
       selectedTag: undefined,
-      allPWGs: ['B2G', 'BPH', 'BTV', 'EGM', 'EXO', 'FSQ', 'HCA',
+      allPWGs: ['B2G', 'BPH', 'BTV', 'EGM', 'EXO', 'FSQ', 'GEN', 'HCA',
                 'HGC', 'HIG', 'HIN', 'JME', 'L1T', 'LUM', 'MUO',
                 'PPS', 'SMP', 'SUS', 'TAU', 'TOP', 'TRK', 'TSG'],
       allTags: [],
