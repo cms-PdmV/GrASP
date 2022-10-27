@@ -76,6 +76,22 @@
       </select>
       tag
     </div>
+    <!-- Interpage navigation links -->
+    <div v-if="!loading && (!fileUpload || allEntries.length)" style="margin-top: 10px;" class="align-center">
+      <div class="ml-1 mr-1" style="display: inline-block">
+        Pages:
+        <template v-for="page in maxSubsets">
+          <a :key="'page-link-' + page"
+             class="ml-1 mr-1"
+             :title="'Display page: ' + page + ' of results'"
+             @click="changeSubsetSelected(page)"
+             :class="page === selectedSubset ? 'bold-text' : ''">
+            {{page}}
+          </a>
+        </template>
+      </div>
+    </div>
+    <!-- Table definition -->
     <table v-if="!loading && (!fileUpload || allEntries.length)">
       <tr>
         <th rowspan="2">Short Name<br><input type="text" class="header-search" placeholder="Type to search..." v-model="search.short_name" @input="applyFilters()"></th>
@@ -93,7 +109,7 @@
         <th title="Interested PWGs">Int. PWGs</th>
         <th><input type="text" class="header-search" placeholder="Type to search..." v-model="search.root" @input="applyFilters()"></th>
       </tr>
-      <tr v-for="entry in entries" :key="entry._id">
+      <tr v-for="entry in subsetEntries" :key="entry._id">
         <td v-if="entry.rowspan.short_name > 0" :rowspan="entry.rowspan.short_name">{{entry.short_name}}</td>
         <td class="dataset-column" v-if="entry.rowspan.dataset > 0" :rowspan="entry.rowspan.dataset">
           <a :href="'https://cms-pdmv.cern.ch/mcm/requests?dataset_name=' + entry.dataset" target="_blank">{{entry.dataset}}</a>
@@ -280,6 +296,9 @@ export default {
       selectAllChecked: false,
       selectAllIndeterminate: false,
       selectedCount: 0,
+      selectedSubset: 0,
+      maxSubsets: [],
+      elementsSubset: 256
     }
   },
   created () {
@@ -336,7 +355,55 @@ export default {
       this.loading = false;
     }
   },
+  computed: {
+    subsetEntries: function () {
+      return this.subsetEntriesMethod(this.entries, this.selectedSubset);
+    },
+  },
   methods: {
+    range: function (start, end) {
+      function* rangeGenerator(start, end) {
+        for (let i = start; i <= end; i++) {
+          yield i;
+        }
+      }
+      return [...rangeGenerator(start, end)];
+    },
+    changeSubsetSelected: function (subset) {
+      console.log("New subset: ", subset);
+      this.selectedSubset = subset;
+    },
+    subsetEntriesMethod: function (entries, selectedSubset) {
+      const maxPages = Math.ceil(entries.length / this.elementsSubset);
+      console.log("Max pages: ", maxPages);
+
+      const newSubsets = this.range(0, maxPages);
+      console.log("New subsets: ", newSubsets);
+
+      this.maxSubsets = newSubsets;
+
+      // Retrieve subset
+      // Beware of the last element
+      let currentElements = selectedSubset * this.elementsSubset;
+      let nextElements = (selectedSubset + 1) * this.elementsSubset;
+
+      // Response subset
+      let subset = []
+
+      // If the index does not exist
+      if (entries.length < nextElements) {
+        console.log("Last subset of the array: ");
+        subset = entries.slice(currentElements, entries.length);
+      }
+      else {
+        subset = entries.slice(currentElements, nextElements);
+      }
+
+      console.log("Subset data: ", subset);
+      console.log("Current selected subset: ", selectedSubset);
+
+      return subset
+    },
     fetchEntries: function(file) {
       let query = [];
       if (this.campaign) {
