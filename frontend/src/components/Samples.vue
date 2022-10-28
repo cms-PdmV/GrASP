@@ -358,7 +358,6 @@ export default {
   computed: {
     subsetEntries: function () {
       let subset = this.subsetEntriesMethod(this.entries, this.selectedSubset);
-      console.log("Computed entries: Merging cells at: ", new Date());
       this.mergeCells(subset, ['short_name', 'dataset', 'root', 'miniaod']);
       return subset;
     },
@@ -373,7 +372,6 @@ export default {
       return [...rangeGenerator(start, end)];
     },
     changeSubsetSelected: function (subset) {
-      console.log("New subset: ", subset);
       this.selectedSubset = subset;
     },
     subsetEntriesMethod: function (entries, selectedSubset) {
@@ -390,15 +388,11 @@ export default {
 
       // If the index does not exist
       if (entries.length < nextElements) {
-        console.log("Last subset of the array: ");
         subset = entries.slice(currentElements, entries.length);
       }
       else {
         subset = entries.slice(currentElements, nextElements);
       }
-
-      console.log("Subset data: ", subset);
-      console.log("Current selected subset: ", selectedSubset);
 
       return subset
     },
@@ -596,7 +590,6 @@ export default {
       });
     },
     mergeCells: function(list, attributes) {
-      console.log("Executing merge cells at: ", new Date());
       list.forEach(element => {
         element.rowspan = {};
         for (let attribute of attributes) {
