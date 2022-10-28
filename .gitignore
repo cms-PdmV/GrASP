@@ -115,3 +115,6 @@ cookie.txt
 nohup.out
 
 *.pid
+
+# IntelliJ
+.idea
