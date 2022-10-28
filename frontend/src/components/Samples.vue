@@ -86,7 +86,7 @@
              :title="'Display page: ' + page + ' of results'"
              @click="changeSubsetSelected(page)"
              :class="page === selectedSubset ? 'bold-text' : ''">
-            {{page}}
+            {{page + 1}}
           </a>
         </template>
       </div>
@@ -357,7 +357,10 @@ export default {
   },
   computed: {
     subsetEntries: function () {
-      return this.subsetEntriesMethod(this.entries, this.selectedSubset);
+      let subset = this.subsetEntriesMethod(this.entries, this.selectedSubset);
+      console.log("Computed entries: Merging cells at: ", new Date());
+      this.mergeCells(subset, ['short_name', 'dataset', 'root', 'miniaod']);
+      return subset;
     },
   },
   methods: {
@@ -374,13 +377,8 @@ export default {
       this.selectedSubset = subset;
     },
     subsetEntriesMethod: function (entries, selectedSubset) {
-      const maxPages = Math.ceil(entries.length / this.elementsSubset);
-      console.log("Max pages: ", maxPages);
-
-      const newSubsets = this.range(0, maxPages);
-      console.log("New subsets: ", newSubsets);
-
-      this.maxSubsets = newSubsets;
+      const maxPages = Math.floor(entries.length / this.elementsSubset);
+      this.maxSubsets = this.range(0, maxPages);
 
       // Retrieve subset
       // Beware of the last element
@@ -440,7 +438,7 @@ export default {
         });
         component.miniaodFilterOptions = Array.from(new Set(['', ...entries.map(x => x.miniaod_version).sort()]), x => [x, x == '' ? 'All' : x]);
         component.nanoaodFilterOptions = Array.from(new Set(['', ...entries.map(x => x.nanoaod_version).sort()]), x => [x, x == '' ? 'All' : x]);
-        component.mergeCells(entries, ['short_name', 'dataset', 'root', 'miniaod']);
+        //component.mergeCells(entries, ['short_name', 'dataset', 'root', 'miniaod']);
         component.allEntries = entries;
         component.drawing = true;
         setTimeout(() => {
@@ -598,6 +596,7 @@ export default {
       });
     },
     mergeCells: function(list, attributes) {
+      console.log("Executing merge cells at: ", new Date());
       list.forEach(element => {
         element.rowspan = {};
         for (let attribute of attributes) {
@@ -684,7 +683,6 @@ export default {
       }
       this.$set(this, 'entries', filteredEntries);
       this.toggleOneCheckbox();
-      this.mergeCells(this.entries, ['short_name', 'dataset', 'root', 'miniaod']);
       this.$router.replace({query: query}).catch(() => {});
     },
     downloadExcelFile: function(outputFormat) {
