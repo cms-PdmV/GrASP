@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   schedule:
     # Cron is UTC time, so 23:59 CERN time
-    - cron: "59 22 * * *"
+    - cron: "20 09 * * *"
 
 jobs:
   # Check if new there were new commits after the newest release tag and save as "new_commits" variable
