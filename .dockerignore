@@ -1,0 +1,22 @@
+# Ignore the following files for image building
+.github/
+logs/
+venv/
+vue_frontend/node_modules/
+vue_frontend/dist/
+
+# Append the config file via secret files
+# or environment files
+config.cfg
+
+# Ignore the scripts, they are mainly used by CI workflows
+update_scripts/
+
+# Ignore Python cache
+__pycache__/
+
+# Ignore Docker Compose files
+grasp.yaml
+
+grasp.sh
+*.pid
