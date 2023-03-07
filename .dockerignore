@@ -2,8 +2,8 @@
 .github/
 logs/
 venv/
-vue_frontend/node_modules/
-vue_frontend/dist/
+frontend/node_modules/
+frontend/dist/
 
 # Append the config file via secret files
 # or environment files
