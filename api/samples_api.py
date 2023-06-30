@@ -93,6 +93,8 @@ class GetSamplesAPI(APIBase):
         try:
             if 'DIGI' in name:
                 tag = name.split('-')[1].split('DIGI')[1].split('_')[0]
+            elif 'DR' in name:
+                tag = name.split('-')[1].split('DR')[1].split('_')[0]
 
             if tag:
                 return tag
