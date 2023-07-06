@@ -27,7 +27,7 @@ class Database():
         self.collection_name = collection_name
         self.logger = logging.getLogger()
         db_host = os.environ.get('DB_HOST', Database.DATABASE_HOST)
-        db_port = os.environ.get('DB_PORT', Database.DATABASE_PORT)
+        db_port = int(os.environ.get('DB_PORT', Database.DATABASE_PORT))
         if not Database.DATABASE_NAME:
             raise Exception('Database name is not set')
 
