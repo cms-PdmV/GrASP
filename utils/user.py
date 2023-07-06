@@ -7,6 +7,7 @@ from flask import session
 from flask import g as request_context
 from cachelib import SimpleCache
 from utils.grasp_database import Database as GrASPDatabase
+from core_lib.middlewares.auth import UserInfo
 
 
 class RoleMeta(EnumMeta):
@@ -66,12 +67,12 @@ class User:
         Check the session cookie and parse user information
         Also fetch info from the database and update the database if needed
         """
-        user_data = session_cookie.get("user")
-        username = user_data.get("username")
+        user_data: UserInfo = session_cookie.get("user")
+        username: str = user_data.username
         if self.cache.has(username):
             return self.cache.get(username)
 
-        name = user_data.get("fullname")
+        name: str = user_data.fullname
         user_info = {"name": name, "username": username, "role": str(Role.ANONYMOUS)}
         user_json = self.get_database().get(username)
         if not user_json:

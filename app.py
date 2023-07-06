@@ -13,7 +13,7 @@ from flask_restful import Api
 from flask_cors import CORS
 from werkzeug.middleware.proxy_fix import ProxyFix
 from jinja2.exceptions import TemplateNotFound
-from middlewares.auth import AuthenticationMiddleware
+from core_lib.middlewares.auth import AuthenticationMiddleware
 from api.campaigns_api import CreateCampaignAPI, GetCampaignsAPI, DeleteCampaignAPI
 from api.tags_api import CreateTagAPI, GetTagsAPI, DeleteTagAPI
 from api.samples_api import GetSamplesAPI, UpdateSampleAPI
@@ -39,12 +39,6 @@ CORS(
 
 # Handle redirections from a reverse proxy
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
-
-# OAuth2 client
-# We require some environment variables to configure properly this component
-# Instantiate the middleware inside the main function
-auth: AuthenticationMiddleware = None
-app.before_request(lambda: auth(request=request, session=session))
 
 
 @app.route("/", defaults={"_path": ""})
@@ -144,10 +138,6 @@ def set_app(db_auth: str | None = None, debug: bool = True) -> None:
     debug: bool
         Set DEBUG logging level
     """
-    # Instantiate the middleware here
-    # Configure cookie security settings for the Flask application
-    global auth
-
     # Setup loggers
     logging.root.setLevel(logging.DEBUG if debug else logging.INFO)
     logger = setup_logging(debug)
@@ -170,26 +160,10 @@ def set_app(db_auth: str | None = None, debug: bool = True) -> None:
     app.secret_key = secret_key
 
     # Include the middleware
-    logger.info("Retriving OIDC credentials from environment variables")
-    oidc_client_id = os.getenv("OIDC_CLIENT_ID")
-    oidc_client_secret = os.getenv("OIDC_CLIENT_SECRET")
-    if not oidc_client_id:
-        raise ValueError(
-            "Please set the OIDC_CLIENT_ID environment variable "
-            "with the application's client id"
-        )
-    if not oidc_client_secret:
-        raise ValueError(
-            "Please set the OIDC_CLIENT_SECRET environment variable "
-            "with the application's client secret"
-        )
-
-    # Set Authentication middleware
-    auth = AuthenticationMiddleware(
-        app=app,
-        client_id=oidc_client_id,
-        client_secret=oidc_client_secret,
-        home_endpoint="catch_all",
+    logger.info("Installing OIDC authentication middleware")
+    auth: AuthenticationMiddleware = AuthenticationMiddleware(app=app)
+    app.before_request(
+        lambda: auth.authenticate(request=request, flask_session=session)
     )
 
     # Set API Docs
