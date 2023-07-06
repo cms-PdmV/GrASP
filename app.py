@@ -37,9 +37,6 @@ CORS(
     supports_credentials=True,
 )
 
-# Handle redirections from a reverse proxy
-app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
-
 
 @app.route("/", defaults={"_path": ""})
 @app.route("/<path:_path>")
@@ -143,6 +140,11 @@ def set_app(db_auth: str | None = None, debug: bool = True) -> None:
     logger = setup_logging(debug)
     logger.info("Setting up Flask application configuration")
     logger.info("Debugging: %s", debug)
+
+    # Handle redirections from a reverse proxy
+    behind_reverse_proxy: bool = bool(os.getenv("REVERSE_PROXY"))
+    if behind_reverse_proxy:
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
     # Set Flask app cookie secret
     secret_key = os.getenv("SECRET_KEY")
