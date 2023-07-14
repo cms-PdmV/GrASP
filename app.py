@@ -11,15 +11,16 @@ import secrets
 from flask import Flask, request, session, render_template, render_template_string
 from flask_restful import Api
 from flask_cors import CORS
+from flask_compress import Compress
 from werkzeug.middleware.proxy_fix import ProxyFix
 from jinja2.exceptions import TemplateNotFound
 from core_lib.middlewares.auth import AuthenticationMiddleware
+from core_lib.utils.username_filter import UsernameFilter
 from api.campaigns_api import CreateCampaignAPI, GetCampaignsAPI, DeleteCampaignAPI
 from api.tags_api import CreateTagAPI, GetTagsAPI, DeleteTagAPI
 from api.samples_api import GetSamplesAPI, UpdateSampleAPI
 from api.system_info_api import UserInfoAPI, UserActionHistory, SearchAPI
 from utils.utils import get_api_documentation
-from utils.username_filter import UsernameFilter
 from utils.grasp_database import Database
 
 
@@ -36,6 +37,7 @@ CORS(
     allow_headers=["Content-Type", "Authorization", "Access-Control-Allow-Credentials"],
     supports_credentials=True,
 )
+Compress(app=app)
 
 
 @app.route("/", defaults={"_path": ""})
