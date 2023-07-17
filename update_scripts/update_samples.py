@@ -14,7 +14,6 @@ from utils.utils import chained_request_to_steps
 
 DEFAULT_MCM_TOOLS_PATH = "/afs/cern.ch/cms/PPD/PdmV/tools/McM/"
 mcm_tools_path: str = os.getenv("MCM_TOOLS_PATH", DEFAULT_MCM_TOOLS_PATH)
-logging.info("McM Tools folder: %s", mcm_tools_path)
 
 # pylint: disable=wrong-import-position,import-error
 sys.path.append(mcm_tools_path)
