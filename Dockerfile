@@ -9,7 +9,9 @@ RUN npm install
 RUN npm run build
 
 # Build dependencies
-FROM python:3.11.3-alpine3.18@sha256:caafba876f841774905f73df0fcaf7fe3f55aaf9cb48a9e369a41077f860d4a7 AS build
+FROM python:3.11.7-alpine3.19@sha256:6aa46819a8ff43850e52f5ac59545b50c6d37ebd3430080421582af362afec97 AS build
+RUN apk update && apk upgrade
+RUN pip install --upgrade pip setuptools wheel
 
 WORKDIR /usr/app
 RUN python -m venv /usr/app/venv
@@ -19,7 +21,9 @@ COPY requirements.txt .
 RUN pip install -r requirements.txt
 
 # Create image for deployment
-FROM python:3.11.3-alpine3.18@sha256:caafba876f841774905f73df0fcaf7fe3f55aaf9cb48a9e369a41077f860d4a7 AS backend
+FROM python:3.11.7-alpine3.19@sha256:6aa46819a8ff43850e52f5ac59545b50c6d37ebd3430080421582af362afec97 AS backend
+RUN apk update && apk upgrade
+RUN pip install --upgrade pip setuptools wheel
 
 RUN addgroup -g 1001 pdmv && adduser --disabled-password -u 1001 -G pdmv pdmv
 
