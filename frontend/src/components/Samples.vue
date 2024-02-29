@@ -112,7 +112,7 @@
       <tr v-for="entry in subsetEntries" :key="entry._id">
         <td v-if="entry.rowspan.short_name > 0" :rowspan="entry.rowspan.short_name">{{entry.short_name}}</td>
         <td class="dataset-column" v-if="entry.rowspan.dataset > 0" :rowspan="entry.rowspan.dataset">
-          <a :href="'https://cms-pdmv.cern.ch/mcm/requests?dataset_name=' + entry.dataset" target="_blank">{{entry.dataset}}</a>
+          <a :href="'https://cms-pdmv-prod.web.cern.ch/mcm/requests?dataset_name=' + entry.dataset" target="_blank">{{entry.dataset}}</a>
         </td>
         <td v-if="entry.rowspan.root > 0" :rowspan="entry.rowspan.root" class="tags-cell">{{entry.tagsNice}}
           <template v-if="selectedTag && role('user')">
@@ -130,8 +130,8 @@
         </td>
         <td v-if="entry.rowspan.root > 0" :rowspan="entry.rowspan.root" class="progress-cell">
           <div>
-            <a :href="'https://cms-pdmv.cern.ch/mcm/requests?prepid=' + entry.root" target="_blank">McM</a>
-            <a :href="'https://cms-pdmv.cern.ch/pmp/historical?r=' + entry.root" target="_blank" class="ml-1">pMp</a>
+            <a :href="'https://cms-pdmv-prod.web.cern.ch/mcm/requests?prepid=' + entry.root" target="_blank">McM</a>
+            <a :href="'https://cms-pdmv-prod.web.cern.ch/pmp/historical?r=' + entry.root" target="_blank" class="ml-1">pMp</a>
             <template v-if="entry.root_output">
               <a :href="makeDASLink(entry.root_output)" target="_blank" class="ml-1">DAS</a>
             </template>
@@ -157,8 +157,8 @@
         <td v-if="entry.rowspan.miniaod > 0" :rowspan="entry.rowspan.miniaod" class="progress-cell">
           <template v-if="entry.miniaod.length">
             <div>
-              <a :href="'https://cms-pdmv.cern.ch/mcm/requests?prepid=' + entry.miniaod" target="_blank">McM</a>
-              <a :href="'https://cms-pdmv.cern.ch/pmp/historical?r=' + entry.miniaod" target="_blank" class="ml-1">pMp</a>
+              <a :href="'https://cms-pdmv-prod.web.cern.ch/mcm/requests?prepid=' + entry.miniaod" target="_blank">McM</a>
+              <a :href="'https://cms-pdmv-prod.web.cern.ch/pmp/historical?r=' + entry.miniaod" target="_blank" class="ml-1">pMp</a>
               <template v-if="entry.miniaod_output">
                 <a :href="makeDASLink(entry.miniaod_output)" target="_blank" class="ml-1">DAS</a>
               </template>
@@ -184,8 +184,8 @@
         <td class="progress-cell">
           <template v-if="entry.nanoaod.length">
             <div>
-              <a :href="'https://cms-pdmv.cern.ch/mcm/requests?prepid=' + entry.nanoaod" target="_blank">McM</a>
-              <a :href="'https://cms-pdmv.cern.ch/pmp/historical?r=' + entry.nanoaod" target="_blank" class="ml-1">pMp</a>
+              <a :href="'https://cms-pdmv-prod.web.cern.ch/mcm/requests?prepid=' + entry.nanoaod" target="_blank">McM</a>
+              <a :href="'https://cms-pdmv-prod.web.cern.ch/pmp/historical?r=' + entry.nanoaod" target="_blank" class="ml-1">pMp</a>
               <template v-if="entry.nanoaod_output">
                 <a :href="makeDASLink(entry.nanoaod_output)" target="_blank" class="ml-1">DAS</a>
               </template>
@@ -209,7 +209,7 @@
           </template>
         </td>
         <td>
-          <a :href="'https://cms-pdmv.cern.ch/mcm/chained_requests?prepid=' + entry.chained_request" target="_blank">{{entry.chain_tag}}</a>
+          <a :href="'https://cms-pdmv-prod.web.cern.ch/mcm/chained_requests?prepid=' + entry.chained_request" target="_blank">{{entry.chain_tag}}</a>
         </td>
         <td style="min-width: 30px; text-align: center">
           <input type="checkbox" :checked="entry.checked" v-on:change="toggleOneCheckbox" v-model="entry.checked">
