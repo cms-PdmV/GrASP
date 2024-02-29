@@ -1,6 +1,7 @@
 """
 Module that contains connector to McM database
 """
+import os
 import time
 import logging
 import socket
@@ -18,13 +19,12 @@ class Database:
     ip_cache = {}
 
     def __init__(self, db_name, dev=True):
-        if dev:
-            url = 'http://vocms0485.cern.ch:5984'
-            lucene_url = 'http://vocms0485.cern.ch:5985'
-        else:
-            url = 'http://vocms0490.cern.ch:5984'
-            lucene_url = 'http://vocms0490.cern.ch:5985'
-
+        url: str = os.getenv("MCM_DATABASE_URL")
+        lucene_url: str = os.getenv("MCM_LUCENE_URL")
+        if not url:
+            raise RuntimeError("Please set `MCM_DATABASE_URL` to the McM CouchDB connection URL.")
+        if not lucene_url:
+            raise RuntimeError("Please set `MCM_LUCENE_URL` to the McM Lucene connection URL.")
         if not db_name:
             raise ValueError('Missing database name')
 
