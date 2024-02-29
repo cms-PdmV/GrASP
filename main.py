@@ -19,17 +19,15 @@ def main():
         "--host", help="Host IP, default is 127.0.0.1", default="127.0.0.1"
     )
     parser.add_argument("--debug", help="Run Flask in debug mode", action="store_true")
-    parser.add_argument("--db_auth", help="Path to GrASP database auth file")
     args = vars(parser.parse_args())
     port = args.get("port")
     host = args.get("host")
     debug = args.get("debug")
-    db_auth = args.get("db_auth")
 
     logger = logging.getLogger()
 
     # Set Flask app configuration
-    set_app(db_auth=db_auth, debug=debug)
+    set_app(debug=debug)
 
     # Write PID to a file
     if os.environ.get("WERKZEUG_RUN_MAIN") != "true":

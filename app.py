@@ -126,17 +126,14 @@ def setup_logging(debug, log_folder: Path):
     return logger
 
 
-def set_app(db_auth: str | None = None, debug: bool = True) -> None:
+def set_app(debug: bool = True) -> None:
     """
-    Set Flask appplication configuration via config.cfg file
-    Parameters
-    ----------
-    db_auth : str
-        Path to MongoDB credentials file. This file should have a JSON format
-        If a None value is provided, the database credentials will be taken from
-        environment variables.
-    debug: bool
-        Set DEBUG logging level
+    Configures the web application setting up the loggers and
+    the database credentials. All the required parameters
+    are taken via environment variables.
+
+    Args:
+        debug (bool): Set DEBUG logging level
     """
     # Setup loggers
     logging.root.setLevel(logging.DEBUG if debug else logging.INFO)
@@ -179,24 +176,21 @@ def set_app(db_auth: str | None = None, debug: bool = True) -> None:
     database_name: str = "grasp"
     logger.info("Set database to: %s", database_name)
     Database.set_database_name(database_name)
-    if db_auth:
-        logger.info("Using the credentials file from: %s", db_auth)
-        Database.set_credentials_file(db_auth)
-    else:
-        # Retrieve credentials from environment variables
-        db_username = os.getenv("DB_USERNAME")
-        db_password = os.getenv("DB_PASSWORD")
-        if not db_username:
-            raise ValueError(
-                "Please set the DB_USERNAME environment variable "
-                "with the database username"
-            )
-        if not db_password:
-            raise ValueError(
-                "Please set the DB_PASSWORD environment variable "
-                "with the database password"
-            )
-        logger.info(
-            "Using credentials from environment - Database username: %s", db_username
+    
+    # Retrieve credentials from environment variables
+    db_username = os.getenv("DB_USERNAME")
+    db_password = os.getenv("DB_PASSWORD")
+    if not db_username:
+        raise ValueError(
+            "Please set the DB_USERNAME environment variable "
+            "with the database username"
         )
-        Database.set_credentials(username=db_username, password=db_password)
+    if not db_password:
+        raise ValueError(
+            "Please set the DB_PASSWORD environment variable "
+            "with the database password"
+        )
+    logger.info(
+        "Using credentials from environment - Database username: %s", db_username
+    )
+    Database.set_credentials(username=db_username, password=db_password)
