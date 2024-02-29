@@ -21,7 +21,7 @@ class CreateCampaignAPI(APIBase):
         name = data['name'].strip()
         self.logger.info('Creating new campaign %s', name)
         if not regex('^[a-zA-Z0-9_\\*-]{3,30}$')(name):
-            raise Exception('Name "%s" is not valid' % (name))
+            raise ValueError('Name "%s" is not valid' % (name))
 
         campaign_db = Database('campaigns')
         campaign = {'_id': name, 'name': name}

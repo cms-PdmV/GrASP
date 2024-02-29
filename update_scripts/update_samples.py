@@ -1,6 +1,7 @@
 """
 Module handles update of all the samples
 """
+
 import json
 import sys
 import time
@@ -12,14 +13,12 @@ from utils.grasp_database import Database as GrASPDatabase
 from utils.mcm_database import Database as McMDatabase
 from utils.utils import chained_request_to_steps
 
-DEFAULT_MCM_TOOLS_PATH = "/afs/cern.ch/cms/PPD/PdmV/tools/McM/"
-mcm_tools_path: str = os.getenv("MCM_TOOLS_PATH", DEFAULT_MCM_TOOLS_PATH)
+default_mcm_tools_path = "/afs/cern.ch/cms/PPD/PdmV/tools/McM/"
+mcm_tools_path: str = os.getenv("MCM_TOOLS_PATH", default_mcm_tools_path)
 
-# pylint: disable=wrong-import-position,import-error
-sys.path.append(mcm_tools_path)
+sys.path.append(mcm_tools_path)  # pylint: disable=wrong-import-order,import-error
 
-# pylint: enable=wrong-import-position,import-error
-from rest import McM
+from rest import McM  # pylint: disable=wrong-import-position,wrong-import-order,import-error
 
 logger = logging.getLogger()
 

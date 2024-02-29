@@ -26,7 +26,7 @@ class Database:
             lucene_url = 'http://vocms0490.cern.ch:5985'
 
         if not db_name:
-            raise Exception('Missing database name')
+            raise ValueError('Missing database name')
 
         self.db_name = db_name
         self.db_url = self.resolve_hostname_to_ip(url)
@@ -382,7 +382,7 @@ class Database:
                     time.sleep(sleep)
                 else:
                     raise http_error
-            except Exception as ex:
+            except Exception as ex: # pylint: disable=broad-exception-raised
                 self.logger.error('Error %s %s: %s', url, options, ex)
                 if attempt < self.max_attempts:
                     sleep = 2 ** attempt
@@ -390,4 +390,4 @@ class Database:
                 else:
                     raise ex
 
-        raise Exception('Error fetching %s' % (url))
+        raise Exception('Error fetching %s' % (url)) # pylint: disable=broad-exception-raised
