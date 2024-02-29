@@ -1,6 +1,7 @@
 """
 Flask app configuration
 """
+
 import os
 import os.path
 import sys
@@ -8,6 +9,7 @@ import json
 import logging
 import logging.handlers
 import secrets
+from pathlib import Path
 from flask import Flask, request, session, render_template, render_template_string
 from flask_restful import Api
 from flask_cors import CORS
@@ -97,31 +99,28 @@ api.add_resource(GetSamplesAPI, "/api/samples/get")
 api.add_resource(UpdateSampleAPI, "/api/samples/update")
 
 
-def setup_logging(debug):
+def setup_logging(debug, log_folder: Path):
     """
     Setup loggin to console or file
     """
     logger = logging.getLogger()
     logger.propagate = False
-    if debug:
-        handler = logging.StreamHandler(sys.stdout)
-        handler.setLevel(logging.DEBUG)
-    else:
-        if not os.path.isdir("logs"):
-            os.mkdir("logs")
-
-        handler = logging.handlers.RotatingFileHandler(
-            "logs/grasp.log", "a", 8 * 1024 * 1024, 50
-        )
-        handler.setLevel(logging.INFO)
-
     formatter = logging.Formatter(
         fmt="[%(asctime)s][%(user)s][%(levelname)s] %(message)s"
     )
-    handler.setFormatter(formatter)
-    handler.addFilter(UsernameFilter())
+    stream_handler = logging.StreamHandler(sys.stdout)
+    stream_handler.setLevel(logging.DEBUG if debug else logging.INFO)
+    stream_handler.setFormatter(formatter)
+    
+    log_folder.mkdir(parents=True, exist_ok=True)
+    log_file = log_folder / Path("grasp.log")
+    file_handler = logging.handlers.RotatingFileHandler(log_file, "a", 8 * 1024 * 1024, 50)
+    file_handler.setLevel(logging.INFO)
+    file_handler.setFormatter(formatter)
+
     logger.handlers.clear()
-    logger.addHandler(handler)
+    logger.addHandler(stream_handler)
+    logger.addHandler(file_handler)
     return logger
 
 
@@ -139,7 +138,8 @@ def set_app(db_auth: str | None = None, debug: bool = True) -> None:
     """
     # Setup loggers
     logging.root.setLevel(logging.DEBUG if debug else logging.INFO)
-    logger = setup_logging(debug)
+    log_folder: Path = Path(os.getenv("LOG_FOLDER", "."))
+    logger = setup_logging(debug , log_folder)
     logger.info("Setting up Flask application configuration")
     logger.info("Debugging: %s", debug)
 
