@@ -111,12 +111,14 @@ def setup_logging(debug, log_folder: Path):
     stream_handler = logging.StreamHandler(sys.stdout)
     stream_handler.setLevel(logging.DEBUG if debug else logging.INFO)
     stream_handler.setFormatter(formatter)
+    stream_handler.addFilter(UsernameFilter())
     
     log_folder.mkdir(parents=True, exist_ok=True)
     log_file = log_folder / Path("grasp.log")
     file_handler = logging.handlers.RotatingFileHandler(log_file, "a", 8 * 1024 * 1024, 50)
     file_handler.setLevel(logging.INFO)
     file_handler.setFormatter(formatter)
+    file_handler.addFilter(UsernameFilter())
 
     logger.handlers.clear()
     logger.addHandler(stream_handler)
