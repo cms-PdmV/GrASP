@@ -27,9 +27,9 @@ class Database():
         self.collection_name = collection_name
         self.logger = logging.getLogger()
         db_host = os.environ.get('DB_HOST', Database.DATABASE_HOST)
-        db_port = os.environ.get('DB_PORT', Database.DATABASE_PORT)
+        db_port = int(os.environ.get('DB_PORT', Database.DATABASE_PORT))
         if not Database.DATABASE_NAME:
-            raise Exception('Database name is not set')
+            raise ValueError('Database name is not set')
 
         if Database.USERNAME and Database.PASSWORD:
             self.logger.debug('Using DB with username and password. DB: %s', collection_name)
@@ -73,7 +73,7 @@ class Database():
         """
         Load credentials from a JSON file
         """
-        with open(filename) as json_file:
+        with open(filename, encoding="utf-8") as json_file:
             credentials = json.load(json_file)
 
         Database.set_credentials(credentials['username'], credentials['password'])

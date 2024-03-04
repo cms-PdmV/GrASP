@@ -1,0 +1,3 @@
+[submodule "core_lib"]
+	path = core_lib
+	url = https://github.com/cms-PdmV/PdmVWebCore

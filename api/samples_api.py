@@ -117,7 +117,7 @@ class GetSamplesAPI(APIBase):
                 """
                 Class that implements all comparison methods
                 """
-                def __init__(self, obj, *args):
+                def __init__(self, obj, *args): #pylint: disable=unused-argument
                     self.obj = obj
 
                 def __lt__(self, other):

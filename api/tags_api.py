@@ -21,7 +21,7 @@ class CreateTagAPI(APIBase):
         name = data['name'].strip()
         self.logger.info('Creating new tag %s', name)
         if not regex('^[a-zA-Z0-9_-]{3,50}$')(name):
-            raise Exception('Name "%s" is not valid' % (name))
+            raise ValueError('Name "%s" is not valid' % (name))
 
         tag_db = Database('tags')
         tag = {'_id': name, 'name': name}

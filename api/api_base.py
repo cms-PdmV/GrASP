@@ -1,6 +1,7 @@
 """
 API base module
 """
+import traceback
 import json
 import logging
 import time
@@ -44,20 +45,19 @@ class APIBase(Resource):
                             result = APIBase.build_response(result)
 
                         status_code = result.status_code
-                    except Exception as ex:
+                    except Exception:
                         status_code = 500
-                        import traceback
                         self.logger.error(traceback.format_exc())
                         return {'response': None,
                                 'success': False,
-                                'message': str(ex)}
+                                'message': 'Server error, please contact an administrator'}
                     finally:
                         end_time = time.time()
                         self.logger.info('[%s] %s %.4fs %s',
                                          name.upper(),
                                          request.path,
                                          end_time - start_time,
-                                         status_code)
+                                         status_code) #pylint: disable=used-before-assignment
                     return result
 
                 return wrapped_function
