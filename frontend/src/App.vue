@@ -71,9 +71,13 @@ header {
   margin: 8px 16px;
 }
 
-
 a {
   text-decoration: none;
+  transition: color 0.3s;
+}
+
+a:hover {
+  text-decoration: underline;
 }
 
 /* Table */

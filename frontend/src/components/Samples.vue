@@ -834,15 +834,6 @@ table {
   margin-bottom: 64px;
 }
 
-a {
-  text-decoration: none;
-  transition: color 0.3s;
-}
-
-a:hover {
-  text-decoration: underline;
-}
-
 td {
   white-space: nowrap;
   min-width: 100px;
