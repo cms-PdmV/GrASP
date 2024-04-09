@@ -131,8 +131,10 @@
         <td v-if="entry.rowspan.root > 0" :rowspan="entry.rowspan.root" class="progress-cell">
           <div>
             <a :href="'https://cms-pdmv-prod.web.cern.ch/mcm/requests?prepid=' + entry.root" target="_blank">McM</a>
+            <strong class="ml-1">-</strong>
             <a :href="'https://cms-pdmv-prod.web.cern.ch/pmp/historical?r=' + entry.root" target="_blank" class="ml-1">pMp</a>
             <template v-if="entry.root_output">
+            <strong class="ml-1">-</strong>
               <a :href="makeDASLink(entry.root_output)" target="_blank" class="ml-1">DAS</a>
             </template>
             <br>
@@ -158,8 +160,10 @@
           <template v-if="entry.miniaod.length">
             <div>
               <a :href="'https://cms-pdmv-prod.web.cern.ch/mcm/requests?prepid=' + entry.miniaod" target="_blank">McM</a>
+              <strong class="ml-1">-</strong>
               <a :href="'https://cms-pdmv-prod.web.cern.ch/pmp/historical?r=' + entry.miniaod" target="_blank" class="ml-1">pMp</a>
               <template v-if="entry.miniaod_output">
+                <strong class="ml-1">-</strong>
                 <a :href="makeDASLink(entry.miniaod_output)" target="_blank" class="ml-1">DAS</a>
               </template>
               <div class="mini-nano-version">{{entry.miniaod_version}}</div>
@@ -185,8 +189,10 @@
           <template v-if="entry.nanoaod.length">
             <div>
               <a :href="'https://cms-pdmv-prod.web.cern.ch/mcm/requests?prepid=' + entry.nanoaod" target="_blank">McM</a>
+              <strong class="ml-1">-</strong>
               <a :href="'https://cms-pdmv-prod.web.cern.ch/pmp/historical?r=' + entry.nanoaod" target="_blank" class="ml-1">pMp</a>
               <template v-if="entry.nanoaod_output">
+                <strong class="ml-1">-</strong>
                 <a :href="makeDASLink(entry.nanoaod_output)" target="_blank" class="ml-1">DAS</a>
               </template>
               <div class="mini-nano-version">{{entry.nanoaod_version}}</div>
@@ -826,6 +832,15 @@ export default {
 
 table {
   margin-bottom: 64px;
+}
+
+a {
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+a:hover {
+  text-decoration: underline;
 }
 
 td {
