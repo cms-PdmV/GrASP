@@ -9,8 +9,11 @@ import argparse
 import logging
 import hashlib
 import os
+import concurrent
+import concurrent.futures
 from utils.grasp_database import Database as GrASPDatabase
 from utils.mcm_database import Database as McMDatabase
+from utils.thread import ThreadSafeDict, ThreadSafeSet
 from utils.utils import chained_request_to_steps
 
 default_mcm_tools_path = "/afs/cern.ch/cms/PPD/PdmV/tools/McM/"
@@ -36,8 +39,8 @@ class SampleUpdater:
         self.mcm_chained_request_db = McMDatabase("chained_requests", dev=dev)
         self.sample_db = GrASPDatabase("samples")
         self.update_timestamp = int(time.time())
-        self.updated_prepids = set()
-        self.cache = {}
+        self.updated_prepids: set = ThreadSafeSet()
+        self.cache: dict = ThreadSafeDict()
 
     def get_mcm_request(self, prepid, use_cache=True):
         """
@@ -327,37 +330,62 @@ class SampleUpdater:
         logger.debug("Tags: %s", ", ".join(tags))
         self.update_requests({"tags": tags})
 
+    def update_request_batch(self, requests):
+        """
+        Updates a batch of given requests.
+        """
+        completed = 0
+        total = len(requests)
+        futures = {}
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            # Submit to the queue
+            for idx, request in enumerate(requests, start=1):
+                prepid = request["prepid"]
+                if prepid in self.updated_prepids:
+                    # Naive optimism that we will be able to skip some executions in the future.
+                    logger.info("Skipping %s as it was already updated", prepid)
+                    continue
+                
+                futures.update({executor.submit(self.process_request, request): (idx, prepid)})
+
+            # Check for results
+            for future in concurrent.futures.as_completed(futures):
+                index, prepid  = futures[future]
+                completed += 1
+                logger.info(
+                    "Processed (%s): %s. Completion (percentage): %.2f", 
+                    index,
+                    prepid,
+                    (completed / total) * 100
+                )
+
     def update_requests(self, query):
         """
         Main function - go through requests for given query and process chained
         requests that these requests are members of
         """
+        self.updated_prepids: set = ThreadSafeSet()
+        self.cache: dict = ThreadSafeDict()
         logger.info("Update requests for query %s", query)
-        self.cache = {}
         page = 0
         limit = 75 if self.debug else 750
-        index = 0
         requests = [{}]
-        self.updated_prepids = set()
+        start_query = time.time()
         while requests:
             requests = self.mcm_request_db.search(query, page=page, limit=limit)
             logger.info(
                 "Fetched %s requests for %s in page %s", len(requests), query, page
             )
-            for request in requests:
-                index += 1
-                prepid = request["prepid"]
-                if prepid in self.updated_prepids:
-                    logger.info("Skipping %s as it was already updated", prepid)
-                    continue
+            start_page = time.time()
+            self.update_request_batch(requests=requests)
+            end_page = time.time()
+            elapsed = end_page - start_page
 
-                logger.info("Processing %s", prepid)
-                start = time.time()
-                self.process_request(request)
-                end = time.time()
-                logger.info("Processed %s %s in %.4fs", index, prepid, end - start)
-
+            logger.info("Page processed in %.4fs. Rate %.4fs/request", elapsed, elapsed / len(requests))
             page += 1
+
+        end_query = time.time()
+        logger.info("Query processed in %.4fs.", end_query - start_query)
 
     def cleanup(self):
         """
