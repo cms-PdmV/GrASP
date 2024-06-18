@@ -337,11 +337,7 @@ class SampleUpdater:
         completed = 0
         total = len(requests)
         futures = {}
-        workers = min(8, os.cpu_count())
-
-        with concurrent.futures.ProcessPoolExecutor(max_workers=workers) as executor:
-            start_batch = time.time()
-
+        with concurrent.futures.ThreadPoolExecutor() as executor:
             # Submit to the queue
             for idx, request in enumerate(requests, start=1):
                 prepid = request["prepid"]
@@ -363,13 +359,6 @@ class SampleUpdater:
                     (completed / total) * 100
                 )
 
-            end_batch = time.time()
-            logger.info(
-                "Elapsed time for (%s): %.2fs", 
-                len(requests),
-                end_batch - start_batch
-            )
-
     def update_requests(self, query):
         """
         Main function - go through requests for given query and process chained
@@ -387,9 +376,13 @@ class SampleUpdater:
             logger.info(
                 "Fetched %s requests for %s in page %s", len(requests), query, page
             )
-            if requests:
-                self.update_request_batch(requests=requests)
-                page += 1
+            start_page = time.time()
+            self.update_request_batch(requests=requests)
+            end_page = time.time()
+            elapsed = end_page - start_page
+
+            logger.info("Page processed in %.4fs. Rate %.4fs/request", elapsed, elapsed / len(requests))
+            page += 1
 
         end_query = time.time()
         logger.info("Query processed in %.4fs.", end_query - start_query)
