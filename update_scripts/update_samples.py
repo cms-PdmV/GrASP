@@ -337,7 +337,7 @@ class SampleUpdater:
         completed = 0
         total = len(requests)
         futures = {}
-        with concurrent.futures.ThreadPoolExecutor() as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=32) as executor:
             # Submit to the queue
             for idx, request in enumerate(requests, start=1):
                 prepid = request["prepid"]
