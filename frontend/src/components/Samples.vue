@@ -112,7 +112,8 @@
       <tr v-for="entry in subsetEntries" :key="entry._id">
         <td v-if="entry.rowspan.short_name > 0" :rowspan="entry.rowspan.short_name">{{entry.short_name}}</td>
         <td class="dataset-column" v-if="entry.rowspan.dataset > 0" :rowspan="entry.rowspan.dataset">
-          {{entry.dataset}}: 
+          {{entry.dataset}}
+          <br>
             <a :href="'https://cms-pdmv-prod.web.cern.ch/mcm/requests?dataset_name=' + entry.dataset" target="_blank">McM</a>
             <strong class="ml-1">-</strong>
             <a :href="'https://xsecdb-xsdb-official.app.cern.ch/xsdb/?searchQuery=process_name%3D' + entry.dataset" target="_blank">XSDB</a>
