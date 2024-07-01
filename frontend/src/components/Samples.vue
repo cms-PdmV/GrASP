@@ -115,7 +115,7 @@
           {{entry.dataset}}
           <br>
             <a :href="'https://cms-pdmv-prod.web.cern.ch/mcm/requests?dataset_name=' + entry.dataset" target="_blank">McM</a>
-            <strong class="ml-1">-</strong>
+            <strong class="mx-1">-</strong>
             <a :href="'https://xsecdb-xsdb-official.app.cern.ch/xsdb/?searchQuery=process_name%3D' + entry.dataset" target="_blank">XSDB</a>
         </td>
         <td v-if="entry.rowspan.root > 0" :rowspan="entry.rowspan.root" class="tags-cell">{{entry.tagsNice}}
