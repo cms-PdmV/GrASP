@@ -112,7 +112,11 @@
       <tr v-for="entry in subsetEntries" :key="entry._id">
         <td v-if="entry.rowspan.short_name > 0" :rowspan="entry.rowspan.short_name">{{entry.short_name}}</td>
         <td class="dataset-column" v-if="entry.rowspan.dataset > 0" :rowspan="entry.rowspan.dataset">
-          <a :href="'https://cms-pdmv-prod.web.cern.ch/mcm/requests?dataset_name=' + entry.dataset" target="_blank">{{entry.dataset}}</a>
+          {{entry.dataset}}
+          <br>
+            <a :href="'https://cms-pdmv-prod.web.cern.ch/mcm/requests?dataset_name=' + entry.dataset" target="_blank">McM</a>
+            <strong class="mx-1">-</strong>
+            <a :href="'https://xsecdb-xsdb-official.app.cern.ch/xsdb/?searchQuery=process_name%3D' + entry.dataset" target="_blank">XSDB</a>
         </td>
         <td v-if="entry.rowspan.root > 0" :rowspan="entry.rowspan.root" class="tags-cell">{{entry.tagsNice}}
           <template v-if="selectedTag && role('user')">
@@ -131,8 +135,10 @@
         <td v-if="entry.rowspan.root > 0" :rowspan="entry.rowspan.root" class="progress-cell">
           <div>
             <a :href="'https://cms-pdmv-prod.web.cern.ch/mcm/requests?prepid=' + entry.root" target="_blank">McM</a>
+            <strong class="ml-1">-</strong>
             <a :href="'https://cms-pdmv-prod.web.cern.ch/pmp/historical?r=' + entry.root" target="_blank" class="ml-1">pMp</a>
             <template v-if="entry.root_output">
+            <strong class="ml-1">-</strong>
               <a :href="makeDASLink(entry.root_output)" target="_blank" class="ml-1">DAS</a>
             </template>
             <br>
@@ -158,8 +164,10 @@
           <template v-if="entry.miniaod.length">
             <div>
               <a :href="'https://cms-pdmv-prod.web.cern.ch/mcm/requests?prepid=' + entry.miniaod" target="_blank">McM</a>
+              <strong class="ml-1">-</strong>
               <a :href="'https://cms-pdmv-prod.web.cern.ch/pmp/historical?r=' + entry.miniaod" target="_blank" class="ml-1">pMp</a>
               <template v-if="entry.miniaod_output">
+                <strong class="ml-1">-</strong>
                 <a :href="makeDASLink(entry.miniaod_output)" target="_blank" class="ml-1">DAS</a>
               </template>
               <div class="mini-nano-version">{{entry.miniaod_version}}</div>
@@ -185,8 +193,10 @@
           <template v-if="entry.nanoaod.length">
             <div>
               <a :href="'https://cms-pdmv-prod.web.cern.ch/mcm/requests?prepid=' + entry.nanoaod" target="_blank">McM</a>
+              <strong class="ml-1">-</strong>
               <a :href="'https://cms-pdmv-prod.web.cern.ch/pmp/historical?r=' + entry.nanoaod" target="_blank" class="ml-1">pMp</a>
               <template v-if="entry.nanoaod_output">
+                <strong class="ml-1">-</strong>
                 <a :href="makeDASLink(entry.nanoaod_output)" target="_blank" class="ml-1">DAS</a>
               </template>
               <div class="mini-nano-version">{{entry.nanoaod_version}}</div>

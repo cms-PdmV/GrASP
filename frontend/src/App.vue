@@ -1,7 +1,7 @@
 <template>
   <v-app>
     <v-app-bar app>
-      <a href="">
+      <a href="" class="no-hover">
         <v-toolbar-title class="headline">
           <span>Gr</span>
           <span class="font-weight-light">ASP</span>
@@ -71,8 +71,16 @@ header {
   margin: 8px 16px;
 }
 
-
 a {
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+a.no-hover:hover {
   text-decoration: none;
 }
 
