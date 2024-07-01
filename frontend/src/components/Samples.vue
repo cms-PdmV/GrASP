@@ -112,7 +112,10 @@
       <tr v-for="entry in subsetEntries" :key="entry._id">
         <td v-if="entry.rowspan.short_name > 0" :rowspan="entry.rowspan.short_name">{{entry.short_name}}</td>
         <td class="dataset-column" v-if="entry.rowspan.dataset > 0" :rowspan="entry.rowspan.dataset">
-          <a :href="'https://cms-pdmv-prod.web.cern.ch/mcm/requests?dataset_name=' + entry.dataset" target="_blank">{{entry.dataset}}</a>
+          {{entry.dataset}}: 
+            <a :href="'https://cms-pdmv-prod.web.cern.ch/mcm/requests?dataset_name=' + entry.dataset" target="_blank">McM</a>
+            <strong class="ml-1">-</strong>
+            <a :href="'https://xsecdb-xsdb-official.app.cern.ch/xsdb/?searchQuery=process_name%3D' + entry.dataset" target="_blank">XSDB</a>
         </td>
         <td v-if="entry.rowspan.root > 0" :rowspan="entry.rowspan.root" class="tags-cell">{{entry.tagsNice}}
           <template v-if="selectedTag && role('user')">
