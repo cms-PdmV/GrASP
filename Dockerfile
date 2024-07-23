@@ -10,6 +10,7 @@ RUN npm run build
 
 # Build dependencies
 FROM python:3.11.7-alpine3.19@sha256:6aa46819a8ff43850e52f5ac59545b50c6d37ebd3430080421582af362afec97 AS build
+RUN apk add git
 RUN apk update && apk upgrade
 RUN pip install --upgrade pip setuptools wheel
 
