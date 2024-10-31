@@ -9,7 +9,7 @@ RUN npm install
 RUN npm run build
 
 # Build dependencies
-FROM python:3.11.7-alpine3.19@sha256:6aa46819a8ff43850e52f5ac59545b50c6d37ebd3430080421582af362afec97 AS build
+FROM python:3.11.10-alpine3.20@sha256:f089154eb2546de825151b9340a60d39e2ba986ab17aaffca14301b0b961a11c AS build
 RUN apk add git
 RUN apk update && apk upgrade
 RUN pip install --upgrade pip setuptools wheel
@@ -22,7 +22,7 @@ COPY requirements.txt .
 RUN pip install -r requirements.txt
 
 # Create image for deployment
-FROM python:3.11.7-alpine3.19@sha256:6aa46819a8ff43850e52f5ac59545b50c6d37ebd3430080421582af362afec97 AS backend
+FROM python:3.11.10-alpine3.20@sha256:f089154eb2546de825151b9340a60d39e2ba986ab17aaffca14301b0b961a11c AS backend
 RUN apk update && apk upgrade
 RUN pip install --upgrade pip setuptools wheel
 
